@@ -1,23 +1,28 @@
-# Use an official Node.js runtime as a parent image  
-FROM node:16  
-  
-# Set the working directory  
-WORKDIR /app  
-  
-# Copy package.json and package-lock.json  
-COPY backend/package*.json ./  
-  
-# Install dependencies  
-RUN npm install  
-  
-# Copy the rest of the backend code  
-COPY backend/ ./  
-  
-# Build the TypeScript code  
-RUN npm run build  
-  
-# Expose the port  
-EXPOSE 5000  
-  
-# Start the server  
-CMD ["npm", "start"]  
+# Dockerfile.backend
+# Use an official Node.js runtime as a parent image
+FROM node:20
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY backend/package*.json ./
+
+# Install dependencies including typescript and ts-node globally
+RUN npm install
+RUN npm install -g typescript ts-node nodemon
+
+# Copy the rest of the backend code
+COPY backend/ ./
+
+# Create a production build
+RUN npm run build
+
+# Make sure the build succeeded
+RUN test -f dist/index.js && test -f dist/worker.js
+
+# Expose the port
+EXPOSE 5000
+
+# The command will be overridden by docker-compose
+CMD ["npm", "start"]

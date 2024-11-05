@@ -9,141 +9,148 @@ A full-stack application for audio transcription using OpenAI's Whisper model, b
 - **Database**: PostgreSQL
 - **Cache**: Redis
 - **Worker**: Background processing for transcription tasks
-- **Container**: Docker for development and production environments
 
-## 🚀 Quick Start
+## 🐳 Docker Configurations
 
-### Prerequisites
+The project uses different Docker Compose configurations for different environments:
 
-- Docker and Docker Compose
-- Node.js 16 or higher
-- npm
-- OpenAI API key
+### 1. `docker-compose.yml` (Default)
+- Used for local testing of the complete stack
+- Includes all services: frontend, backend, worker, database, and Redis
+- Suitable for testing the full application locally before deployment
+- Uses default ports (3000 for frontend, 5000 for backend)
 
-### Environment Variables
+### 2. `docker-compose.dev.yml`
+- Lightweight configuration for development
+- Only runs database and Redis
+- Frontend and backend run directly on your machine
+- Enables hot-reload and faster development cycles
+- Best for active development work
 
-Create a `.env` file in the root directory:
+### 3. `docker-compose.prod.yml`
+- Production-ready configuration
+- Includes optimized builds
+- Uses different ports (8080 for frontend) to avoid conflicts
+- Includes restart policies and volume configurations
+- Suitable for deployment to staging/production servers
 
-```env
-OPENAI_API_KEY=your_openai_api_key
-OPENAI_API_URL=https://api.openai.com/v1
-```
+## 🚀 Development Setup
 
-### Development Mode
-
-For local development without containers:
-
-1. Start the database and Redis:
+### Local Development (Recommended for devs)
 ```bash
-docker-compose -f docker-compose.dev.yml up
-```
+# Start only DB and Redis
+docker-compose -f docker-compose.dev.yml up -d
 
-2. Start the backend:
-```bash
+# Start backend
 cd backend
 npm install
 npm run dev
-```
 
-3. In a new terminal, start the worker:
-```bash
+# Start worker (in new terminal)
 cd backend
 npm run worker:dev
-```
 
-4. In a new terminal, start the frontend:
-```bash
+# Start frontend (in new terminal)
 cd frontend
 npm install
 npm start
 ```
 
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend: http://localhost:5000
-
-### Production Mode
-
-To run the full application in production mode:
-
+### Full Stack Testing
 ```bash
+# Test complete application locally
 docker-compose up --build
 ```
 
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend: http://localhost:5000
+## 📦 Deployment
 
-## 📁 Project Structure
+### Prerequisites
+- Docker and Docker Compose installed on your server
+- Git access to the repository
+- OpenAI API key
 
-```
-transcription-app/
-├── backend/
-│   ├── src/
-│   ├── package.json
-│   ├── tsconfig.json
-├── frontend/
-│   ├── src/
-│   ├── package.json
-│   ├── tsconfig.json
-├── docker-compose.yml
-├── docker-compose.dev.yml
-├── Dockerfile.backend
-├── Dockerfile.frontend
+### Server Deployment Steps
+
+1. Clone the repository:
+```bash
+git clone https://github.com/giacomocap/transcription-app
+cd transcription-app
 ```
 
-## 🛠️ Available Scripts
+2. Create environment file:
+```bash
+cat > .env << EOL
+DB_PASSWORD=your_secure_password
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_URL=https://api.openai.com/v1
+EOL
+```
 
-### Backend
+3. Deploy the application:
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+4. Verify deployment:
+```bash
+docker-compose -f docker-compose.prod.yml ps
+```
+
+The application will be accessible at:
+- Frontend: http://your-server-ip:8080
+- Backend API: http://your-server-ip:5000
+
+### Maintenance Commands
 
 ```bash
-npm run dev        # Start development server with hot-reload
-npm run worker:dev # Start worker in development mode
-npm run start      # Start production server
+# View logs
+docker-compose -f docker-compose.prod.yml logs
+
+# Restart services
+docker-compose -f docker-compose.prod.yml restart
+
+# Update application
+git pull
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# Stop application
+docker-compose -f docker-compose.prod.yml down
 ```
-
-### Frontend
-
-```bash
-npm start   # Start development server
-npm build   # Build for production
-npm test    # Run tests
-npm eject   # Eject from create-react-app
-```
-
-## 🐳 Docker Configuration
-
-The application uses multiple Dockerfiles and Docker Compose configurations:
-
-- `Dockerfile.backend`: Node.js backend configuration
-- `Dockerfile.frontend`: React frontend with Nginx configuration
-- `docker-compose.yml`: Full production setup
-- `docker-compose.dev.yml`: Development setup (DB and Redis only)
 
 ## 🔧 Configuration
 
-### Database
+### Environment Variables
+Create a `.env` file in the root directory:
 
-PostgreSQL is configured with the following default settings:
-- User: postgres
-- Password: password
-- Database: transcription
-- Port: 5432
+```env
+# Database
+DB_PASSWORD=your_secure_password
 
-### Redis
+# OpenAI
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_URL=https://api.openai.com/v1
 
-Redis is configured with default settings:
-- Port: 6379
-- No password
+# Ports (if needed)
+FRONTEND_PORT=8080
+BACKEND_PORT=5000
+```
 
-## 🤝 Contributing
+### Default Ports
+- Frontend: 8080 (production), 3000 (development)
+- Backend API: 5000
+- PostgreSQL: 5432
+- Redis: 6379
+
+## 📝 Contributing Guidelines
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+3. Make your changes
+4. Test using `docker-compose up --build`
+5. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+6. Push to the branch (`git push origin feature/AmazingFeature`)
+7. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

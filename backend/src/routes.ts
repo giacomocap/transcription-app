@@ -27,6 +27,22 @@ const redisOptions = {
 
 const transcriptionQueue = new Queue('transcriptionQueue', { connection: redisOptions });
 
+/**
+ * @swagger
+ * /upload:
+ *   post:
+ *     summary: Upload a file
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - in: formData
+ *         name: file
+ *         type: file
+ *         description: The file to upload
+ *     responses:
+ *       200:
+ *         description: Successfully uploaded
+ */
 router.post('/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
     const jobId = uuidv4();
@@ -70,18 +86,78 @@ router.post('/config/transcription', async (req, res) => {
     res.json(result.rows[0]);
 });
 
+/**
+ * @swagger
+ * /config/refinement:
+ *   post:
+ *     summary: Add refinement configuration
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               openai_api_url:
+ *                 type: string
+ *               openai_api_key:
+ *                 type: string
+ *               model_name:
+ *                 type: string
+ *               system_prompt:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Successfully added refinement configuration
+ */
 router.post('/config/refinement', async (req, res) => {
     const { openai_api_url, openai_api_key, model_name, system_prompt } = req.body;
     const result = await pool.query('INSERT INTO refinement_config (openai_api_url, openai_api_key, model_name, system_prompt) VALUES ($1, $2, $3, $4) RETURNING *', [openai_api_url, openai_api_key, model_name, system_prompt]);
     res.json(result.rows[0]);
 });
 
+/**
+ * @swagger
+ * /jobs/{id}:
+ *   get:
+ *     summary: Get job by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The job ID
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved job
+ */
 router.get('/jobs/:id', async (req, res) => {
     const jobId = req.params.id;
     const result = await pool.query('SELECT * FROM jobs WHERE id = $1', [jobId]);
     res.json(result.rows[0]);
 });
 
+/**
+ * @swagger
+ * /jobs/{id}/refine:
+ *   post:
+ *     summary: Refine transcription for a job
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The job ID
+ *     responses:
+ *       200:
+ *         description: Successfully refined transcription
+ *       404:
+ *         description: Original transcription not found
+ *       500:
+ *         description: Transcription refinement failed
+ */
 router.post('/jobs/:id/refine', async (req: any, res: any) => {
     const jobId = req.params.id;
     // Add the refinement job to the queue or handle directly  
