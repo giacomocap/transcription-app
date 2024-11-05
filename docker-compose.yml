@@ -1,0 +1,67 @@
+services:  
+  backend:  
+    build:  
+      context: .  
+      dockerfile: Dockerfile.backend  
+    ports:  
+      - '5000:5000'  
+    environment:  
+      - PORT=5000  
+      # Database environment variables  
+      - DB_HOST=db  
+      - DB_PORT=5432  
+      - DB_USER=postgres  
+      - DB_PASSWORD=password  
+      - DB_NAME=transcription  
+      # Redis environment variables  
+      - REDIS_HOST=redis  
+      - REDIS_PORT=6379  
+      # OpenAI API environment variables  
+      - OPENAI_API_KEY=${OPENAI_API_KEY}  
+      - OPENAI_API_URL=${OPENAI_API_URL}  
+      - WHISPER_MODEL=whisper-1  
+    depends_on:  
+      - db  
+      - redis  
+  frontend:  
+    build:  
+      context: .  
+      dockerfile: Dockerfile.frontend  
+    ports:  
+      - '3000:3000'  
+    depends_on:  
+      - backend  
+  db:  
+    image: postgres:13  
+    environment:  
+      - POSTGRES_USER=postgres  
+      - POSTGRES_PASSWORD=password  
+      - POSTGRES_DB=transcription  
+    volumes:  
+      - db-data:/var/lib/postgresql/data  
+  redis:  
+    image: redis:6  
+    ports:  
+      - '6379:6379'  
+  worker:  
+    build:  
+      context: .  
+      dockerfile: Dockerfile.backend  # Assuming worker uses the same setup as backend  
+    command: ts-node src/worker.ts  
+    environment:  
+      - DB_HOST=db  
+      - DB_PORT=5432  
+      - DB_USER=postgres  
+      - DB_PASSWORD=password  
+      - DB_NAME=transcription  
+      - REDIS_HOST=redis  
+      - REDIS_PORT=6379  
+      - OPENAI_API_KEY=${OPENAI_API_KEY}  
+      - OPENAI_API_URL=${OPENAI_API_URL}  
+      - WHISPER_MODEL=whisper-1  
+    depends_on:  
+      - db  
+      - redis  
+  
+volumes:  
+  db-data:  

@@ -1,0 +1,83 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Backend - Dev Server",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/index.js",
+            "cwd": "${workspaceFolder}/backend",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "sourceMaps": true
+        },
+        {
+            "name": "Backend - Worker",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/backend/worker.js",
+            "cwd": "${workspaceFolder}/backend",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "worker:dev"
+            ],
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "sourceMaps": true
+        },
+        {
+            "name": "Frontend - Dev Server",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/frontend/node_modules/react-scripts/bin/react-scripts.js",
+            "args": [
+                "start"
+            ],
+            "cwd": "${workspaceFolder}/frontend",
+            "env": {
+                "NODE_ENV": "development"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "sourceMaps": true
+        },
+        {
+            "name": "Frontend - Chrome Debug",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/frontend",
+            "sourceMaps": true
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Run All",
+            "configurations": [
+                "Backend - Dev Server",
+                "Backend - Worker",
+                "Frontend - Dev Server",
+                "Frontend - Chrome Debug"
+            ]
+        },
+        {
+            "name": "Run and Debug Frontend with Chrome",
+            "configurations": [
+                "Frontend - Dev Server",
+                "Frontend - Chrome Debug"
+            ]
+        }
+    ]
+}
