@@ -14,9 +14,6 @@ const redisOptions = {
     port: Number(process.env.REDIS_PORT) || 6379,
 };
 
-// Initialize OpenAI API client  
-
-
 const transcriptionWorker = new Worker(
     'transcriptionQueue',
     async job => {
@@ -24,6 +21,7 @@ const transcriptionWorker = new Worker(
 
         //get openai params from transcription_config
         const openaiConfig = (await pool.query('SELECT * FROM transcription_config')).rows[0] as TranscriptionConfig;
+        console.log('openaiConfig', openaiConfig);
         const apiModel = openaiConfig.model_name;
         const apiKey = openaiConfig.openai_api_key;
         const apiBaseUrl = openaiConfig.openai_api_url;

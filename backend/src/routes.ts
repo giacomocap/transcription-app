@@ -45,6 +45,7 @@ const transcriptionQueue = new Queue('transcriptionQueue', { connection: redisOp
  */
 router.post('/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
+    console.log('Uploaded file:', file?.originalname);
     const jobId = uuidv4();
 
     // Save job in the database  
@@ -55,34 +56,39 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     // Add job to the queue  
     await transcriptionQueue.add('transcribe', { jobId, filePath: file?.path, fileName: file?.originalname, mimeType: file?.mimetype });
-
+    console.log('Added job to queue:', jobId);
     res.json({ jobId });
 });
 
 router.delete('/jobs/:id', async (req, res) => {
     const jobId = req.params.id;
+    console.log('/api/jobs/:id', jobId);
     await pool.query('DELETE FROM jobs WHERE id = $1', [jobId]);
     res.json({ success: true });
 });
 
 router.get('/jobs', async (req, res) => {
+    console.log('/api/jobs');
     const result = await pool.query('SELECT * FROM jobs ORDER BY created_at DESC');
     res.json(result.rows);
 });
 
 router.get('/config/transcription', async (req, res) => {
+    console.log('/api/config/transcription');
     const result = await pool.query('SELECT * FROM transcription_config ORDER BY created_at DESC');
     res.json(result.rows[0]);
 });
 
 router.get('/config/refinement', async (req, res) => {
+    console.log('/api/config/refinement');
     const result = await pool.query('SELECT * FROM refinement_config ORDER BY created_at DESC');
     res.json(result.rows[0]);
 });
 
 router.post('/config/transcription', async (req, res) => {
+    console.log('/api/config/transcription POST', req.body);
     const { openai_api_url, openai_api_key, model_name, max_concurrent_jobs } = req.body;
-    const result = await pool.query('INSERT INTO transcription_config (openai_api_url, openai_api_key, model_name, max_concurrent_jobs) VALUES ($1, $2, $3, $4) RETURNING *', [openai_api_url, openai_api_key, model_name, max_concurrent_jobs]);
+    const result = await pool.query('UPDATE transcription_config SET openai_api_url = $1, openai_api_key = $2, model_name = $3, max_concurrent_jobs = $4', [openai_api_url, openai_api_key, model_name, max_concurrent_jobs]);
     res.json(result.rows[0]);
 });
 
@@ -111,8 +117,9 @@ router.post('/config/transcription', async (req, res) => {
  *         description: Successfully added refinement configuration
  */
 router.post('/config/refinement', async (req, res) => {
+    console.log('/api/config/refinement POST', req.body);
     const { openai_api_url, openai_api_key, model_name, system_prompt } = req.body;
-    const result = await pool.query('INSERT INTO refinement_config (openai_api_url, openai_api_key, model_name, system_prompt) VALUES ($1, $2, $3, $4) RETURNING *', [openai_api_url, openai_api_key, model_name, system_prompt]);
+    const result = await pool.query('UPDATE refinement_config SET openai_api_url = $1, openai_api_key = $2, model_name = $3, system_prompt = $4', [openai_api_url, openai_api_key, model_name, system_prompt]);
     res.json(result.rows[0]);
 });
 
