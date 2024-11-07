@@ -18,7 +18,7 @@ The project uses different Docker Compose configurations for different environme
 - Used for local testing of the complete stack
 - Includes all services: frontend, backend, worker, database, and Redis
 - Suitable for testing the full application locally before deployment
-- Uses default ports (3000 for frontend, 5000 for backend)
+- Uses default ports (3000 for frontend, 5001 for backend)
 
 ### 2. `docker-compose.dev.yml`
 - Lightweight configuration for development
@@ -98,7 +98,7 @@ docker-compose -f docker-compose.prod.yml ps
 
 The application will be accessible at:
 - Frontend: http://your-server-ip:8080
-- Backend API: http://your-server-ip:5000
+- Backend API: http://your-server-ip:5001
 
 ### Maintenance Commands
 
@@ -132,12 +132,12 @@ OPENAI_API_URL=https://api.openai.com/v1
 
 # Ports (if needed)
 FRONTEND_PORT=8080
-BACKEND_PORT=5000
+BACKEND_PORT=5001
 ```
 
 ### Default Ports
 - Frontend: 8080 (production), 3000 (development)
-- Backend API: 5000
+- Backend API: 5001
 - PostgreSQL: 5432
 - Redis: 6379
 

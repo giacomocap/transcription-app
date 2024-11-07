@@ -1,52 +1,57 @@
 services:
   backend:
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile.backend
     restart: unless-stopped
     ports:
-      - '5000:5000'
+      - '5001:5001'
     command: npm start  # Explicitly set the command
     environment:
-      - PORT=5000
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
+      - PORT=${PORT:-5001}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=transcription
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - DB_NAME=${DB_NAME:-transcription}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=whisper-1
+      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3}
     depends_on:
       - db
       - redis
+    volumes:
+      - ./backend/uploads:/app/uploads 
 
   worker:
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile.backend
     restart: unless-stopped
     command: node dist/worker.js  # Changed to use compiled version
     environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
+      - PORT=${PORT:-5001}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=transcription
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - DB_NAME=${DB_NAME:-transcription}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=whisper-1
+      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3}
     depends_on:
       - db
       - redis
+    volumes:
+      - ./backend/uploads:/app/uploads 
 
   frontend:
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile.frontend
     restart: unless-stopped
     ports:

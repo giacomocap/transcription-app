@@ -67,6 +67,18 @@ router.delete('/jobs/:id', async (req, res) => {
     res.json({ success: true });
 });
 
+/**
+ * @swagger
+ * /jobs:
+ *  get:
+ *   summary: Get all jobs
+ *  responses:
+ *   200:
+ *   description: Successfully retrieved jobs
+ *  500:
+ *  description: Failed to retrieve jobs
+ *  
+    */
 router.get('/jobs', async (req, res) => {
     console.log('/api/jobs');
     const result = await pool.query('SELECT * FROM jobs ORDER BY created_at DESC');
@@ -84,6 +96,7 @@ router.get('/config/refinement', async (req, res) => {
     const result = await pool.query('SELECT * FROM refinement_config ORDER BY created_at DESC');
     res.json(result.rows[0]);
 });
+
 
 router.post('/config/transcription', async (req, res) => {
     console.log('/api/config/transcription POST', req.body);

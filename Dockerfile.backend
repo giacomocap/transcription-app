@@ -22,7 +22,7 @@ RUN npm run build
 RUN test -f dist/index.js && test -f dist/worker.js
 
 # Expose the port
-EXPOSE 5000
+EXPOSE 5001
 
 # The command will be overridden by docker-compose
 CMD ["npm", "start"]

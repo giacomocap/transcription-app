@@ -4,10 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     ports:
-      - '5000:5000'
+      - '5001:5001'
     command: npm run dev  # Changed to use nodemon in dev mode
     environment:
-      - PORT=5000
+      - PORT=5001
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=postgres
@@ -17,7 +17,7 @@ services:
       - REDIS_PORT=6379
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=whisper-1
+      - WHISPER_MODEL=whisper-large-v3
     depends_on:
       - db
       - redis
@@ -52,7 +52,7 @@ services:
       - REDIS_PORT=6379
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=whisper-1
+      - WHISPER_MODEL=whisper-large-v3
     depends_on:
       - db
       - redis

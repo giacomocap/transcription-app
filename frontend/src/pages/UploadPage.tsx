@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Upload } from 'lucide-react';
 
 export const UploadPage = () => {
