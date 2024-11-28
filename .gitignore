@@ -10,3 +10,5 @@
 *.cache
 *.parcel-cache
 *.yarn
+*venv
+*uploads

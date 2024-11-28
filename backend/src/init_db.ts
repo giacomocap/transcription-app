@@ -12,13 +12,41 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS jobs (
         id UUID PRIMARY KEY,
         file_name VARCHAR(255) NOT NULL,
+        file_url VARCHAR(255),
         status VARCHAR(50) NOT NULL DEFAULT 'pending',
         transcript TEXT,
         refined_transcript TEXT,
+        subtitle_content TEXT,
+        diarization_enabled BOOLEAN DEFAULT FALSE,
+        diarization_status VARCHAR(50),
+        audio_hash VARCHAR(64),
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+    // // Create speaker_segments table for diarization results
+    // await client.query(`
+    //   CREATE TABLE IF NOT EXISTS speaker_segments (
+    //     id SERIAL PRIMARY KEY,
+    //     job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
+    //     speaker_label VARCHAR(50),
+    //     start_time FLOAT NOT NULL,
+    //     end_time FLOAT NOT NULL,
+    //     confidence FLOAT,
+    //     created_at TIMESTAMP DEFAULT NOW()
+    //   );
+    // `);
+
+    // // Create diarization_cache table
+    // await client.query(`
+    //   CREATE TABLE IF NOT EXISTS diarization_cache (
+    //     audio_hash VARCHAR(64) PRIMARY KEY,
+    //     segments JSONB NOT NULL,
+    //     created_at TIMESTAMP DEFAULT NOW(),
+    //     last_accessed TIMESTAMP DEFAULT NOW()
+    //   );
+    // `);
 
     // Create transcription_config table if not exists
     await client.query(`

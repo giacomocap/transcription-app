@@ -47,15 +47,21 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     const file = req.file;
     console.log('Uploaded file:', file?.originalname);
     const jobId = uuidv4();
+    const diarizationEnabled = req.body.diarization === 'true';
 
     // Save job in the database  
     await pool.query(
-        'INSERT INTO jobs (id, file_name, status) VALUES ($1, $2, $3)',
-        [jobId, file?.originalname, 'queued']
+        'INSERT INTO jobs (id, file_name, status, diarization_enabled, diarization_status) VALUES ($1, $2, $3, $4, $5)',
+        [jobId, file?.originalname, 'queued', diarizationEnabled, diarizationEnabled ? 'pending' : null]
     );
 
     // Add job to the queue  
-    await transcriptionQueue.add('transcribe', { jobId, filePath: file?.path, fileName: file?.originalname, mimeType: file?.mimetype });
+    await transcriptionQueue.add('transcribe', { 
+        jobId, 
+        filePath: file?.path, 
+        fileName: file?.originalname, 
+        diarizationEnabled 
+    });
     console.log('Added job to queue:', jobId);
     res.json({ jobId });
 });

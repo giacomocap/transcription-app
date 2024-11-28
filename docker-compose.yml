@@ -17,7 +17,7 @@ services:
       - REDIS_PORT=6379
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=whisper-large-v3
+      - WHISPER_MODEL=whisper-large-v3-turbo
     depends_on:
       - db
       - redis
@@ -52,7 +52,7 @@ services:
       - REDIS_PORT=6379
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=whisper-large-v3
+      - WHISPER_MODEL=whisper-large-v3-turbo
     depends_on:
       - db
       - redis
