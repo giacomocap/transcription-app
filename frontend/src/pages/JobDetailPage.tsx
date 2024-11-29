@@ -20,9 +20,13 @@ export const JobDetailPage = () => {
     const [playbackSpeed, setPlaybackSpeed] = useState(1);
     const [segments, setSegments] = useState<Segment[]>([]);
     const [activeSegment, setActiveSegment] = useState<number | null>(null);
+    const [autoScroll, setAutoScroll] = useState(true);
     const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+    const isAutoScrolling = useRef(false);
     const { id } = useParams();
 
     useEffect(() => {
@@ -94,22 +98,47 @@ export const JobDetailPage = () => {
         }
     };
 
+    const scrollToCenter = (index: number) => {
+        const container = containerRef.current;
+        const segment = segmentRefs.current[index];
+        
+        if (container && segment) {
+            isAutoScrolling.current = true;
+            const containerHeight = container.clientHeight;
+            const segmentTop = segment.offsetTop;
+            const segmentHeight = segment.clientHeight;
+            
+            const targetScroll = segmentTop - (containerHeight / 2) + (segmentHeight / 2);
+            
+            const scrollPromise = new Promise<void>((resolve) => {
+                container.scrollTo({
+                    top: targetScroll,
+                    behavior: 'smooth'
+                });
+
+                container.addEventListener('scrollend', () => resolve(), { once: true });
+            });
+
+            scrollPromise.then(() => {
+                isAutoScrolling.current = false;
+            });
+        }
+    };
+
     const handleTimeUpdate = () => {
         if (audioRef.current) {
             const currentTime = audioRef.current.currentTime;
             setCurrentTime(currentTime);
 
-            // Find and scroll to active segment
             const activeIndex = segments.findIndex(
                 segment => currentTime >= segment.startTime && currentTime <= segment.endTime
             );
 
             if (activeIndex !== -1 && activeIndex !== activeSegment) {
                 setActiveSegment(activeIndex);
-                segmentRefs.current[activeIndex]?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
+                if (autoScroll && isPlaying) {
+                    scrollToCenter(activeIndex);
+                }
             }
         }
     };
@@ -268,23 +297,44 @@ export const JobDetailPage = () => {
                         {segments.length > 0 ? (
                             <div>
                                 <h2 className="text-xl font-semibold mb-4">Transcript</h2>
-                                <div className="space-y-4 max-h-[500px] overflow-y-auto">
-                                    {segments.map((segment, index) => (
-                                        <div
-                                            key={segment.index}
-                                            ref={el => segmentRefs.current[index] = el}
-                                            onClick={() => handleSegmentClick(segment.startTime)}
-                                            className={`p-3 rounded transition-colors cursor-pointer ${activeSegment === index
-                                                ? 'bg-blue-50 border-l-4 border-blue-500'
-                                                : 'hover:bg-gray-50'
+                                <div className="relative">
+                                    <div 
+                                        ref={containerRef}
+                                        className="space-y-2 max-h-[500px] overflow-y-auto"
+                                        onScroll={(e) => {
+                                            if (!isAutoScrolling.current && autoScroll && isPlaying) {
+                                                setAutoScroll(false);
+                                            }
+                                        }}
+                                    >
+                                        {segments.map((segment, index) => (
+                                            <div
+                                                key={segment.index}
+                                                ref={el => segmentRefs.current[index] = el}
+                                                onClick={() => handleSegmentClick(segment.startTime)}
+                                                className={`p-1 rounded transition-colors cursor-pointer ${
+                                                    activeSegment === index
+                                                    ? 'bg-blue-50 border-l-4 border-blue-500'
+                                                    : 'hover:bg-gray-50'
                                                 }`}
-                                        >
-                                            <div className="text-sm text-gray-500 mb-1">
-                                                {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
+                                            >
+                                                <div className="text-xs text-gray-500 mb-0.5">
+                                                    {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
+                                                </div>
+                                                <div className="text-gray-800 text-sm">{segment.text}</div>
                                             </div>
-                                            <div className="text-gray-800">{segment.text}</div>
+                                        ))}
+                                    </div>
+                                    {!autoScroll && isPlaying && (
+                                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                                            <button
+                                                onClick={() => setAutoScroll(true)}
+                                                className="bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-sm"
+                                            >
+                                                Resume Auto-scroll
+                                            </button>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             </div>
                         ) : (

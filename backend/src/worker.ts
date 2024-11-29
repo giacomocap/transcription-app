@@ -6,7 +6,7 @@ import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 import { RefinementConfig, TranscriptionConfig } from './types';
-import { refineSegment, refineFullTranscript } from './refinementEngine';
+import { refineSegmentsBatch, refineFullTranscript } from './refinementEngine';
 import { TranscriptionSegment } from 'openai/resources/audio/transcriptions';
 
 dotenv.config();
@@ -93,11 +93,11 @@ const transcriptionWorker = new Worker(
             );
 
             // Enqueue refinement job
-            // await refinementQueue.add('refine', {
-            //     jobId,
-            //     segments: transcription.segments,
-            //     fullText: transcription.text
-            // });
+            await refinementQueue.add('refine', {
+                jobId,
+                segments: transcription.segments,
+                fullText: transcription.text
+            });
 
             // If diarization is enabled, start it asynchronously
             if (diarizationEnabled) {
@@ -193,32 +193,28 @@ const refinementWorker = new Worker(
         };
 
         try {
-            // const openaiConfig = (await pool.query('SELECT * FROM refinement_config')).rows[0] as RefinementConfig;
+            const openaiConfig = (await pool.query('SELECT * FROM refinement_config')).rows[0] as RefinementConfig;
 
-            // // First stage: Refine each segment individually
-            // const refinedSegments = await Promise.all(
-            //     segments!.map(segment => refineSegment(segment, {
-            //         openai_api_key: openaiConfig.openai_api_key,
-            //         openai_api_url: openaiConfig.openai_api_url,
-            //         model_name: openaiConfig.fast_model_name ?? 'llama-3.1-8b-instant'
-            //     }))
-            // );
-            // const refinedSrtContent = segmentsToSRT(refinedSegments);
-            // const fullText = refinedSegments.map(s => s.text).join(' ');
+            // First stage: Refine segments in batches
+            const refinedSegments = await refineSegmentsBatch(segments, {
+                openai_api_key: openaiConfig.openai_api_key,
+                openai_api_url: openaiConfig.openai_api_url,
+                model_name: openaiConfig.fast_model_name ?? 'llama-3.1-8b-instant'}, 50);
+            const refinedSrtContent = segmentsToSRT(refinedSegments);
+            const fullText = refinedSegments.map(s => s.text).join(' ');
 
-            // await pool.query(
-            //     'UPDATE jobs SET status = $1, transcript = $2, subtitle_content = $3, updated_at = NOW() WHERE id = $4',
-            //     ['transcribed', fullText, refinedSrtContent, jobId]);
+            await pool.query(
+                'UPDATE jobs SET status = $1, transcript = $2, subtitle_content = $3, updated_at = NOW() WHERE id = $4',
+                ['transcribed', fullText, refinedSrtContent, jobId]
+            );
 
+            // Second stage: Refine the full transcript
+            const finalRefinedText = await refineFullTranscript(refinedSegments, openaiConfig);
 
-
-            // // Second stage: Refine the full transcript
-            // const finalRefinedText = await refineFullTranscript(refinedSegments, openaiConfig);
-
-            // await pool.query(
-            //     'UPDATE jobs SET status = $1, transcript = $2, updated_at = NOW() WHERE id = $3',
-            //     ['refined', finalRefinedText, jobId]
-            // );
+            await pool.query(
+                'UPDATE jobs SET status = $1, transcript = $2, updated_at = NOW() WHERE id = $3',
+                ['transcribed', finalRefinedText, jobId]
+            );
 
         } catch (error) {
             console.error('Refinement error:', error);
