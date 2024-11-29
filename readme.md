@@ -38,9 +38,16 @@ The project uses different Docker Compose configurations for different environme
 
 ### Local Development (Recommended for devs)
 ```bash
-# Start only DB and Redis
+# Create Python virtual environment for diarization service
+cd diarization-service
+python3.10 -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+pip install -c constraints.txt -r requirements.txt
+
+# Start local services
 docker-compose -f docker-compose.dev.yml up -d
 
+# Then use VSCode Debug "Run All with Diarization" or the following commands:
 # Start backend
 cd backend
 npm install

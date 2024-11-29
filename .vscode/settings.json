@@ -1,0 +1,4 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/diarization-service/.venv/bin/python",
+    "python.analysis.extraPaths": ["${workspaceFolder}/diarization-service"]
+}

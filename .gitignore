@@ -12,3 +12,5 @@
 *.yarn
 *venv
 *uploads
+*__pycache__
+*temp_outputs

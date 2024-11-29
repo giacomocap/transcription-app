@@ -60,6 +60,24 @@
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/frontend",
             "sourceMaps": true
+        },
+        {
+            "name": "Python: Diarization Service",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "src.main:app",
+                "--reload",
+                "--port",
+                "8000"
+            ],
+            "cwd": "${workspaceFolder}/diarization-service",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/diarization-service",
+                "UPLOAD_DIR": "${workspaceFolder}/backend/uploads"
+            },
+            "justMyCode": true
         }
     ],
     "compounds": [
@@ -69,14 +87,8 @@
                 "Backend - Dev Server",
                 "Backend - Worker",
                 "Frontend - Dev Server",
-                "Frontend - Chrome Debug"
-            ]
-        },
-        {
-            "name": "Run and Debug Frontend with Chrome",
-            "configurations": [
-                "Frontend - Dev Server",
-                "Frontend - Chrome Debug"
+                "Frontend - Chrome Debug",
+                "Python: Diarization Service"
             ]
         }
     ]

@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 app.use('/api', router);
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 if (swaggerSpecs && Object.keys(swaggerSpecs).length > 0)
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));

@@ -19,6 +19,7 @@ async function initializeDatabase() {
         subtitle_content TEXT,
         diarization_enabled BOOLEAN DEFAULT FALSE,
         diarization_status VARCHAR(50),
+        speaker_profiles JSONB,
         audio_hash VARCHAR(64),
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
@@ -68,6 +69,7 @@ async function initializeDatabase() {
         openai_api_url VARCHAR(255) NOT NULL,
         openai_api_key VARCHAR(255) NOT NULL,
         model_name VARCHAR(100) NOT NULL,
+        fast_model_name VARCHAR(100) NOT NULL,
         system_prompt TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
@@ -112,7 +114,7 @@ async function initializeDatabase() {
     console.error('Error initializing database:', error);
     throw error;
   } finally {
-    client.release();
+    client.release(); 
   }
 }
 
