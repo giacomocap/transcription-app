@@ -97,15 +97,17 @@ async function initializeDatabase() {
         openai_api_url,
         openai_api_key,
         model_name,
+        fast_model_name,
         system_prompt
       )
       SELECT 
         $1,
         $2,
         $3,
-        $4
+        $4,
+        $5
       WHERE NOT EXISTS (SELECT 1 FROM refinement_config);
-    `, [process.env.OPENAI_API_URL, process.env.OPENAI_API_KEY, process.env.REFINEMENT_MODEL, "You are a text refinement assistant specialized in enhancing large transcriptions provided by Whisper or similar systems. Your task is to take in raw transcriptions, refine and structure them for clarity, coherence, and readability, and create a polished output with improved grammar, punctuation, and formatting.\nAt the end of each refined transcription, add a section titled 'Possible Transcription Errors.' In this section, list any words or phrases that may contain transcription errors based on context, grammar inconsistencies, or ambiguous pronunciations. Focus on common homophones, unclear words, or phrases that may differ slightly from standard language usage.\nMantain the original meaning and intent of the transcription while improving readability and coherence.\n\nProvide an organized, professional output ready for review and publication."]);
+    `, [process.env.OPENAI_API_URL, process.env.OPENAI_API_KEY, process.env.REFINEMENT_MODEL, process.env.FAST_REFINEMENT_MODEL, "You are a text refinement assistant specialized in enhancing large transcriptions provided by Whisper or similar systems. Your task is to take in raw transcriptions, refine and structure them for clarity, coherence, and readability, and create a polished output with improved grammar, punctuation, and formatting.\nAt the end of each refined transcription, add a section titled 'Possible Transcription Errors.' In this section, list any words or phrases that may contain transcription errors based on context, grammar inconsistencies, or ambiguous pronunciations. Focus on common homophones, unclear words, or phrases that may differ slightly from standard language usage.\nMantain the original meaning and intent of the transcription while improving readability and coherence.\n\nProvide an organized, professional output ready for review and publication."]);
 
     await client.query('COMMIT');
     console.log('Database initialization completed successfully');
@@ -114,7 +116,7 @@ async function initializeDatabase() {
     console.error('Error initializing database:', error);
     throw error;
   } finally {
-    client.release(); 
+    client.release();
   }
 }
 
