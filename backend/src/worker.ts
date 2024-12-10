@@ -183,38 +183,38 @@ const transcriptionWorker = new Worker(
             // });
 
             // If diarization is enabled, start it asynchronously
-            if (diarizationEnabled) {
-                try {
-                    // Start diarization
-                    const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            job_id: jobId,
-                            file_path: enhancedAudioPath,
-                        }),
-                    });
+            // if (diarizationEnabled) {
+            //     try {
+            //         // Start diarization
+            //         const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
+            //             method: 'POST',
+            //             headers: {
+            //                 'Content-Type': 'application/json',
+            //             },
+            //             body: JSON.stringify({
+            //                 job_id: jobId,
+            //                 file_path: enhancedAudioPath,
+            //             }),
+            //         });
 
-                    if (!diarizeResponse.ok) {
-                        throw new Error(`Failed to start diarization: ${diarizeResponse.statusText}`);
-                    }
+            //         if (!diarizeResponse.ok) {
+            //             throw new Error(`Failed to start diarization: ${diarizeResponse.statusText}`);
+            //         }
 
-                    // Add diarization polling job to separate queue
-                    await diarizationQueue.add('pollDiarization', {
-                        jobId,
-                        transcriptionSegments: transcription.segments,
-                    });
+            //         // Add diarization polling job to separate queue
+            //         await diarizationQueue.add('pollDiarization', {
+            //             jobId,
+            //             transcriptionSegments: transcription.segments,
+            //         });
 
-                } catch (error: any) {
-                    console.error('Diarization error:', error);
-                    await pool.query(
-                        'UPDATE jobs SET diarization_status = $1 WHERE id = $3',
-                        ['failed', jobId]
-                    );
-                }
-            }
+            //     } catch (error: any) {
+            //         console.error('Diarization error:', error);
+            //         await pool.query(
+            //             'UPDATE jobs SET diarization_status = $1 WHERE id = $3',
+            //             ['failed', jobId]
+            //         );
+            //     }
+            // }
 
             return { jobId, status: 'transcribed' };
 

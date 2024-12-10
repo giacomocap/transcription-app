@@ -18,8 +18,9 @@ services:
       - REDIS_PORT=${REDIS_PORT:-6379}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3}
-      - REFINEMENT_MODEL=${WHISPER_MODEL:-llama-3.1-70b-versatile}
+      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3-turbo}
+      - REFINEMENT_MODEL=${REFINEMENT_MODEL:-llama-3.1-70b-versatile}
+      - FAST_REFINEMENT_MODEL=${FAST_REFINEMENT_MODEL:-llama-3.1-8b-instant}
     depends_on:
       - db
       - redis
@@ -57,8 +58,9 @@ services:
       - REDIS_PORT=${REDIS_PORT:-6379}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3}
-      - REFINEMENT_MODEL=${WHISPER_MODEL:-llama-3.1-70b-versatile}
+      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3-turbo}
+      - REFINEMENT_MODEL=${REFINEMENT_MODEL:-llama-3.1-70b-versatile}
+      - FAST_REFINEMENT_MODEL=${FAST_REFINEMENT_MODEL:-llama-3.1-8b-instant}
     depends_on:
       - db
       - redis
