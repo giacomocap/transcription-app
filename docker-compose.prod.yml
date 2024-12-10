@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     ports:
       - '5001:5001'
-    command: npm start  # Explicitly set the command
+    command: npm start # Explicitly set the command
     environment:
       - PORT=${PORT:-5001}
       - DB_HOST=${DB_HOST:-db}
@@ -18,20 +18,35 @@ services:
       - REDIS_PORT=${REDIS_PORT:-6379}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3}
-      - REFINEMENT_MODEL=${WHISPER_MODEL:-llama-3.2-90b-text-preview}
+      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3-turbo}
+      - REFINEMENT_MODEL=${REFINEMENT_MODEL:-llama-3.1-70b-versatile}
+      - FAST_REFINEMENT_MODEL=${FAST_REFINEMENT_MODEL:-llama-3.1-8b-instant}
     depends_on:
       - db
       - redis
     volumes:
-      - ./backend/uploads:/app/uploads 
+      - ./backend/uploads:/app/uploads
+
+  diarization:
+    build:
+      context: ./diarization-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - db
+      - redis
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile.backend
     restart: unless-stopped
-    command: node dist/worker.js  # Changed to use compiled version
+    command: node dist/worker.js # Changed to use compiled version
     environment:
       - PORT=${PORT:-5001}
       - DB_HOST=${DB_HOST:-db}
@@ -43,13 +58,14 @@ services:
       - REDIS_PORT=${REDIS_PORT:-6379}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3}
-      - REFINEMENT_MODEL=${WHISPER_MODEL:-llama-3.2-90b-text-preview}
+      - WHISPER_MODEL=${WHISPER_MODEL:-whisper-large-v3-turbo}
+      - REFINEMENT_MODEL=${REFINEMENT_MODEL:-llama-3.1-70b-versatile}
+      - FAST_REFINEMENT_MODEL=${FAST_REFINEMENT_MODEL:-llama-3.1-8b-instant}
     depends_on:
       - db
       - redis
     volumes:
-      - ./backend/uploads:/app/uploads 
+      - ./backend/uploads:/app/uploads
 
   frontend:
     build:
@@ -57,7 +73,7 @@ services:
       dockerfile: Dockerfile.frontend
     restart: unless-stopped
     ports:
-      - '8080:80'  # Changed from 80:80 to 8080:80
+      - '8080:80' # Changed from 80:80 to 8080:80
     depends_on:
       - backend
 

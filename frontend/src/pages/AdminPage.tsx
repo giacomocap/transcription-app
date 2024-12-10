@@ -15,6 +15,7 @@ interface RefinementConfig {
     openai_api_url: string;
     openai_api_key: string;
     model_name: string;
+    fast_model_name: string;
     system_prompt: string;
 }
 
@@ -30,6 +31,7 @@ export const AdminPage = () => {
         openai_api_url: '',
         openai_api_key: '',
         model_name: '',
+        fast_model_name: '',
         system_prompt: ''
     });
 
@@ -230,6 +232,21 @@ export const AdminPage = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Fast Model Name
+                        </label>
+                        <input
+                            type="text"
+                            value={refinementConfig.fast_model_name}
+                            onChange={(e) => setRefinementConfig({
+                                ...refinementConfig,
+                                fast_model_name: e.target.value
+                            })}
+                            className="w-full p-2 border rounded-lg"
+                        />
+                    </div>
+{/* 
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
                             System Prompt
                         </label>
                         <textarea
@@ -241,7 +258,7 @@ export const AdminPage = () => {
                             rows={4}
                             className="w-full p-2 border rounded-lg"
                         />
-                    </div>
+                    </div> */}
 
                     <button
                         onClick={() => handleSave('refinement')}

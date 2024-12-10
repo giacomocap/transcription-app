@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile.backend
     ports:
       - '5001:5001'
-    command: npm run dev  # Changed to use nodemon in dev mode
+    command: npm run dev # Changed to use nodemon in dev mode
     environment:
       - PORT=5001
       - DB_HOST=db
@@ -17,7 +17,8 @@ services:
       - REDIS_PORT=6379
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=whisper-large-v3
+      - WHISPER_MODEL=whisper-large-v3-turbo
+      - REFINEMENT_MODEL=llama-3.1-70b-versatile
     depends_on:
       - db
       - redis
@@ -37,6 +38,20 @@ services:
     depends_on:
       - backend
 
+  diarization:
+    build:
+      context: ./diarization-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - db
+      - redis
+
   worker:
     build:
       context: .
@@ -52,26 +67,27 @@ services:
       - REDIS_PORT=6379
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_API_URL=${OPENAI_API_URL}
-      - WHISPER_MODEL=whisper-large-v3
+      - WHISPER_MODEL=whisper-large-v3-turbo
+      - REFINEMENT_MODEL=llama-3.1-70b-versatile
     depends_on:
       - db
       - redis
     volumes:
       - ./backend:/app
       - /app/node_modules
-      
-  db:  
-    image: postgres:13  
-    environment:  
-      - POSTGRES_USER=postgres  
-      - POSTGRES_PASSWORD=password  
-      - POSTGRES_DB=transcription  
-    volumes:  
-      - db-data:/var/lib/postgresql/data  
-  redis:  
-    image: redis:6  
-    ports:  
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=transcription
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  redis:
+    image: redis:6
+    ports:
       - '6379:6379'
-  
-volumes:  
-  db-data:  
+
+volumes:
+  db-data:

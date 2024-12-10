@@ -4,27 +4,44 @@ import { Upload } from 'lucide-react';
 export const UploadPage = () => {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [diarizationEnabled, setDiarizationEnabled] = useState(false);
 
     const handleUpload = async () => {
         if (!file) return;
 
         setUploading(true);
+        setUploadProgress(0);
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('diarization', diarizationEnabled.toString());
 
-        try {
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/upload', true);
 
-            const data = await response.json();
-            window.location.href = `/jobs/${data.jobId}`;
-        } catch (error) {
-            console.error('Upload failed:', error);
-        } finally {
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const progress = Math.round((event.loaded / event.total) * 100);
+                setUploadProgress(progress);
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                window.location.href = `/jobs/${data.jobId}`;
+            } else {
+                console.error('Upload failed');
+                setUploading(false);
+            }
+        };
+
+        xhr.onerror = () => {
+            console.error('Upload failed');
             setUploading(false);
-        }
+        };
+
+        xhr.send(formData);
     };
 
     return (
@@ -51,14 +68,37 @@ export const UploadPage = () => {
             </div>
 
             {file && (
-                <div className="mt-4">
+                <div className="mt-4 space-y-4">
                     <p className="text-sm text-gray-600">Selected: {file.name}</p>
+                    
+                    {/* <div className="flex items-center space-x-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={diarizationEnabled}
+                                onChange={(e) => setDiarizationEnabled(e.target.checked)}
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            <span className="ml-3 text-sm font-medium text-gray-600">Enable Speaker Diarization</span>
+                        </label>
+                    </div> */}
+
+                    {uploading && (
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div 
+                                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                                style={{ width: `${uploadProgress}%` }}
+                            ></div>
+                        </div>
+                    )}
+
                     <button
                         onClick={handleUpload}
                         disabled={uploading}
-                        className="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                        className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:opacity-50"
                     >
-                        {uploading ? 'Uploading...' : 'Start Transcription'}
+                        {uploading ? `Uploading... ${uploadProgress}%` : 'Start Transcription'}
                     </button>
                 </div>
             )}

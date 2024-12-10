@@ -1,11 +1,15 @@
 // backend/src/worker.ts  
-import { Worker } from 'bullmq';
+import { Worker, Queue } from 'bullmq';
 import pool from './db';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
-import { TranscriptionConfig } from './types';
+import { RefinementConfig, TranscriptionConfig } from './types';
+import { refineSegmentsBatch, refineFullTranscript } from './refinementEngine';
+import { TranscriptionSegment } from 'openai/resources/audio/transcriptions';
+import { convertToOpus } from './converter';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -13,11 +17,106 @@ const redisOptions = {
     host: process.env.REDIS_HOST || 'redis',
     port: Number(process.env.REDIS_PORT) || 6379,
 };
+const DIARIZATION_URL = process.env.NODE_ENV === 'development'
+    ? 'http://localhost:8000'
+    : 'http://diarization:8000';
+const ENHANCEMENT_SERVICE_URL = 'http://audio-enhancement:3003';
+
+interface EnhancementJob {
+    id: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    error?: string;
+}
+
+async function pollDiarizationStatus(jobId: string, maxAttempts = 360): Promise<any> {
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+        const response = await fetch(`${DIARIZATION_URL}/status/${jobId}`);
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error('Diarization job not found');
+            }
+            throw new Error(`Failed to get diarization status: ${response.statusText}`);
+        }
+
+        const status = await response.json();
+
+        if (status.status === 'completed') {
+            return JSON.parse(status.result);
+        }
+
+        if (status.status === 'failed') {
+            throw new Error(`Diarization failed: ${status.error}`);
+        }
+
+        // Wait for 10 seconds before next attempt
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        attempts++;
+    }
+
+    throw new Error('Diarization timed out');
+}
+
+async function processAudioEnhancement(audioPath: string): Promise<string> {
+    try {
+        // Create enhancement job
+        const jobId = crypto.randomUUID();
+        const createResponse = await fetch(`${ENHANCEMENT_SERVICE_URL}/enhance`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                job_id: jobId,
+                file_path: audioPath,
+            }),
+        });
+
+        if (!createResponse.ok) {
+            throw new Error(`Enhancement job creation failed: ${createResponse.statusText}`);
+        }
+
+        // Poll for job completion
+        while (true) {
+            const statusResponse = await fetch(`${ENHANCEMENT_SERVICE_URL}/status/${jobId}`);
+
+            if (!statusResponse.ok) {
+                throw new Error(`Failed to get job status: ${statusResponse.statusText}`);
+            }
+
+            const status = await statusResponse.json();
+
+            if (status.status === 'completed') {
+                return `${ENHANCEMENT_SERVICE_URL}/download/${jobId}`;
+            } else if (status.status === 'failed') {
+                throw new Error(`Enhancement failed: ${status.error}`);
+            }
+
+            // Wait before next poll
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+    } catch (error) {
+        console.error('Audio enhancement failed:', error);
+        throw error;
+    }
+}
+
+async function downloadFile(url: string, filePath: string): Promise<void> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to download file: ${response.statusText}`);
+    }
+
+    const buffer = await response.arrayBuffer();
+    await fs.promises.writeFile(filePath, Buffer.from(buffer));
+}
 
 const transcriptionWorker = new Worker(
     'transcriptionQueue',
     async job => {
-        const { jobId, filePath } = job.data;
+        const { jobId, filePath, fileName, diarizationEnabled } = job.data;
 
         //get openai params from transcription_config
         const openaiConfig = (await pool.query('SELECT * FROM transcription_config')).rows[0] as TranscriptionConfig;
@@ -38,31 +137,251 @@ const transcriptionWorker = new Worker(
             // Read the file from disk  
             const absoluteFilePath = path.resolve(filePath);
 
-            // Call OpenAI Whisper API using the official OpenAI Node.js library  
+            // Convert file to Opus if it's not already an Opus
+            let transcriptionFilePath = absoluteFilePath;
+            // if (!filePath.toLowerCase().endsWith('.opus')) {
+            //     console.log(`Converting ${fileName} to Opus format...`);
+            //     transcriptionFilePath = await convertToOpus(absoluteFilePath);
+            //     console.log(`File converted successfully to: ${transcriptionFilePath}`);
+            // }
+
+            let enhancedAudioPath = transcriptionFilePath;
+            // First enhance the audio
+            // const enhancedAudioUrl = await processAudioEnhancement(transcriptionFilePath);
+
+            // // Download enhanced audio
+            // enhancedAudioPath = path.join(
+            //   os.tmpdir(),
+            //   `enhanced_${path.basename(transcriptionFilePath)}`
+            // );
+            // await downloadFile(enhancedAudioUrl, enhancedAudioPath);
+
+            const fileUrl = `/api/uploads/${path.basename(filePath)}`;
+
+            // Store the file URL
+            await pool.query('UPDATE jobs SET file_url = $1 WHERE id = $2', [fileUrl, jobId]);
+
+            // Start transcription with Whisper
             const transcription = await openai.audio.transcriptions.create({
-                file: fs.createReadStream(absoluteFilePath),
-                model: apiModel || process.env.WHISPER_MODEL || 'whisper-1',
-                // Include any additional parameters if needed  
+                file: fs.createReadStream(enhancedAudioPath),
+                model: apiModel,
+                response_format: 'verbose_json',
             });
 
-            const transcriptText = transcription.text;
+            // Save initial transcription result
+            const srtContent = segmentsToSRT(transcription.segments!);
+            await pool.query(
+                'UPDATE jobs SET status = $1, transcript = $2, subtitle_content=$3, updated_at = NOW() WHERE id = $4',
+                ['transcribed', transcription.text, srtContent, jobId]
+            );
 
-            // Save result in the database  
-            await pool.query('UPDATE jobs SET status = $1, transcript = $2 WHERE id = $3', [
-                'completed',
-                transcriptText,
-                jobId,
-            ]);
+            // // Enqueue refinement job
+            // await refinementQueue.add('refine', {
+            //     jobId,
+            //     segments: transcription.segments,
+            //     fullText: transcription.text
+            // });
 
-            // Delete the file after processing  
-            fs.unlinkSync(absoluteFilePath);
-        } catch (error) {
-            console.error('Transcription failed:', error);
-            await pool.query('UPDATE jobs SET status = $1 WHERE id = $2', ['failed', jobId]);
+            // If diarization is enabled, start it asynchronously
+            // if (diarizationEnabled) {
+            //     try {
+            //         // Start diarization
+            //         const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
+            //             method: 'POST',
+            //             headers: {
+            //                 'Content-Type': 'application/json',
+            //             },
+            //             body: JSON.stringify({
+            //                 job_id: jobId,
+            //                 file_path: enhancedAudioPath,
+            //             }),
+            //         });
+
+            //         if (!diarizeResponse.ok) {
+            //             throw new Error(`Failed to start diarization: ${diarizeResponse.statusText}`);
+            //         }
+
+            //         // Add diarization polling job to separate queue
+            //         await diarizationQueue.add('pollDiarization', {
+            //             jobId,
+            //             transcriptionSegments: transcription.segments,
+            //         });
+
+            //     } catch (error: any) {
+            //         console.error('Diarization error:', error);
+            //         await pool.query(
+            //             'UPDATE jobs SET diarization_status = $1 WHERE id = $3',
+            //             ['failed', jobId]
+            //         );
+            //     }
+            // }
+
+            return { jobId, status: 'transcribed' };
+
+        } catch (error: any) {
+            console.error('Error processing job:', error);
+            await pool.query(
+                'UPDATE jobs SET status = $1,transcript = $2 WHERE id = $3',
+                ['failed', error.message, jobId]
+            );
+            throw error;
         }
     },
     { connection: redisOptions }
 );
+
+const diarizationQueue = new Queue('diarizationQueue', { connection: redisOptions });
+
+// Separate worker for diarization polling
+const diarizationWorker = new Worker(
+    'diarizationQueue',
+    async job => {
+        const { jobId, transcriptionSegments } = job.data;
+
+        try {
+            //Update job status to 'diarizing'
+            await pool.query('UPDATE jobs SET diarization_status = $1 WHERE id = $2', ['running', jobId]);
+
+            const diarizationResult = await pollDiarizationStatus(jobId);
+            const finalText = combineTranscriptionAndDiarization(transcriptionSegments, diarizationResult.segments);
+
+            // Update job with diarized result
+            await pool.query(
+                'UPDATE jobs SET subtitle_content = $1, diarization_status = $2, speaker_profiles = $3 WHERE id = $4',
+                [finalText, 'completed', JSON.stringify(diarizationResult.speaker_profiles), jobId]
+            );
+
+            return { jobId, status: 'completed' };
+        } catch (error: any) {
+            console.error('Diarization polling error:', error);
+            await pool.query(
+                'UPDATE jobs SET diarization_status = $1, diarization_error = $2 WHERE id = $3',
+                ['failed', error.message, jobId]
+            );
+            throw error;
+        }
+    },
+    { connection: redisOptions }
+);
+
+const refinementQueue = new Queue('refinementQueue', { connection: redisOptions });
+
+// Create a refinement worker
+const refinementWorker = new Worker(
+    'refinementQueue',
+    async job => {
+        const { jobId, segments } = job.data as {
+            jobId: string;
+            segments: TranscriptionSegment[];
+        };
+
+        try {
+            const openaiConfig = (await pool.query('SELECT * FROM refinement_config')).rows[0] as RefinementConfig;
+
+            // First stage: Refine segments in batches
+            const refinedSegments = await refineSegmentsBatch(segments, {
+                openai_api_key: openaiConfig.openai_api_key,
+                openai_api_url: openaiConfig.openai_api_url,
+                model_name: openaiConfig.fast_model_name ?? 'llama-3.1-8b-instant'
+            }, 50);
+            const refinedSrtContent = segmentsToSRT(refinedSegments);
+            const fullText = refinedSegments.map(s => s.text).join(' ');
+
+            await pool.query(
+                'UPDATE jobs SET status = $1, transcript = $2, subtitle_content = $3, updated_at = NOW() WHERE id = $4',
+                ['transcribed', fullText, refinedSrtContent, jobId]
+            );
+
+            // Second stage: Refine the full transcript
+            const finalRefinedText = await refineFullTranscript(refinedSegments, openaiConfig);
+
+            await pool.query(
+                'UPDATE jobs SET status = $1, transcript = $2, updated_at = NOW() WHERE id = $3',
+                ['transcribed', finalRefinedText, jobId]
+            );
+
+        } catch (error) {
+            console.error('Refinement error:', error);
+            throw error;
+        }
+    },
+    { connection: redisOptions }
+);
+
+// Convert SRT format to segments
+function srtToSegments(srtContent: string): { start: number, end: number, text: string }[] {
+    const blocks = srtContent.trim().split('\n\n');
+    return blocks.map(block => {
+        const [, timecode, ...textLines] = block.split('\n');
+        const [start, end] = timecode.split(' --> ').map(timeToSeconds);
+        return {
+            start,
+            end,
+            text: textLines.join(' ').trim()
+        };
+    });
+}
+
+function timeToSeconds(timeString: string): number {
+    const [hours, minutes, seconds] = timeString.split(':').map(parseFloat);
+    return hours * 3600 + minutes * 60 + seconds;
+}
+
+
+
+// Convert segments to SRT format
+function segmentsToSRT(segments: TranscriptionSegment[]): string {
+    return segments?.map((segment, index) => {
+        const startTime = formatSRTTime(segment.start);
+        const endTime = formatSRTTime(segment.end);
+        return `${index + 1}\n${startTime} --> ${endTime}\n${segment.text.trim()}\n`;
+    }).join('\n') ?? "";
+}
+
+// Format time for SRT (HH:MM:SS,mmm)
+function formatSRTTime(seconds: number): string {
+    const date = new Date(seconds * 1000);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = date.getUTCMinutes();
+    const secs = date.getUTCSeconds();
+    const ms = date.getUTCMilliseconds();
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+}
+
+function combineTranscriptionAndDiarization(transcriptSegments: TranscriptionSegment[], diarizationSegments: any[]): string {
+    let combinedSegments: any[] = [];
+    let diarizationIndex = 0;
+
+    transcriptSegments.forEach(transcriptSegment => {
+        while (diarizationIndex < diarizationSegments.length &&
+            diarizationSegments[diarizationIndex].end <= transcriptSegment.start) {
+            diarizationIndex++;
+        }
+
+        if (diarizationIndex < diarizationSegments.length &&
+            diarizationSegments[diarizationIndex].start < transcriptSegment.end) {
+            const speaker = diarizationSegments[diarizationIndex].speaker;
+            combinedSegments.push({
+                ...transcriptSegment,
+                text: `[${speaker}] ${transcriptSegment.text}`
+            });
+        } else {
+            combinedSegments.push(transcriptSegment);
+        }
+    });
+
+    return segmentsToSRT(combinedSegments);
+}
+
+async function isTranscriptionComplete(jobId: string): Promise<boolean> {
+    const result = await pool.query(
+        'SELECT status FROM jobs WHERE id = $1',
+        [jobId]
+    );
+    const status = result.rows[0]?.status;
+    return status === 'completed' || status === 'failed';
+}
 
 transcriptionWorker.on('completed', job => {
     console.log(`Job ${job.id} has completed!`);
@@ -70,4 +389,4 @@ transcriptionWorker.on('completed', job => {
 
 transcriptionWorker.on('failed', (job, err) => {
     console.log(`Job ${job?.id} has failed with ${err.message}`);
-});  
+});

@@ -1,0 +1,20 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
+    },
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/diarization-service/src",
+        "${workspaceFolder}/audio-enhancement-service/src"
+    ],
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticMode": "workspace",
+    "python.envFile": "${workspaceFolder}/.env",
+    "diarization-service": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/diarization-service/.venv/bin/python"
+    },
+    "audio-enhancement-service": {
+        "python.defaultInterpreterPath": "${workspaceFolder}/audio-enhancement-service/.venv/bin/python"
+    }
+}
