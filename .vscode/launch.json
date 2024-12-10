@@ -61,22 +61,60 @@
             "webRoot": "${workspaceFolder}/frontend",
             "sourceMaps": true
         },
+        // {
+        //     "name": "Python: Diarization Service",
+        //     "type": "debugpy",
+        //     "request": "launch",
+        //     "module": "uvicorn",
+        //     "args": [
+        //         "src.main:app",
+        //         "--reload",
+        //         "--port",
+        //         "8000"
+        //     ],
+        //     "cwd": "${workspaceFolder}/diarization-service",
+        //     "env": {
+        //         "PYTHONPATH": "${workspaceFolder}/diarization-service",
+        //         "UPLOAD_DIR": "${workspaceFolder}/backend/uploads"
+        //     },
+        //     "justMyCode": true
+        // },
+        // {
+        //     "name": "Python: Audio Enhancement Service",
+        //     "type": "debugpy",
+        //     "request": "launch",
+        //     "module": "uvicorn",
+        //     "args": [
+        //         "src.main:app",
+        //         "--reload",
+        //         "--port",
+        //         "3003"
+        //     ],
+        //     "cwd": "${workspaceFolder}/audio-enhancement-service",
+        //     "env": {
+        //         "PYTHONPATH": "${workspaceFolder}/audio-enhancement-service",
+        //         "UPLOAD_DIR": "${workspaceFolder}/backend/uploads"
+        //     },
+        //     "justMyCode": true
+        // },
         {
             "name": "Python: Diarization Service",
             "type": "debugpy",
             "request": "launch",
-            "module": "uvicorn",
-            "args": [
-                "src.main:app",
-                "--reload",
-                "--port",
-                "8000"
-            ],
+            "program": "${workspaceFolder}/diarization-service/src/main.py",
             "cwd": "${workspaceFolder}/diarization-service",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}/diarization-service",
-                "UPLOAD_DIR": "${workspaceFolder}/backend/uploads"
-            },
+            "python": "${workspaceFolder}/diarization-service/.venv/bin/python",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Audio Enhancement Service",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/audio-enhancement-service/src/main.py",
+            "cwd": "${workspaceFolder}/audio-enhancement-service",
+            "python": "${workspaceFolder}/audio-enhancement-service/.venv/bin/python",
+            "console": "integratedTerminal",
             "justMyCode": true
         }
     ],
@@ -88,7 +126,8 @@
                 "Backend - Worker",
                 "Frontend - Dev Server",
                 "Frontend - Chrome Debug",
-                "Python: Diarization Service"
+                "Python: Diarization Service",
+                "Python: Audio Enhancement Service"
             ]
         }
     ]

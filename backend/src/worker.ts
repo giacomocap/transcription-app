@@ -8,6 +8,8 @@ import path from 'path';
 import { RefinementConfig, TranscriptionConfig } from './types';
 import { refineSegmentsBatch, refineFullTranscript } from './refinementEngine';
 import { TranscriptionSegment } from 'openai/resources/audio/transcriptions';
+import { convertToOpus } from './converter';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -18,6 +20,13 @@ const redisOptions = {
 const DIARIZATION_URL = process.env.NODE_ENV === 'development'
     ? 'http://localhost:8000'
     : 'http://diarization:8000';
+const ENHANCEMENT_SERVICE_URL = 'http://audio-enhancement:3003';
+
+interface EnhancementJob {
+    id: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    error?: string;
+}
 
 async function pollDiarizationStatus(jobId: string, maxAttempts = 360): Promise<any> {
     let attempts = 0;
@@ -50,6 +59,60 @@ async function pollDiarizationStatus(jobId: string, maxAttempts = 360): Promise<
     throw new Error('Diarization timed out');
 }
 
+async function processAudioEnhancement(audioPath: string): Promise<string> {
+    try {
+        // Create enhancement job
+        const jobId = crypto.randomUUID();
+        const createResponse = await fetch(`${ENHANCEMENT_SERVICE_URL}/enhance`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                job_id: jobId,
+                file_path: audioPath,
+            }),
+        });
+
+        if (!createResponse.ok) {
+            throw new Error(`Enhancement job creation failed: ${createResponse.statusText}`);
+        }
+
+        // Poll for job completion
+        while (true) {
+            const statusResponse = await fetch(`${ENHANCEMENT_SERVICE_URL}/status/${jobId}`);
+
+            if (!statusResponse.ok) {
+                throw new Error(`Failed to get job status: ${statusResponse.statusText}`);
+            }
+
+            const status = await statusResponse.json();
+
+            if (status.status === 'completed') {
+                return `${ENHANCEMENT_SERVICE_URL}/download/${jobId}`;
+            } else if (status.status === 'failed') {
+                throw new Error(`Enhancement failed: ${status.error}`);
+            }
+
+            // Wait before next poll
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+    } catch (error) {
+        console.error('Audio enhancement failed:', error);
+        throw error;
+    }
+}
+
+async function downloadFile(url: string, filePath: string): Promise<void> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to download file: ${response.statusText}`);
+    }
+
+    const buffer = await response.arrayBuffer();
+    await fs.promises.writeFile(filePath, Buffer.from(buffer));
+}
+
 const transcriptionWorker = new Worker(
     'transcriptionQueue',
     async job => {
@@ -73,6 +136,26 @@ const transcriptionWorker = new Worker(
         try {
             // Read the file from disk  
             const absoluteFilePath = path.resolve(filePath);
+
+            // Convert file to Opus if it's not already an Opus
+            let transcriptionFilePath = absoluteFilePath;
+            // if (!filePath.toLowerCase().endsWith('.opus')) {
+            //     console.log(`Converting ${fileName} to Opus format...`);
+            //     transcriptionFilePath = await convertToOpus(absoluteFilePath);
+            //     console.log(`File converted successfully to: ${transcriptionFilePath}`);
+            // }
+
+            let enhancedAudioPath = transcriptionFilePath;
+            // First enhance the audio
+            // const enhancedAudioUrl = await processAudioEnhancement(transcriptionFilePath);
+
+            // // Download enhanced audio
+            // enhancedAudioPath = path.join(
+            //   os.tmpdir(),
+            //   `enhanced_${path.basename(transcriptionFilePath)}`
+            // );
+            // await downloadFile(enhancedAudioUrl, enhancedAudioPath);
+
             const fileUrl = `/api/uploads/${path.basename(filePath)}`;
 
             // Store the file URL
@@ -80,7 +163,7 @@ const transcriptionWorker = new Worker(
 
             // Start transcription with Whisper
             const transcription = await openai.audio.transcriptions.create({
-                file: fs.createReadStream(absoluteFilePath),
+                file: fs.createReadStream(enhancedAudioPath),
                 model: apiModel,
                 response_format: 'verbose_json',
             });
@@ -92,12 +175,12 @@ const transcriptionWorker = new Worker(
                 ['transcribed', transcription.text, srtContent, jobId]
             );
 
-            // Enqueue refinement job
-            await refinementQueue.add('refine', {
-                jobId,
-                segments: transcription.segments,
-                fullText: transcription.text
-            });
+            // // Enqueue refinement job
+            // await refinementQueue.add('refine', {
+            //     jobId,
+            //     segments: transcription.segments,
+            //     fullText: transcription.text
+            // });
 
             // If diarization is enabled, start it asynchronously
             if (diarizationEnabled) {
@@ -110,7 +193,7 @@ const transcriptionWorker = new Worker(
                         },
                         body: JSON.stringify({
                             job_id: jobId,
-                            file_path: absoluteFilePath,
+                            file_path: enhancedAudioPath,
                         }),
                     });
 
@@ -199,7 +282,8 @@ const refinementWorker = new Worker(
             const refinedSegments = await refineSegmentsBatch(segments, {
                 openai_api_key: openaiConfig.openai_api_key,
                 openai_api_url: openaiConfig.openai_api_url,
-                model_name: openaiConfig.fast_model_name ?? 'llama-3.1-8b-instant'}, 50);
+                model_name: openaiConfig.fast_model_name ?? 'llama-3.1-8b-instant'
+            }, 50);
             const refinedSrtContent = segmentsToSRT(refinedSegments);
             const fullText = refinedSegments.map(s => s.text).join(' ');
 
@@ -223,6 +307,7 @@ const refinementWorker = new Worker(
     },
     { connection: redisOptions }
 );
+
 // Convert SRT format to segments
 function srtToSegments(srtContent: string): { start: number, end: number, text: string }[] {
     const blocks = srtContent.trim().split('\n\n');

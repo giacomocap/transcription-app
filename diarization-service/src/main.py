@@ -10,7 +10,7 @@ from nemo.collections.asr.models.msdd_models import NeuralDiarizer
 from pydub import AudioSegment
 from pydantic_settings import BaseSettings
 
-from src.helpers import create_config, cleanup
+from helpers import create_config, cleanup
 
 class Settings(BaseSettings):
     upload_dir: str = "/tmp/uploads"
