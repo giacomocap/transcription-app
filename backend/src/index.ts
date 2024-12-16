@@ -7,14 +7,35 @@ import initializeDatabase from './init_db';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpecs from './swaggerConfig';
 import path from 'path';
+import session from 'express-session';
+import passport from './auth';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true
+}));
 app.use(express.json());
+
+// Session configuration
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+// Initialize Passport and restore authentication state from session
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/api', router);
 app.use('/api/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 

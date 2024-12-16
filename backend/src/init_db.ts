@@ -7,10 +7,24 @@ async function initializeDatabase() {
   try {
     await client.query('BEGIN');
 
+    // Create users table if not exists
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY,
+        google_id VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        display_name VARCHAR(255) NOT NULL,
+        profile_picture TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     // Create jobs table if not exists
     await client.query(`
       CREATE TABLE IF NOT EXISTS jobs (
         id UUID PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         file_name VARCHAR(255) NOT NULL,
         file_url VARCHAR(255),
         status VARCHAR(50) NOT NULL DEFAULT 'pending',
