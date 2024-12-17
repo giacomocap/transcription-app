@@ -9,6 +9,7 @@ import { refineTranscription } from './refinement';
 import path from 'path';
 import { isAuthenticated, isResourceOwner, configureAuthRoutes } from './auth';
 import { AuthenticatedRequest } from './types/auth';
+import fs from 'fs/promises';
 
 dotenv.config();
 
@@ -74,9 +75,31 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
 
 router.delete('/jobs/:id', isAuthenticated, isResourceOwner, async (req, res) => {
     const jobId = req.params.id;
-    console.log('/api/jobs/:id', jobId);
-    await pool.query('DELETE FROM jobs WHERE id = $1', [jobId]);
-    res.json({ success: true });
+    
+    try {
+        // Get file path before deleting the job
+        const result = await pool.query('SELECT file_name FROM jobs WHERE id = $1', [jobId]);
+        const fileName = result.rows[0]?.file_name;
+        
+        // Delete from database
+        await pool.query('DELETE FROM jobs WHERE id = $1', [jobId]);
+        
+        // Delete file from filesystem if it exists
+        if (fileName) {
+            const filePath = path.join('uploads', fileName);
+            try {
+                await fs.unlink(filePath);
+            } catch (err) {
+                console.error('Error deleting file:', err);
+                // Continue even if file deletion fails
+            }
+        }
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting job:', error);
+        res.status(500).json({ error: 'Failed to delete job' });
+    }
 });
 
 /**
