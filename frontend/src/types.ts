@@ -12,6 +12,10 @@ export interface Job {
     audio_hash?: string;
     created_at: string;
     updated_at: string;
+    executive_summary?: string;
+    tasks?: Task[];
+    notes?: Note[];
+    action_items?: ActionItem[];
 }
 
 export interface AdminSettings {
@@ -27,3 +31,24 @@ export interface AdminSettings {
 export type Status = 'pending' | 'running' | 'completed' | 'failed';
 
 export type TranscriptionStatus = Status | 'transcribed';
+
+export interface Task {
+    id: string;
+    description: string;
+    completed: boolean;
+    timestamp?: string;
+}
+
+export interface Note {
+    id: string;
+    content: string;
+    timestamp: string;
+}
+
+export interface ActionItem {
+    id: string;
+    description: string;
+    status: 'pending' | 'in_progress' | 'completed';
+    priority: 'low' | 'medium' | 'high';
+    timestamp?: string;
+}

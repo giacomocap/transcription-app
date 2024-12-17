@@ -4,6 +4,7 @@ import { Job } from '../types';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Play, Pause, Download, Clock, RotateCcw, Trash } from 'lucide-react';
 import { JobStatus } from '../components/JobStatus';
+import { TranscriptionTabs } from '../components/TranscriptionTabs';
 
 interface Segment {
     index: number;
@@ -348,68 +349,13 @@ export const JobDetailPage = () => {
                         </div>
                     )}
 
-                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-6">
-                        {segments.length > 0 ? (
-                            <div>
-                                <h2 className="text-xl font-semibold mb-4">Transcript</h2>
-                                <div className="relative">
-                                    <div 
-                                        ref={containerRef}
-                                        className="space-y-2 max-h-[500px] overflow-y-auto"
-                                        onScroll={(e) => {
-                                            if (!isAutoScrolling.current && autoScroll && isPlaying) {
-                                                setAutoScroll(false);
-                                            }
-                                        }}
-                                    >
-                                        {segments.map((segment, index) => (
-                                            <div
-                                                key={segment.index}
-                                                ref={el => segmentRefs.current[index] = el}
-                                                onClick={() => handleSegmentClick(segment.startTime)}
-                                                className={`p-1 rounded transition-colors cursor-pointer ${
-                                                    activeSegment === index
-                                                    ? 'bg-blue-50 border-l-4 border-blue-500'
-                                                    : 'hover:bg-gray-50'
-                                                }`}
-                                            >
-                                                <div className="text-xs text-gray-500 mb-0.5">
-                                                    {formatTime(segment.startTime)} - {formatTime(segment.endTime)}
-                                                </div>
-                                                <div className="text-gray-800 text-sm">{segment.text}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {!autoScroll && isPlaying && (
-                                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-                                            <button
-                                                onClick={() => setAutoScroll(true)}
-                                                className="bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-sm"
-                                            >
-                                                Resume Auto-scroll
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <h2 className="text-xl font-semibold mb-4">Transcript</h2>
-                                <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100 text-gray-800 font-mono text-sm">
-                                    {job.transcript}
-                                </pre>
-                            </div>
-                        )}
-
-                        {job.refined_transcript && (
-                            <div>
-                                <h2 className="text-xl font-semibold mb-4">Refined Transcript</h2>
-                                <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg border border-gray-100 text-gray-800 font-mono text-sm">
-                                    {job.refined_transcript}
-                                </pre>
-                            </div>
-                        )}
-                    </div>
+                    {/* Tabs section with refined transcript moved to its own tab */}
+                    <TranscriptionTabs 
+                        job={job}
+                        currentTime={currentTime}
+                        onTimeSelect={handleSegmentClick}
+                        isPlaying={isPlaying}
+                    />
                 </div>
             )}
         </div>

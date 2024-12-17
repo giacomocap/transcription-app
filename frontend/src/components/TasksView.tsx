@@ -1,0 +1,47 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Job, Task } from "../types";
+
+interface TasksViewProps {
+    job: Job;
+}
+
+export const TasksView = ({ job }: TasksViewProps) => {
+    const handleTaskToggle = async (taskId: string, completed: boolean) => {
+        // Implement task toggle logic here
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Tasks</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {job.tasks && job.tasks.length > 0 ? (
+                    <div className="space-y-4">
+                        {job.tasks.map((task) => (
+                            <div key={task.id} className="flex items-start space-x-3">
+                                <Checkbox
+                                    checked={task.completed}
+                                    onCheckedChange={(checked) => 
+                                        handleTaskToggle(task.id, checked as boolean)
+                                    }
+                                />
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium leading-none">
+                                        {task.description}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        {task.timestamp && `@${task.timestamp}`}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-gray-500 italic">No tasks identified.</p>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
