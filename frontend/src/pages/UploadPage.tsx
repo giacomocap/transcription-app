@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, Info } from 'lucide-react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "../components/ui/tooltip"
 
 export const UploadPage = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -71,7 +77,7 @@ export const UploadPage = () => {
                 <div className="mt-4 space-y-4">
                     <p className="text-sm text-gray-600">Selected: {file.name}</p>
                     
-                    {/* <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2">
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input 
                                 type="checkbox" 
@@ -80,9 +86,31 @@ export const UploadPage = () => {
                                 onChange={(e) => setDiarizationEnabled(e.target.checked)}
                             />
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            <span className="ml-3 text-sm font-medium text-gray-600">Enable Speaker Diarization</span>
+                            <span className="ml-3 text-sm font-medium text-gray-600">Enable Speaker Identification</span>
                         </label>
-                    </div> */}
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-gray-500 cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[300px] p-4">
+                                    <div className="space-y-2">
+                                        <p className="font-semibold">Speaker Identification</p>
+                                        <p>This feature analyzes the audio to identify different speakers in the conversation.</p>
+                                        <div className="space-y-1">
+                                            <p className="text-yellow-600 font-medium">Important Notes:</p>
+                                            <ul className="list-disc list-inside text-sm">
+                                                <li>Only enable if your recording has multiple speakers</li>
+                                                <li>This process can take significantly longer than regular transcription</li>
+                                                <li>Other features like summary and refinement will be delayed until speaker identification is complete</li>
+                                            </ul>
+                                        </div>
+                                        <p className="text-sm italic">Example output: "Speaker 1: Hello" / "Speaker 2: Hi there"</p>
+                                    </div>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
 
                     {uploading && (
                         <div className="w-full bg-gray-200 rounded-full h-2.5">

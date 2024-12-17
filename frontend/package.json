@@ -50,6 +50,7 @@
     ]
   },
   "devDependencies": {
+    "@shadcn/ui": "^0.0.4",
     "@types/react-router-dom": "^5.3.3",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",

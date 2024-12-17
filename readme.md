@@ -148,7 +148,42 @@ BACKEND_PORT=5001
 - PostgreSQL: 5432
 - Redis: 6379
 
-## 📝 Contributing Guidelines
+## 🚀 Using the Diarization Service and Google Auth
+
+This version of the transcription app includes a diarization service that separates speakers in the audio, and uses Google Auth for authentication.
+
+The diarization service is automatically included in the `docker-compose.yml` and `docker-compose.prod.yml` configurations. It is not included in the `docker-compose.dev.yml` configuration, and must be run separately if using the development configuration.
+
+To use Google Auth, you will need to configure the Google OAuth settings in the backend. Here's how:
+
+1.  **Create a Google Cloud Project:**
+    - Go to the [Google Cloud Console](https://console.cloud.google.com/).
+    - Create a new project or select an existing one.
+
+2.  **Enable the Google People API:**
+    - In the Google Cloud Console, navigate to "APIs & Services" > "Library".
+    - Search for "Google People API" and enable it.
+
+3.  **Create OAuth 2.0 Credentials:**
+    - Go to "APIs & Services" > "Credentials".
+    - Click "Create Credentials" > "OAuth client ID".
+    - Select "Web application" as the application type.
+    - Add `http://localhost:3000` to "Authorized JavaScript origins" for development, and your production frontend URL for production.
+    - Add `http://localhost:5001/api/auth/google/callback` to "Authorized redirect URIs" for development, and your production backend URL for production.
+    - Click "Create".
+
+4.  **Set Environment Variables:**
+    - After creating the credentials, you will get a `client ID` and a `client secret`.
+    - In your `.env` file, add the following:
+      ```env
+      GOOGLE_CLIENT_ID=your_client_id
+      GOOGLE_CLIENT_SECRET=your_client_secret
+      ```
+    - Replace `your_client_id` and `your_client_secret` with the actual values you obtained from the Google Cloud Console.
+
+After completing these steps, the application will automatically use Google Auth for authentication.
+
+##  Contributing Guidelines
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)

@@ -7,10 +7,24 @@ async function initializeDatabase() {
   try {
     await client.query('BEGIN');
 
+    // Create users table if not exists
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY,
+        google_id VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        display_name VARCHAR(255) NOT NULL,
+        profile_picture TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     // Create jobs table if not exists
     await client.query(`
       CREATE TABLE IF NOT EXISTS jobs (
         id UUID PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         file_name VARCHAR(255) NOT NULL,
         file_url VARCHAR(255),
         status VARCHAR(50) NOT NULL DEFAULT 'pending',
@@ -90,7 +104,7 @@ async function initializeDatabase() {
         $3,
         3
       WHERE NOT EXISTS (SELECT 1 FROM transcription_config);
-    `, [process.env.OPENAI_API_URL, process.env.OPENAI_API_KEY, process.env.WHISPER_MODEL]);
+    `, [process.env.AUDIO_OPENAI_API_URL, process.env.AUDIO_OPENAI_API_KEY, process.env.AUDIO_MODEL]);
 
     await client.query(`
       INSERT INTO refinement_config (
@@ -109,14 +123,15 @@ async function initializeDatabase() {
       WHERE NOT EXISTS (SELECT 1 FROM refinement_config);
     `, [process.env.OPENAI_API_URL, process.env.OPENAI_API_KEY, process.env.REFINEMENT_MODEL, process.env.FAST_REFINEMENT_MODEL, `You are a text refinement assistant. Your task is to refine and structure raw transcriptions for clarity, coherence, and readability while strictly preserving the original language, meaning, and intent.
 
-Your tasks:
+Tasks:
 Correct grammar, punctuation, and formatting.
-Address common homophones, unclear words, or non-standard language usage.
+Format the refined text into paragraphs, without titles.
 Rules:
 
 Do not translate under any circumstances. Work strictly in the original language of the transcription.
 Process the entire transcription fully before concluding.
 Maintain all original meanings without deviation.
+
 Deliver a polished, professional output ready for review and publication.`]);
 
     await client.query('COMMIT');

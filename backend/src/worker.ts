@@ -6,7 +6,6 @@ import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 import { RefinementConfig, TranscriptionConfig } from './types';
-import { refineSegmentsBatch, refineFullTranscript } from './refinementEngine';
 import { TranscriptionSegment } from 'openai/resources/audio/transcriptions';
 import { convertToOpus } from './converter';
 import crypto from 'crypto';
@@ -175,12 +174,12 @@ const transcriptionWorker = new Worker(
                 ['transcribed', transcription.text, srtContent, jobId]
             );
 
-            // // Enqueue refinement job
-            // await refinementQueue.add('refine', {
-            //     jobId,
-            //     segments: transcription.segments,
-            //     fullText: transcription.text
-            // });
+            // Enqueue refinement job
+            await refinementQueue.add('refine', {
+                jobId,
+                segments: transcription.segments,
+                fullText: transcription.text
+            });
 
             // If diarization is enabled, start it asynchronously
             // if (diarizationEnabled) {
@@ -266,47 +265,202 @@ const diarizationWorker = new Worker(
 
 const refinementQueue = new Queue('refinementQueue', { connection: redisOptions });
 
-// Create a refinement worker
+async function refineTranscription(segments: TranscriptionSegment[], config: RefinementConfig): Promise<string> {
+    const MAX_TOKENS_PER_CHUNK = 8000; // Adjust based on the model's output window and your testing
+    const openai = new OpenAI({
+        apiKey: config.openai_api_key,
+        baseURL: config.openai_api_url,
+    });
+
+    const chunks = chunkTranscription(segments, MAX_TOKENS_PER_CHUNK);
+    let refinedText = '';
+    let previousChunkSummary = '';
+
+    for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const prompt = buildPrompt(chunk, previousChunkSummary);
+
+        const response = await openai.chat.completions.create({
+            model: config.model_name, // or another suitable model
+            messages: [
+                { role: 'system', content: systemPrompt }, // Your system prompt (see below)
+                { role: 'user', content: prompt },
+            ],
+            temperature: 0.4,
+        });
+
+        const refinedChunk = response.choices[0].message.content || '';
+
+        // Summarize the refined chunk for context in the next iteration, only if it's not the last chunk.
+        if (i < chunks.length - 1) {
+            previousChunkSummary = await summarizeText(refinedChunk);
+        }
+
+        // Concatenate the refined chunk to the overall result 
+        refinedText += refinedChunk;
+    }
+
+    return refinedText.trim();
+}
+
+// Replace the existing refinement worker with this new implementation
 const refinementWorker = new Worker(
     'refinementQueue',
     async job => {
-        const { jobId, segments } = job.data as {
-            jobId: string;
-            segments: TranscriptionSegment[];
-        };
+        const { jobId, segments, fullText } = job.data;
+        console.log(`Starting refinement for job ${jobId}`);
 
         try {
             const openaiConfig = (await pool.query('SELECT * FROM refinement_config')).rows[0] as RefinementConfig;
 
-            // First stage: Refine segments in batches
-            const refinedSegments = await refineSegmentsBatch(segments, {
-                openai_api_key: openaiConfig.openai_api_key,
-                openai_api_url: openaiConfig.openai_api_url,
-                model_name: openaiConfig.fast_model_name ?? 'llama-3.1-8b-instant'
-            }, 50);
-            const refinedSrtContent = segmentsToSRT(refinedSegments);
-            const fullText = refinedSegments.map(s => s.text).join(' ');
+            // Start refinement
+            console.log(`Beginning text refinement for job ${jobId}`);
+            const refinedText = await refineTranscription(segments, openaiConfig);
+            console.log(`Refinement completed for job ${jobId}`);
 
+            // Final update
             await pool.query(
-                'UPDATE jobs SET status = $1, transcript = $2, subtitle_content = $3, updated_at = NOW() WHERE id = $4',
-                ['transcribed', fullText, refinedSrtContent, jobId]
+                'UPDATE jobs SET status = $1, refined_transcript = $2, updated_at = NOW() WHERE id = $3',
+                ['transcribed', refinedText, jobId]
             );
-
-            // Second stage: Refine the full transcript
-            const finalRefinedText = await refineFullTranscript(refinedSegments, openaiConfig);
-
-            await pool.query(
-                'UPDATE jobs SET status = $1, transcript = $2, updated_at = NOW() WHERE id = $3',
-                ['transcribed', finalRefinedText, jobId]
-            );
+            console.log(`Database update completed for job ${jobId}`);
 
         } catch (error) {
-            console.error('Refinement error:', error);
+            console.error(`Refinement error for job ${jobId}:`, error);
             throw error;
         }
     },
     { connection: redisOptions }
 );
+
+
+function chunkTranscription(segments: TranscriptionSegment[], maxTokens: number): string[] {
+    const chunks: string[] = [];
+    let currentChunk = '';
+    let currentChunkTokens = 0;
+
+    for (const segment of segments) {
+        const segmentText = segment.text;
+        const segmentTokens = estimateTokens(segmentText); // Implement your token estimation
+        // If adding this segment would exceed maxTokens, start a new chunk
+        if (currentChunkTokens + segmentTokens > maxTokens && currentChunk) {
+            chunks.push(currentChunk);
+            currentChunk = '';
+            currentChunkTokens = 0;
+        }
+
+        // Add segment to current chunk
+        currentChunk += segmentText + ' ';
+        currentChunkTokens += segmentTokens;
+    }
+
+    if (currentChunk) {
+        chunks.push(currentChunk);
+    }
+
+    return chunks;
+}
+
+async function summarizeText(text: string): Promise<string> {
+    const summaryPrompt = `
+    <prompt>
+      <task>
+        Provide a concise summary of the following text, focusing on the main points and key information. The summary should be no more than 100 words. Directly respond with the summary. Do not translate the text.
+      </task>
+      <text>
+        ${text}
+      </text>
+    </prompt>
+    `;
+
+    const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY1,
+        baseURL: process.env.OPENAI_API_URL1,
+    });
+
+    const response = await openai.chat.completions.create({
+        model: process.env.FAST_REFINEMENT_MODEL!,
+        messages: [
+            { role: 'user', content: summaryPrompt },
+        ],
+        temperature: 0.4,
+    });
+
+    return response.choices[0].message.content || '';
+}
+
+function buildPrompt(chunk: string, previousChunkSummary: string): string {
+    return `
+    <prompt>
+      <context>
+        ${previousChunkSummary ? `<summary>${previousChunkSummary}</summary>` : ''}
+      </context>
+      <text>
+        ${chunk}
+      </text>
+    </prompt>
+    `;
+}
+
+const systemPrompt = `
+<prompt>
+  <role>
+    You are a specialized text refinement assistant. Your primary objective is to meticulously refine and structure raw text transcriptions, enhancing their clarity, coherence, and readability. Your output should be a polished, professional document ready for review and publication. It is imperative that you strictly preserve the original meaning and intent of the text throughout the refinement process.
+  </role>
+  <tasks>
+    <task id="1">
+      Correct all grammatical errors, punctuation mistakes, and formatting inconsistencies.
+    </task>
+    <task id="2">
+      Restructure the text to eliminate the informalities typical of spoken language, such as filler words, repetitions, and false starts. Ensure the refined text maintains a formal and professional tone.
+    </task>
+    <task id="3">
+      Address and correct common homophone errors, unclear word choices, and any non-standard language usage.
+    </task>
+    <task id="4">
+      <important>
+        Format the refined text into multiple paragraphs to improve readability. Ensure a logical flow between paragraphs, but do not add any titles or headings.
+      </important>
+      <example input="This is the first point. This is the second point. And this is the third point.">
+        Refined: "This is the first point. This is the second point.\n\nAnd this is the third point."
+      </example>
+    </task>
+    <task id="5">
+      <important>
+         Refine the text without summarizing. All original information and details must be included and accurately represented in the output.
+      </important>
+    </task>
+  </tasks>
+  <rules>
+    <rule id="1">
+      <most-important>
+        Do not, under any circumstances, translate the text. Your work must be conducted strictly in the original language of the transcription.
+      </most-important>
+    </rule>
+    <rule id="2">
+      Process the entire transcription thoroughly before delivering the final output. Do not submit incomplete or partial refinements.
+    </rule>
+    <rule id="3">
+      Ensure that all original meanings and nuances of the text are maintained without any deviation or alteration.
+    </rule>
+    <rule id="4">
+       Avoid summarizing the content. The refined text should retain all the important information present in the original transcription.
+    </rule>
+    <rule id="5">
+    Already refined and summarized text could be provided as context. Do not include the context in the final output.
+    </rule>
+  </rules>
+  <instruction>
+    Refine the following text:
+  </instruction>
+</prompt>
+`
+
+
+// Placeholder - Implement a proper token estimation strategy for your chosen model
+function estimateTokens(text: string): number {
+    return text ? Math.round(text.split(/\s+/).length * 1.33) : 0;
+}
 
 // Convert SRT format to segments
 function srtToSegments(srtContent: string): { start: number, end: number, text: string }[] {

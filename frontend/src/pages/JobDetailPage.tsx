@@ -1,8 +1,8 @@
 // frontend/src/pages/JobDetailPage.tsx  
 import { useEffect, useState, useRef } from 'react';
 import { Job } from '../types';
-import { useParams } from 'react-router-dom';
-import { Play, Pause, Download, Clock, RotateCcw } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Play, Pause, Download, Clock, RotateCcw, Trash } from 'lucide-react';
 import { JobStatus } from '../components/JobStatus';
 
 interface Segment {
@@ -22,12 +22,14 @@ export const JobDetailPage = () => {
     const [activeSegment, setActiveSegment] = useState<number | null>(null);
     const [autoScroll, setAutoScroll] = useState(true);
     const [duration, setDuration] = useState(0);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const segmentRefs = useRef<(HTMLDivElement | null)[]>([]);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
     const isAutoScrolling = useRef(false);
     const { id } = useParams();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const interval = setInterval(() => { fetchJob(); }, 5000);
@@ -200,6 +202,24 @@ export const JobDetailPage = () => {
         }
     };
 
+    const handleDelete = async () => {
+        if (!job) return;
+        
+        try {
+            const response = await fetch(`/api/jobs/${job.id}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                navigate('/jobs', { replace: true });
+            } else {
+                console.error('Failed to delete job');
+            }
+        } catch (error) {
+            console.error('Error deleting job:', error);
+        }
+    };
+
     const formatTime = (time: number) => {
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
@@ -212,12 +232,47 @@ export const JobDetailPage = () => {
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h1 className="text-2xl font-bold">{job.file_name}</h1>
-                        <JobStatus
-                            transcriptionStatus={job.status}
-                            diarizationEnabled={job.diarization_enabled}
-                            diarizationStatus={job.diarization_status}
-                        />
+                        <div className="flex items-center gap-4">
+                            <JobStatus
+                                transcriptionStatus={job.status}
+                                diarizationEnabled={job.diarization_enabled}
+                                diarizationStatus={job.diarization_status}
+                            />
+                            <button
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                            >
+                                <Trash className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
+                    
+                    {/* Delete Confirmation Modal */}
+                    {showDeleteConfirm && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                                <h3 className="text-lg font-semibold mb-4">Delete Transcription</h3>
+                                <p className="text-gray-600 mb-6">
+                                    Are you sure you want to delete this transcription? This action cannot be undone.
+                                </p>
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(false)}
+                                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleDelete}
+                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
                     <div className="flex justify-end items-center">
                         <div className="flex space-x-3">
                             <button
