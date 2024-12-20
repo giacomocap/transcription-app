@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "activate-venv",
+            "type": "shell",
+            "command": "source ${workspaceFolder}/diarization-service/.venv/bin/activate", // Use 'source'
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+                "panel": "new"
+            }
+        }
+    ]
+}
