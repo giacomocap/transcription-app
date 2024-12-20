@@ -1,6 +1,6 @@
 // frontend/src/pages/JobDetailPage.tsx  
 import { useEffect, useState, useRef } from 'react';
-import { Job } from '../types';
+import { Job } from '../types/index';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Play, Pause, RotateCcw, Trash } from 'lucide-react';
 import { JobStatus } from '../components/JobStatus';

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Job } from "../types";
+import { Job } from "../types/index";
 import { useEffect, useState } from "react";
 import { DownloadOptions } from "./DownloadOptions";
 
@@ -31,15 +31,19 @@ export const RefinedTranscriptView = ({ job }: RefinedTranscriptViewProps) => {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="max-h-[500px] overflow-y-auto p-4 bg-white rounded-lg">
+                <div className="max-h-[500px] overflow-y-auto p-4">
                     {job.refined_transcript ? (
-                        <div className="whitespace-pre-wrap font-mono text-base text-gray-800 leading-relaxed">
-                            {job.refined_transcript}
+                        <div className="text-gray-800 text-base leading-relaxed">
+                            {job.refined_transcript.split('\n\n').map((paragraph, index) => (
+                                <div key={index} className="mb-4">
+                                    {paragraph}
+                                </div>
+                            ))}
                         </div>
                     ) : (
-                        <div className="text-gray-500 italic">
+                        <p className="text-gray-500 italic">
                             No refined transcript available.
-                        </div>
+                        </p>
                     )}
                 </div>
             </CardContent>

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { useEffect, useRef, useState } from "react";
-import { Job } from "../types";
+import { Job } from "../types/index";
 import { DownloadOptions } from './DownloadOptions';
 
 interface TranscriptViewProps {
