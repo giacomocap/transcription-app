@@ -2,14 +2,8 @@
   "name": "transcription-app",
   "version": "1.0.0",
   "scripts": {
-    "dev": "concurrently \"cd backend && npm run dev\" \"cd backend && npm run worker:dev\" \"cd frontend && npm start\""
+    "dev": "echo 'No dev script'"
   },
   "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "concurrently": "^9.1.0"
-  },
-  "dependencies": {
-    "lucide-react": "^0.454.0"
-  }
+  "license": "ISC"
 }

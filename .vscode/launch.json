@@ -41,9 +41,10 @@
             "name": "Frontend - Dev Server",
             "type": "node",
             "request": "launch",
-            "program": "${workspaceFolder}/frontend/node_modules/react-scripts/bin/react-scripts.js",
-            "args": [
-                "start"
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev"
             ],
             "cwd": "${workspaceFolder}/frontend",
             "env": {
@@ -105,18 +106,19 @@
             "cwd": "${workspaceFolder}/diarization-service",
             "python": "${workspaceFolder}/diarization-service/.venv/bin/python",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "preLaunchTask": "activate-venv"
         },
-        {
-            "name": "Python: Audio Enhancement Service",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/audio-enhancement-service/src/main.py",
-            "cwd": "${workspaceFolder}/audio-enhancement-service",
-            "python": "${workspaceFolder}/audio-enhancement-service/.venv/bin/python",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        }
+        // {
+        //     "name": "Python: Audio Enhancement Service",
+        //     "type": "debugpy",
+        //     "request": "launch",
+        //     "program": "${workspaceFolder}/audio-enhancement-service/src/main.py",
+        //     "cwd": "${workspaceFolder}/audio-enhancement-service",
+        //     "python": "${workspaceFolder}/audio-enhancement-service/.venv/bin/python",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true
+        // }
     ],
     "compounds": [
         {
@@ -126,8 +128,8 @@
                 "Backend - Worker",
                 "Frontend - Dev Server",
                 "Frontend - Chrome Debug",
-                "Python: Diarization Service",
-                "Python: Audio Enhancement Service"
+                // "Python: Diarization Service",
+                // "Python: Audio Enhancement Service"
             ]
         }
     ]

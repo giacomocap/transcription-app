@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Button } from '@/components/ui/button';
 
 export const Navigation = () => {
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, logout, login } = useAuth();
 
     return (
         <nav className="bg-white shadow">
@@ -58,12 +59,7 @@ export const Navigation = () => {
                                 </button>
                             </div>
                         ) : (
-                            <Link
-                                to="/login"
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                            >
-                                Sign In
-                            </Link>
+                            <Button onClick={login}>Login</Button>
                         )}
                     </div>
                 </div>
