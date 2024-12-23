@@ -318,10 +318,15 @@ const refinementWorker = new Worker(
             const refinedText = await refineTranscription(segments, openaiConfig);
             console.log(`Refinement completed for job ${jobId}`);
 
+            // Generate executive summary
+            console.log(`Generating executive summary for job ${jobId}`);
+            const executiveSummary = await generateExecutiveSummary(refinedText, openaiConfig);
+            console.log(`Executive summary generated for job ${jobId}`);
+
             // Final update
             await pool.query(
-                'UPDATE jobs SET status = $1, refined_transcript = $2, updated_at = NOW() WHERE id = $3',
-                ['transcribed', refinedText, jobId]
+                'UPDATE jobs SET status = $1, refined_transcript = $2, summary = $3, updated_at = NOW() WHERE id = $4',
+                ['transcribed', refinedText, executiveSummary, jobId]
             );
             console.log(`Database update completed for job ${jobId}`);
 
@@ -456,6 +461,136 @@ const systemPrompt = `
 </prompt>
 `
 
+async function generateExecutiveSummary(text: string, config: RefinementConfig): Promise<string> {
+    const MAX_TOKENS_PER_SUMMARY_CHUNK = 6000; // Conservative limit for summary generation
+    const openai = new OpenAI({
+        apiKey: config.openai_api_key,
+        baseURL: config.openai_api_url,
+    });
+
+    // If text is short enough, process directly
+    if (text.length < MAX_TOKENS_PER_SUMMARY_CHUNK * 4) { // Approximate token estimation
+        return await generateSingleSummary(text, config);
+    }
+
+    // For longer texts, use a two-stage summarization
+    const textChunks = chunkText(text, MAX_TOKENS_PER_SUMMARY_CHUNK);
+    const intermediateSummaries = await Promise.all(
+        textChunks.map(chunk => generateIntermediateSummary(chunk, config))
+    );
+
+    // Combine intermediate summaries into final executive summary
+    const combinedSummary = intermediateSummaries.join('\n\n');
+    return await generateSingleSummary(combinedSummary, config);
+}
+
+async function generateSingleSummary(text: string, config: RefinementConfig): Promise<string> {
+    const openai = new OpenAI({
+        apiKey: config.openai_api_key,
+        baseURL: config.openai_api_url,
+    });
+
+    const summaryPrompt = `
+    <prompt>
+      <task>
+        Create an executive summary of the following text. The summary should:
+        - Be approximately 250-300 words
+        - Highlight the most important points, key decisions, and main conclusions
+        - Be written in a professional, business-appropriate tone
+        - Include any critical action items or next steps if present
+        - Maintain the original context and intent of the discussion
+      </task>
+      <text>
+        ${text}
+      </text>
+    </prompt>
+    `;
+
+    const response = await openai.chat.completions.create({
+        model: config.model_name,
+        messages: [
+            { role: 'user', content: summaryPrompt },
+        ],
+        temperature: 0.3,
+    });
+
+    return response.choices[0].message.content || '';
+}
+
+async function generateIntermediateSummary(text: string, config: RefinementConfig): Promise<string> {
+    const openai = new OpenAI({
+        apiKey: config.openai_api_key,
+        baseURL: config.openai_api_url,
+    });
+
+    const summaryPrompt = `
+    <prompt>
+      <task>
+        Create a detailed summary of this section of text, focusing on:
+        - Key points and main ideas
+        - Important details and context
+        - Any decisions or action items
+        Keep the summary to around 150 words while maintaining all crucial information.
+      </task>
+      <text>
+        ${text}
+      </text>
+    </prompt>
+    `;
+
+    const response = await openai.chat.completions.create({
+        model: config.model_name,
+        messages: [
+            { role: 'user', content: summaryPrompt },
+        ],
+        temperature: 0.3,
+    });
+
+    return response.choices[0].message.content || '';
+}
+
+//Helper function to chunk text for summarization
+function chunkText(text: string, maxTokens: number): string[] {
+    // Rough approximation: 1 token ≈ 4 characters
+    const chunkSize = maxTokens * 4;
+    const chunks: string[] = [];
+
+    // Split by paragraphs first
+    const paragraphs = text.split(/\n\s*\n/);
+    let currentChunk = '';
+
+    for (const paragraph of paragraphs) {
+        if ((currentChunk + paragraph).length > chunkSize) {
+            if (currentChunk) {
+                chunks.push(currentChunk.trim());
+                currentChunk = '';
+            }
+            // If a single paragraph is too long, split it by sentences
+            if (paragraph.length > chunkSize) {
+                const sentences = paragraph.match(/[^.!?]+[.!?]+/g) || [];
+                for (const sentence of sentences) {
+                    if (currentChunk.length + sentence.length > chunkSize) {
+                        if (currentChunk) {
+                            chunks.push(currentChunk.trim());
+                            currentChunk = '';
+                        }
+                    }
+                    currentChunk += sentence;
+                }
+            } else {
+                currentChunk = paragraph;
+            }
+        } else {
+            currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
+        }
+    }
+
+    if (currentChunk) {
+        chunks.push(currentChunk.trim());
+    }
+
+    return chunks;
+}
 
 // Placeholder - Implement a proper token estimation strategy for your chosen model
 function estimateTokens(text: string): number {

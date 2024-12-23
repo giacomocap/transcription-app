@@ -31,6 +31,7 @@ async function initializeDatabase() {
         transcript TEXT,
         refined_transcript TEXT,
         subtitle_content TEXT,
+        summary TEXT,
         diarization_enabled BOOLEAN DEFAULT FALSE,
         diarization_status VARCHAR(50),
         speaker_profiles JSONB,
