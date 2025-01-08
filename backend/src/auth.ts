@@ -5,13 +5,14 @@ import pool from './db';
 import { v4 as uuidv4 } from 'uuid';
 import { UserData, AuthenticatedRequest } from './types/auth';
 
+const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 // Configure Google OAuth strategy
 passport.use(
     new GoogleStrategy(
         {
             clientID: process.env.GOOGLE_CLIENT_ID || '',
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-            callbackURL: '/api/auth/google/callback',
+            callbackURL: frontendUrl + '/api/auth/google/callback',
         },
         async (accessToken: string, refreshToken: string, profile: Profile, done: any) => {
             try {
@@ -130,7 +131,6 @@ export const isResourceOwner = (
 
 // Auth routes
 export const configureAuthRoutes = (router: any) => {
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     router.get(
         '/auth/google',
         passport.authenticate('google', {

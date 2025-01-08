@@ -27,19 +27,30 @@ services:
     volumes:
       - ./backend/uploads:/app/uploads
 
-  diarization:
+
+  frontend:
     build:
-      context: ./diarization-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.frontend
     restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-      - UPLOAD_DIR=/app/uploads
-    volumes:
-      - ./backend/uploads:/app/uploads
+    ports:
+      - '8080:80' # Changed from 80:80 to 8080:80
     depends_on:
-      - db
-      - redis
+      - backend
+
+  # diarization:
+  #   build:
+  #     context: ./diarization-service
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   environment:
+  #     - PYTHONUNBUFFERED=1
+  #     - UPLOAD_DIR=/app/uploads
+  #   volumes:
+  #     - ./backend/uploads:/app/uploads
+  #   depends_on:
+  #     - db
+  #     - redis
 
   worker:
     build:
@@ -67,15 +78,14 @@ services:
     volumes:
       - ./backend/uploads:/app/uploads
 
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+  cloudflared:
+    image: cloudflare/cloudflared
     restart: unless-stopped
-    ports:
-      - '8080:80' # Changed from 80:80 to 8080:80
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     depends_on:
-      - backend
+      - frontend
 
   db:
     image: postgres:13

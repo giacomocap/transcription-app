@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import { Upload, Info } from 'lucide-react';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "../components/ui/tooltip"
+import { useState } from 'react';
+import { Upload } from 'lucide-react';
+// import {
+//     Tooltip,
+//     TooltipContent,
+//     TooltipProvider,
+//     TooltipTrigger,
+// } from "../components/ui/tooltip"
 
 export const UploadPage = () => {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [diarizationEnabled, setDiarizationEnabled] = useState(false);
+    const [diarizationEnabled, _setDiarizationEnabled] = useState(false);
 
     const handleUpload = async () => {
         if (!file) return;
@@ -77,7 +77,7 @@ export const UploadPage = () => {
                 <div className="mt-4 space-y-4">
                     <p className="text-sm text-gray-600">Selected: {file.name}</p>
                     
-                    <div className="flex items-center space-x-2">
+                    {/* <div className="flex items-center space-x-2">
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input 
                                 type="checkbox" 
@@ -110,7 +110,7 @@ export const UploadPage = () => {
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                    </div>
+                    </div> */}
 
                     {uploading && (
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
