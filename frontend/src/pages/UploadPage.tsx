@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Upload, Info } from 'lucide-react';
+import { Upload, Info, Mic, XCircle, Download } from 'lucide-react';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "../components/ui/tooltip"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { AudioRecordingSetup } from '../components/AudioRecordingSetup';
 
 export const UploadPage = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -50,67 +52,140 @@ export const UploadPage = () => {
         xhr.send(formData);
     };
 
+    const handleRecordingComplete = (audioBlob: Blob) => {
+        const file = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
+        setFile(file);
+    };
+
     return (
         <div className="p-6 max-w-2xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">Upload Media File</h1>
+            <h1 className="text-2xl font-bold mb-6">Upload Media</h1>
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <input
-                    type="file"
-                    accept="audio/*,video/*"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="file-upload"
-                />
-                <label
-                    htmlFor="file-upload"
-                    className="cursor-pointer block"
-                >
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-600">
-                        Drag and drop or click to upload audio/video files
-                    </p>
-                </label>
-            </div>
+            <Tabs defaultValue="upload" className="mb-6">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="upload">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload File
+                    </TabsTrigger>
+                    <TabsTrigger value="record">
+                        <Mic className="mr-2 h-4 w-4" />
+                        Record Audio
+                    </TabsTrigger>
+                </TabsList>
 
-            {file && (
-                <div className="mt-4 space-y-4">
-                    <p className="text-sm text-gray-600">Selected: {file.name}</p>
-                    
-                    <div className="flex items-center space-x-2">
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
-                                className="sr-only peer"
-                                checked={diarizationEnabled}
-                                onChange={(e) => setDiarizationEnabled(e.target.checked)}
-                            />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            <span className="ml-3 text-sm font-medium text-gray-600">Enable Speaker Identification</span>
+                <TabsContent value="upload">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                        <input
+                            type="file"
+                            accept="audio/*,video/*"
+                            onChange={(e) => setFile(e.target.files?.[0] || null)}
+                            className="hidden"
+                            id="file-upload"
+                        />
+                        <label
+                            htmlFor="file-upload"
+                            className="cursor-pointer block"
+                        >
+                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                            <p className="mt-2 text-sm text-gray-600">
+                                Drag and drop or click to upload audio/video files
+                            </p>
                         </label>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Info className="h-4 w-4 text-gray-500 cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-[300px] p-4">
-                                    <div className="space-y-2">
-                                        <p className="font-semibold">Speaker Identification</p>
-                                        <p>This feature analyzes the audio to identify different speakers in the conversation.</p>
-                                        <div className="space-y-1">
-                                            <p className="text-yellow-600 font-medium">Important Notes:</p>
-                                            <ul className="list-disc list-inside text-sm">
-                                                <li>Only enable if your recording has multiple speakers</li>
-                                                <li>This process can take significantly longer than regular transcription</li>
-                                                <li>Other features like summary and refinement will be delayed until speaker identification is complete</li>
-                                            </ul>
-                                        </div>
-                                        <p className="text-sm italic">Example output: "Speaker 1: Hello" / "Speaker 2: Hi there"</p>
-                                    </div>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
                     </div>
+                </TabsContent>
+
+                <TabsContent value="record">
+                    <AudioRecordingSetup onRecordingComplete={handleRecordingComplete} />
+                </TabsContent>
+            </Tabs>
+
+            <div className="mt-4 space-y-4">
+              {file && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600">Selected: {file.name}</p>
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => {
+                          const url = URL.createObjectURL(file);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = file.name;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          URL.revokeObjectURL(url);
+                        }}
+                        className="text-blue-500 hover:text-blue-700"
+                        title="Download"
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setFile(null)}
+                        className="text-red-500 hover:text-red-700"
+                        title="Cancel"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={diarizationEnabled}
+                        onChange={(e) => setDiarizationEnabled(e.target.checked)}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                      <span className="ml-3 text-sm font-medium text-gray-600">
+                        Enable Speaker Identification
+                      </span>
+                    </label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-gray-500 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[300px] p-4">
+                          <div className="space-y-2">
+                            <p className="font-semibold">Speaker Identification</p>
+                            <p>
+                              This feature analyzes the audio to identify different
+                              speakers in the conversation.
+                            </p>
+                            <div className="space-y-1">
+                              <p className="text-yellow-600 font-medium">
+                                Important Notes:
+                              </p>
+                              <ul className="list-disc list-inside text-sm">
+                                <li>
+                                  Only enable if your recording has multiple
+                                  speakers
+                                </li>
+                                <li>
+                                  This process can take significantly longer than
+                                  regular transcription
+                                </li>
+                                <li>
+                                  Other features like summary and refinement will
+                                  be delayed until speaker identification is
+                                  complete
+                                </li>
+                              </ul>
+                            </div>
+                            <p className="text-sm italic">
+                              Example output: "Speaker 1: Hello" / "Speaker 2: Hi
+                              there"
+                            </p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </>
+              )}
 
                     {uploading && (
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -129,7 +204,6 @@ export const UploadPage = () => {
                         {uploading ? `Uploading... ${uploadProgress}%` : 'Start Transcription'}
                     </button>
                 </div>
-            )}
         </div>
     );
 };

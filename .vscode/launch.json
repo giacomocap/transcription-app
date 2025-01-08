@@ -57,11 +57,40 @@
         {
             "name": "Frontend - Chrome Debug",
             "type": "chrome",
-            "request": "launch",
+            "request": "attach",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/frontend",
             "sourceMaps": true
         },
+        // {
+        //     "name": "Desktop App - Debug Main Process",
+        //     "type": "node",
+        //     "request": "launch",
+        //     "cwd": "${workspaceRoot}/desktop-app",
+        //     "runtimeExecutable": "${workspaceRoot}/desktop-app/node_modules/.bin/electron-vite",
+        //     "windows": {
+        //         "runtimeExecutable": "${workspaceRoot}/desktop-app/node_modules/.bin/electron-vite.cmd"
+        //     },
+        //     "runtimeArgs": [
+        //         "--sourcemap"
+        //     ],
+        //     "console": "integratedTerminal",
+        //     "outputCapture": "std",
+        //     "env": {
+        //         "REMOTE_DEBUGGING_PORT": "9222"
+        //     }
+        // },
+        // {
+        //     "name": "Desktop App - Debug Renderer Process",
+        //     "port": 9222,
+        //     "request": "attach",
+        //     "type": "chrome",
+        //     "webRoot": "${workspaceFolder}/src/renderer",
+        //     "timeout": 60000,
+        //     "presentation": {
+        //         "hidden": true
+        //     }
+        // },
         // {
         //     "name": "Python: Diarization Service",
         //     "type": "debugpy",
@@ -127,6 +156,8 @@
                 "Backend - Dev Server",
                 "Backend - Worker",
                 "Frontend - Dev Server",
+                "Desktop App - Debug Main Process",
+                "Desktop App - Debug Renderer Process",
                 "Frontend - Chrome Debug",
                 // "Python: Diarization Service",
                 // "Python: Audio Enhancement Service"

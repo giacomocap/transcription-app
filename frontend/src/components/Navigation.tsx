@@ -12,7 +12,7 @@ export const Navigation = () => {
                     <div className="flex">
                         <div className="flex-shrink-0 flex items-center">
                             <Link to="/" className="text-xl font-bold text-gray-800">
-                                Transcription App
+                                Claire.AI
                             </Link>
                         </div>
                         {isAuthenticated && (

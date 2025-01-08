@@ -5,5 +5,8 @@
     "dev": "echo 'No dev script'"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "electron-vite": "^2.3.0"
+  }
 }
