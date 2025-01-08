@@ -78,15 +78,15 @@ router.delete('/jobs/:id', isAuthenticated, isResourceOwner, async (req, res) =>
 
     try {
         // Get file path before deleting the job
-        const result = await pool.query('SELECT file_name FROM jobs WHERE id = $1', [jobId]);
-        const fileName = result.rows[0]?.file_name;
+        const result = await pool.query('SELECT file_url FROM jobs WHERE id = $1', [jobId]);
+        const fileName = result.rows[0]?.file_url;
 
         // Delete from database
         await pool.query('DELETE FROM jobs WHERE id = $1', [jobId]);
 
         // Delete file from filesystem if it exists
         if (fileName) {
-            const filePath = path.join('uploads', fileName);
+            const filePath = fileName.replace('/api/', '');
             try {
                 await fs.unlink(filePath);
             } catch (err) {
@@ -124,20 +124,20 @@ router.get('/jobs', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     res.json(result.rows);
 });
 
-router.get('/config/transcription', isAuthenticated, async (req, res) => {
+router.get('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
     console.log('/api/config/transcription');
     const result = await pool.query('SELECT * FROM transcription_config ORDER BY created_at DESC');
     res.json(result.rows[0]);
 });
 
-router.get('/config/refinement', async (req, res) => {
+router.get('/config/refinement', isAuthenticated, checkAdmin, async (req, res) => {
     console.log('/api/config/refinement');
     const result = await pool.query('SELECT * FROM refinement_config ORDER BY created_at DESC');
     res.json(result.rows[0]);
 });
 
 
-router.post('/config/transcription', async (req, res) => {
+router.post('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
     console.log('/api/config/transcription POST', req.body);
     const { openai_api_url, openai_api_key, model_name, max_concurrent_jobs } = req.body;
     const result = await pool.query('UPDATE transcription_config SET openai_api_url = $1, openai_api_key = $2, model_name = $3, max_concurrent_jobs = $4', [openai_api_url, openai_api_key, model_name, max_concurrent_jobs]);
@@ -168,7 +168,7 @@ router.post('/config/transcription', async (req, res) => {
  *       200:
  *         description: Successfully added refinement configuration
  */
-router.post('/config/refinement', async (req, res) => {
+router.post('/config/refinement', isAuthenticated, checkAdmin, async (req, res) => {
     console.log('/api/config/refinement POST', req.body);
     const { openai_api_url, openai_api_key, model_name, system_prompt } = req.body;
     const result = await pool.query('UPDATE refinement_config SET openai_api_url = $1, openai_api_key = $2, model_name = $3, system_prompt = $4', [openai_api_url, openai_api_key, model_name, system_prompt]);
@@ -243,15 +243,14 @@ router.post('/jobs/:id/refine', isAuthenticated, isResourceOwner, async (req: Au
     }
 });
 
-// Admin stats route
 router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: AuthenticatedRequest, res: Response) => {
     try {
         // Query to get total number of jobs
         const totalJobsQuery = await pool.query('SELECT COUNT(*) FROM jobs');
         const totalJobs = parseInt(totalJobsQuery.rows[0].count, 10);
 
-        // Query to get number of successful jobs (assuming 'success' is a status)
-        const successfulJobsQuery = await pool.query("SELECT COUNT(*) FROM jobs WHERE status = 'success'");
+        // Query to get number of successful jobs (assuming 'transcribed' is a status)
+        const successfulJobsQuery = await pool.query("SELECT COUNT(*) FROM jobs WHERE status = 'transcribed'");
         const successfulJobs = parseInt(successfulJobsQuery.rows[0].count, 10);
 
         // Query to get number of failed jobs (assuming 'failed' is a status)
@@ -262,7 +261,7 @@ router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: Authenticate
         const successRate = totalJobs > 0 ? (successfulJobs / totalJobs) * 100 : 0;
         const errorRate = totalJobs > 0 ? (failedJobs / totalJobs) * 100 : 0;
 
-        // Query to get average, min, and max timings (assuming `created_at` and `updated_at` are used for timings)
+        // Query to get average, min, and max timings
         const timingsQuery = await pool.query(`
             SELECT 
                 AVG(EXTRACT(EPOCH FROM (updated_at - created_at))) AS avg_duration,
@@ -272,9 +271,7 @@ router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: Authenticate
         `);
         const { avg_duration, min_duration, max_duration } = timingsQuery.rows[0];
 
-        // Query to get file size information (assuming `file_url` can be used to infer file size)
-        // Note: This is a placeholder, as file size is not directly stored in the database.
-        // You might need to fetch this from your storage service (e.g., S3, GCS).
+        // Query to get file size information
         const fileSizesQuery = await pool.query(`
             SELECT 
                 AVG(LENGTH(file_url)) AS avg_file_size,
@@ -284,13 +281,39 @@ router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: Authenticate
         `);
         const { avg_file_size, min_file_size, max_file_size } = fileSizesQuery.rows[0];
 
-        // Query to get error details (assuming `transcript` or `refined_transcript` contains error info)
+        // Query to get error details
         const errorsQuery = await pool.query(`
             SELECT transcript, refined_transcript
             FROM jobs
             WHERE status = 'failed'
         `);
         const errors = errorsQuery.rows;
+
+        // Query to get stats per user
+        const statsPerUserQuery = await pool.query(`
+            SELECT 
+                u.id AS user_id,
+                u.display_name,
+                u.email,
+                COUNT(j.id) AS total_jobs,
+                SUM(CASE WHEN j.status = 'transcribed' THEN 1 ELSE 0 END) AS successful_jobs,
+                SUM(CASE WHEN j.status = 'failed' THEN 1 ELSE 0 END) AS failed_jobs,
+                AVG(EXTRACT(EPOCH FROM (j.updated_at - j.created_at))) AS avg_duration_per_user
+            FROM users u
+            LEFT JOIN jobs j ON u.id = j.user_id
+            GROUP BY u.id, u.display_name, u.email
+        `);
+        const statsPerUser = statsPerUserQuery.rows;
+
+        // Query to get stats about the users
+        const usersStatsQuery = await pool.query(`
+            SELECT 
+                COUNT(*) AS total_users,
+                COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') AS new_users_last_7_days,
+                COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') AS new_users_last_30_days
+            FROM users
+        `);
+        const { total_users, new_users_last_7_days, new_users_last_30_days } = usersStatsQuery.rows[0];
 
         // Compile the stats
         const stats = {
@@ -310,6 +333,12 @@ router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: Authenticate
                 maxFileSize: parseFloat(max_file_size).toFixed(2) + ' bytes',
             },
             errors,
+            statsPerUser,
+            usersStats: {
+                totalUsers: total_users,
+                newUsersLast7Days: new_users_last_7_days,
+                newUsersLast30Days: new_users_last_30_days,
+            },
         };
 
         res.json(stats);

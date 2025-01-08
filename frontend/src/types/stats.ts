@@ -18,4 +18,6 @@ export interface Stats {
         transcript: string;
         refined_transcript: string;
     }>;
+    statsPerUser: Array<any>;
+    usersStats: any;
 }
