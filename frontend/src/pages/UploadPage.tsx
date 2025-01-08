@@ -56,16 +56,28 @@ export const UploadPage = () => {
                     <CardTitle>Upload</CardTitle>
                     <CardDescription>Drag and drop or click to upload audio/video files</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                <CardContent
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        setFile(e.dataTransfer.files?.[0] || null);
+                    }}
+                >
+                    <Label
+                        htmlFor="file-upload"
+                        className="cursor-pointer flex flex-col items-center gap-2 border-2 border-dashed p-4"
+                    >
                         <Upload className="h-8 w-8 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Choose File</span>
+                        <span className="text-sm text-muted-foreground">
+                            Drag and drop or click to choose file
+                        </span>
                     </Label>
                     <Input
                         type="file"
                         accept="audio/*,video/*"
+                        capture="user"
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setFile(e.target.files?.[0] || null)
+                            setFile(e.target.files?.[0] || null)
                         }
                         className="hidden"
                         id="file-upload"

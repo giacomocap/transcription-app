@@ -44,7 +44,8 @@
             "runtimeExecutable": "npm",
             "runtimeArgs": [
                 "run",
-                "dev"
+                "dev",
+                "--host"
             ],
             "cwd": "${workspaceFolder}/frontend",
             "env": {
