@@ -94,6 +94,17 @@ export const isAuthenticated = (
     res.status(401).json({ error: 'Unauthorized' });
 };
 
+export const checkAdmin = (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    if (req.user?.email !== process.env.ADMIN_EMAIL) {
+        res.status(403).json({ error: 'Unauthorized' });
+    }
+    next();
+};
+
 // Middleware to check if user owns the resource
 export const isResourceOwner = (
     req: AuthenticatedRequest,

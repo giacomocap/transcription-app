@@ -1,101 +1,98 @@
 // frontend/src/pages/AdminPage.tsx  
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '../components/ui/alert';
+import StatsView from '../components/StatsView';
 
-interface TranscriptionConfig {
-    openai_api_url: string;
-    openai_api_key: string;
-    model_name: string;
-    max_concurrent_jobs: number;
-}
+// interface TranscriptionConfig {
+//     openai_api_url: string;
+//     openai_api_key: string;
+//     model_name: string;
+//     max_concurrent_jobs: number;
+// }
 
-interface RefinementConfig {
-    openai_api_url: string;
-    openai_api_key: string;
-    model_name: string;
-    fast_model_name: string;
-    system_prompt: string;
-}
+// interface RefinementConfig {
+//     openai_api_url: string;
+//     openai_api_key: string;
+//     model_name: string;
+//     fast_model_name: string;
+//     system_prompt: string;
+// }
 
 export const AdminPage = () => {
-    const [transcriptionConfig, setTranscriptionConfig] = useState<TranscriptionConfig>({
-        openai_api_url: '',
-        openai_api_key: '',
-        model_name: '',
-        max_concurrent_jobs: 0
-    });
+    // const [transcriptionConfig, setTranscriptionConfig] = useState<TranscriptionConfig>({
+    //     openai_api_url: '',
+    //     openai_api_key: '',
+    //     model_name: '',
+    //     max_concurrent_jobs: 0
+    // });
 
-    const [refinementConfig, setRefinementConfig] = useState<RefinementConfig>({
-        openai_api_url: '',
-        openai_api_key: '',
-        model_name: '',
-        fast_model_name: '',
-        system_prompt: ''
-    });
+    // const [refinementConfig, setRefinementConfig] = useState<RefinementConfig>({
+    //     openai_api_url: '',
+    //     openai_api_key: '',
+    //     model_name: '',
+    //     fast_model_name: '',
+    //     system_prompt: ''
+    // });
 
-    const [saveStatus, setSaveStatus] = useState<{
-        type: 'success' | 'error' | null;
-        message: string;
-    }>({ type: null, message: '' });
+    // const [saveStatus, setSaveStatus] = useState<{
+    //     type: 'success' | 'error' | null;
+    //     message: string;
+    // }>({ type: null, message: '' });
 
-    useEffect(() => {
-        // Fetch configurations on component mount
-        const fetchConfigs = async () => {
-            try {
-                const [transcriptionRes, refinementRes] = await Promise.all([
-                    fetch('/api/config/transcription'),
-                    fetch('/api/config/refinement')
-                ]);
+    // useEffect(() => {
+    //     // Fetch configurations on component mount
+    //     const fetchConfigs = async () => {
+    //         try {
+    //             const [transcriptionRes, refinementRes] = await Promise.all([
+    //                 fetch('/api/config/transcription'),
+    //                 fetch('/api/config/refinement')
+    //             ]);
 
-                if (transcriptionRes.ok && refinementRes.ok) {
-                    const transcription = await transcriptionRes.json();
-                    const refinement = await refinementRes.json();
-                    setTranscriptionConfig(transcription);
-                    setRefinementConfig(refinement);
-                }
-            } catch (error) {
-                setSaveStatus({
-                    type: 'error',
-                    message: 'Failed to load configurations'
-                });
-            }
-        };
+    //             if (transcriptionRes.ok && refinementRes.ok) {
+    //                 const transcription = await transcriptionRes.json();
+    //                 const refinement = await refinementRes.json();
+    //                 setTranscriptionConfig(transcription);
+    //                 setRefinementConfig(refinement);
+    //             }
+    //         } catch (error) {
+    //             setSaveStatus({
+    //                 type: 'error',
+    //                 message: 'Failed to load configurations'
+    //             });
+    //         }
+    //     };
 
-        fetchConfigs();
-    }, []);
+    //     fetchConfigs();
+    // }, []);
 
-    const handleSave = async (type: 'transcription' | 'refinement') => {
-        const config = type === 'transcription' ? transcriptionConfig : refinementConfig;
-        try {
-            const response = await fetch(`/api/config/${type}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(config),
-            });
+    // const handleSave = async (type: 'transcription' | 'refinement') => {
+    //     const config = type === 'transcription' ? transcriptionConfig : refinementConfig;
+    //     try {
+    //         const response = await fetch(`/api/config/${type}`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: JSON.stringify(config),
+    //         });
 
-            if (response.ok) {
-                setSaveStatus({
-                    type: 'success',
-                    message: `${type.charAt(0).toUpperCase() + type.slice(1)} configuration saved successfully`
-                });
-            } else {
-                throw new Error('Failed to save configuration');
-            }
-        } catch (error) {
-            setSaveStatus({
-                type: 'error',
-                message: `Failed to save ${type} configuration`
-            });
-        }
-    };
+    //         if (response.ok) {
+    //             setSaveStatus({
+    //                 type: 'success',
+    //                 message: `${type.charAt(0).toUpperCase() + type.slice(1)} configuration saved successfully`
+    //             });
+    //         } else {
+    //             throw new Error('Failed to save configuration');
+    //         }
+    //     } catch (error) {
+    //         setSaveStatus({
+    //             type: 'error',
+    //             message: `Failed to save ${type} configuration`
+    //         });
+    //     }
+    // };
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-2xl font-bold mb-6">Admin Settings</h1>
+            {/* <h1 className="text-2xl font-bold mb-6">Admin Settings</h1>
 
             {saveStatus.type && (
                 <Alert variant={saveStatus.type === 'success' ? 'default' : 'destructive'}>
@@ -104,7 +101,6 @@ export const AdminPage = () => {
                 </Alert>
             )}
 
-            {/* Transcription Configuration */}
             <Card>
                 <CardHeader>
                     <CardTitle>Transcription Model Configuration</CardTitle>
@@ -179,7 +175,6 @@ export const AdminPage = () => {
                 </CardContent>
             </Card>
 
-            {/* Refinement Configuration */}
             <Card>
                 <CardHeader>
                     <CardTitle>Refinement Model Configuration</CardTitle>
@@ -244,7 +239,7 @@ export const AdminPage = () => {
                             className="w-full p-2 border rounded-lg"
                         />
                     </div>
-{/* 
+                    {/* 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             System Prompt
@@ -258,7 +253,7 @@ export const AdminPage = () => {
                             rows={4}
                             className="w-full p-2 border rounded-lg"
                         />
-                    </div> */}
+                    </div> 
 
                     <button
                         onClick={() => handleSave('refinement')}
@@ -267,7 +262,8 @@ export const AdminPage = () => {
                         Save Refinement Settings
                     </button>
                 </CardContent>
-            </Card>
+            </Card> */}
+            <StatsView />
         </div>
     );
 };

@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { Navigation } from './components/Navigation';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { AdminPage } from './pages/AdminPage';
 // import { LandingPage } from './pages/LandingPage';
 
 // Create a new component to handle the conditional rendering of the Navigation
@@ -44,14 +45,14 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
-          {/* <Route
+          <Route
             path="/admin"
             element={
               <ProtectedRoute>
                 <AdminPage />
               </ProtectedRoute>
             }
-          /> */}
+          />
           <Route path="/" element={<Navigate to="/upload" />} />
         </Routes>
       </main>
