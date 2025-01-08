@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { JobsDashboard } from './pages/JobsDashboard';
-import { AdminPage } from './pages/AdminPage';
+// import { AdminPage } from './pages/AdminPage';
 import { UploadPage } from './pages/UploadPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { LoginPage } from './pages/LoginPage';
@@ -41,14 +41,14 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
-              <Route
+              {/* <Route
                 path="/admin"
                 element={
                   <ProtectedRoute>
                     <AdminPage />
                   </ProtectedRoute>
                 }
-              />
+              /> */}
               <Route path="/" element={<Navigate to="/upload" />} />
             </Routes>
           </main>

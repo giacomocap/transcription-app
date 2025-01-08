@@ -34,7 +34,7 @@ export const TranscriptionTabs = ({ job, currentTime, onTimeSelect, isPlaying }:
 
     return (
         <Tabs defaultValue="transcript" className="w-full">
-            <TabsList className="grid grid-cols-6 w-full">
+            <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="transcript">Raw Transcript</TabsTrigger>
                 <TabsTrigger value="refined" className="relative">
                     Refined

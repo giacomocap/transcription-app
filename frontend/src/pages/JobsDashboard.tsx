@@ -1,7 +1,26 @@
-// frontend/src/pages/JobsDashboard.tsx  
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Job } from '../types';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Job } from "../types";
+import { Button } from "../components/ui/button";
+import {
+    Card,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Trash } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export const JobsDashboard = () => {
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -9,16 +28,15 @@ export const JobsDashboard = () => {
 
     const fetchJobs = async () => {
         try {
-            const response = await fetch('/api/jobs');
+            const response = await fetch("/api/jobs");
             const data = await response.json();
             setJobs(data);
         } catch (error) {
-            console.error('Failed to fetch jobs:', error);
+            console.error("Failed to fetch jobs:", error);
         }
     };
 
     useEffect(() => {
-
         fetchJobs();
         const interval = setInterval(fetchJobs, 5000);
         return () => clearInterval(interval);
@@ -27,104 +45,89 @@ export const JobsDashboard = () => {
     const onDelete = async (id: string) => {
         try {
             const response = await fetch(`/api/jobs/${id}`, {
-                method: 'DELETE'
+                method: "DELETE",
             });
             if (response.ok) {
                 setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
             } else {
-                console.error('Failed to delete job');
+                console.error("Failed to delete job");
             }
         } catch (error) {
-            console.error('Failed to delete job:', error);
+            console.error("Failed to delete job:", error);
         } finally {
             setJobToDelete(null);
         }
-    }
+    };
 
     return (
-        <div className="p-6">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold">Transcription Jobs</h1>
-                <p className="text-gray-600 mt-2">
-                    View and manage your audio transcription jobs.
-                </p>
-            </div>
-
-            {/* Delete Confirmation Modal */}
-            {jobToDelete && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                        <h3 className="text-lg font-semibold mb-4">Delete Transcription</h3>
-                        <p className="text-gray-600 mb-6">
-                            Are you sure you want to delete this transcription? This action cannot be undone.
-                        </p>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setJobToDelete(null)}
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => jobToDelete && onDelete(jobToDelete)}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+        <div className="p-6 max-w-2xl mx-auto flex flex-col gap-4 md:gap-6">
+            <h1 className="text-2xl md:text-3xl font-bold">Transcriptions</h1>
 
             <div className="grid gap-4">
                 {jobs.length === 0 ? (
-                    <div className="text-center py-12">
-                        <p className="text-gray-600 mb-4">No transcriptions found...</p>
-                        <Link 
-                            to="/upload" 
-                            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            Upload an audio file
-                        </Link>
+                    <div className="text-center py-8 md:py-12">
+                        <p className="text-muted-foreground mb-2 md:mb-4">
+                            No transcriptions found...
+                        </p>
+                        <Button asChild>
+                            <Link to="/upload">Upload an audio file</Link>
+                        </Button>
                     </div>
                 ) : (
                     jobs.map((job) => (
-                        <div
-                            key={job.id}
-                            className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-                        >
-                            <div className="flex items-center justify-between">
-                                <Link
-                                    to={`/jobs/${job.id}`}
-                                    className="flex-1"
-                                >
-                                    <div>
-                                        <p className="font-medium">{job.file_name}</p>
-                                        <p className="text-sm text-gray-500">
-                                            Created: {new Date(job.created_at).toLocaleDateString()}
-                                        </p>
+                        <Card key={job.id} className="hover:shadow-md transition-shadow">
+                            <CardHeader>
+                                <CardTitle className="flex items-center justify-between">
+                                    <Link to={`/jobs/${job.id}`} className="flex-1">
+                                        {job.file_name}
+                                    </Link>
+                                    <div className="flex gap-1 items-center">
+                                        <Badge
+                                            variant="secondary"
+                                            className={`text-xs px-2 py-1 rounded-full ${job.status === "completed"
+                                                ? "bg-green-100 text-green-800"
+                                                : job.status === "failed"
+                                                    ? "bg-red-100 text-red-800"
+                                                    : job.status === "running"
+                                                        ? "bg-blue-100 text-blue-800"
+                                                        : "bg-gray-100 text-gray-800"
+                                                }`}
+                                        >
+                                            {job.status}
+                                        </Badge>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setJobToDelete(job.id);
+                                                    }}
+                                                >Delete
+                                                    <Trash className="w-4 h-4 md:w-5 md:h-5" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete Transcription</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Are you sure you want to delete this transcription? This action
+                                                        cannot be undone.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel onClick={() => setJobToDelete(null)}>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => jobToDelete && onDelete(jobToDelete)}>Delete the transcription</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </div>
-                                </Link>
-                                <div className='flex gap-1 items-center'>
-                                    <div className={`px-3 py-1 rounded-full text-sm ${job.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                        job.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                            job.status === 'running' ? 'bg-blue-100 text-blue-800' :
-                                                'bg-gray-100 text-gray-800'
-                                        }`}>
-                                        {job.status}
-                                    </div>
-                                    <button 
-                                        className="px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200" 
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            setJobToDelete(job.id);
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                                </CardTitle>
+                                <CardDescription>
+                                    Created: {new Date(job.created_at).toLocaleDateString()}
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
                     ))
                 )}
             </div>

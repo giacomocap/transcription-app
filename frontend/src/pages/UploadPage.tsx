@@ -1,17 +1,15 @@
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
-// import {
-//     Tooltip,
-//     TooltipContent,
-//     TooltipProvider,
-//     TooltipTrigger,
-// } from "../components/ui/tooltip"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Button } from '../components/ui/button';
+import { Progress } from '../components/ui/progress';
 
 export const UploadPage = () => {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [diarizationEnabled, _setDiarizationEnabled] = useState(false);
 
     const handleUpload = async () => {
         if (!file) return;
@@ -20,7 +18,6 @@ export const UploadPage = () => {
         setUploadProgress(0);
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('diarization', diarizationEnabled.toString());
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/upload', true);
@@ -51,33 +48,36 @@ export const UploadPage = () => {
     };
 
     return (
-        <div className="p-6 max-w-2xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">Upload Media File</h1>
+        <div className="p-6 max-w-2xl mx-auto flex flex-col gap-4 md:gap-6">
+            <h1 className="text-2xl md:text-3xl font-bold">Upload Media File</h1>
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <input
-                    type="file"
-                    accept="audio/*,video/*"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="file-upload"
-                />
-                <label
-                    htmlFor="file-upload"
-                    className="cursor-pointer block"
-                >
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-600">
-                        Drag and drop or click to upload audio/video files
-                    </p>
-                </label>
-            </div>
-
-            {file && (
-                <div className="mt-4 space-y-4">
-                    <p className="text-sm text-gray-600">Selected: {file.name}</p>
-                    
-                    {/* <div className="flex items-center space-x-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Upload</CardTitle>
+                    <CardDescription>Drag and drop or click to upload audio/video files</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Choose File</span>
+                    </Label>
+                    <Input
+                        type="file"
+                        accept="audio/*,video/*"
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setFile(e.target.files?.[0] || null)
+                        }
+                        className="hidden"
+                        id="file-upload"
+                    />
+                </CardContent>
+                {file && (
+                    <CardFooter className="flex-col items-start gap-2">
+                        <div className="w-full flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Selected:</span>
+                            <span className="text-sm">{file.name}</span>
+                        </div>
+                        {/* <div className="flex items-center space-x-2">
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input 
                                 type="checkbox" 
@@ -112,24 +112,13 @@ export const UploadPage = () => {
                         </TooltipProvider>
                     </div> */}
 
-                    {uploading && (
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div 
-                                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
-                                style={{ width: `${uploadProgress}%` }}
-                            ></div>
-                        </div>
-                    )}
-
-                    <button
-                        onClick={handleUpload}
-                        disabled={uploading}
-                        className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                    >
-                        {uploading ? `Uploading... ${uploadProgress}%` : 'Start Transcription'}
-                    </button>
-                </div>
-            )}
+                        {uploading && <Progress value={uploadProgress} className="w-full" />}
+                        <Button onClick={handleUpload} disabled={uploading} className="w-full">
+                            {uploading ? `Uploading... ${uploadProgress}%` : 'Start Transcription'}
+                        </Button>
+                    </CardFooter>
+                )}
+            </Card>
         </div>
     );
 };

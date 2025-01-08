@@ -1,5 +1,6 @@
-import { AlertCircle, CheckCircle2, Clock, HelpCircle, Info, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { Status, TranscriptionStatus } from "../types";
+import { Badge } from "./ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -15,34 +16,29 @@ interface JobStatusProps {
 
 const statusConfig = {
   pending: {
-    icon: Clock,
-    color: "text-yellow-500",
-    bgColor: "bg-yellow-50",
+    variant: "secondary",
     label: "Pending",
+    icon: Clock
   },
   running: {
-    icon: Loader2,
-    color: "text-blue-500",
-    bgColor: "bg-blue-50",
+    variant: "default",
     label: "Running",
+    icon: Loader2
   },
   completed: {
-    icon: CheckCircle2,
-    color: "text-green-500",
-    bgColor: "bg-green-50",
+    variant: "success",
     label: "Completed",
+    icon: CheckCircle2
   },
   failed: {
-    icon: AlertCircle,
-    color: "text-red-500",
-    bgColor: "bg-red-50",
+    variant: "destructive",
     label: "Failed",
+    icon: AlertCircle
   },
   transcribed: {
-    icon: CheckCircle2,
-    color: "text-green-500",
-    bgColor: "bg-green-50",
+    variant: "success",
     label: "Transcribed",
+    icon: CheckCircle2
   },
 };
 
@@ -52,75 +48,57 @@ export const JobStatus = ({
   diarizationStatus,
 }: JobStatusProps) => {
   const transcriptionConfig = statusConfig[transcriptionStatus];
-  const diarizationConfig = diarizationStatus ? statusConfig[diarizationStatus] : null;
+  const diarizationConfig = diarizationStatus
+    ? statusConfig[diarizationStatus]
+    : null;
 
   const StatusIcon = transcriptionConfig.icon;
-  const DiarStatusIcon = diarizationConfig?.icon || HelpCircle;
+  const DiarizationIcon = diarizationConfig?.icon || AlertCircle;
 
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger>
-          <div className="inline-flex items-center gap-2 rounded-lg border p-2 shadow-sm">
-            <div
-              className={`flex items-center gap-1.5 rounded-md ${transcriptionConfig.bgColor} px-2 py-1`}
-            >
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-2">
+            <Badge variant={transcriptionConfig.variant as any} className="gap-1.5 px-2.5 py-2.5">
               <StatusIcon
-                className={`${transcriptionConfig.color} h-4 w-4 ${
+                className={`h-4 w-4 ${
                   transcriptionStatus === "running" ? "animate-spin" : ""
                 }`}
               />
-              <span className={`text-sm ${transcriptionConfig.color}`}>
-                {transcriptionConfig.label}
-              </span>
-            </div>
-
+              {transcriptionConfig.label}
+            </Badge>
             {diarizationEnabled && (
-              <div
-                className={`flex items-center gap-1.5 rounded-md ${
-                  diarizationConfig?.bgColor || "bg-gray-50"
-                } px-2 py-1`}
+              <Badge
+                variant={diarizationConfig?.variant as any || "secondary"}
+                className="gap-1.5"
               >
-                <DiarStatusIcon
-                  className={`${
-                    diarizationConfig?.color || "text-gray-400"
-                  } h-4 w-4 ${
+                <DiarizationIcon
+                  className={`h-4 w-4 ${
                     diarizationStatus === "running" ? "animate-spin" : ""
                   }`}
                 />
-                <span
-                  className={`text-sm ${
-                    diarizationConfig?.color || "text-gray-400"
-                  }`}
-                >
-                  {diarizationConfig?.label || "Diarization"}
-                </span>
-              </div>
+                {diarizationConfig?.label || "Diarization"}
+              </Badge>
             )}
           </div>
         </TooltipTrigger>
-        <TooltipContent className="w-64 p-3 bg-white border shadow-lg">
+        <TooltipContent>
           <div className="space-y-2">
-            <div className="flex items-start gap-2">
-              <Info className="h-4 w-4 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">Transcription: {transcriptionConfig.label}</p>
-                <p className="text-xs text-gray-500">
-                  {getStatusDescription(transcriptionStatus)}
-                </p>
-              </div>
+            <div>
+              <p className="font-medium">Transcription: {transcriptionConfig.label}</p>
+              <p className="text-xs text-muted-foreground">
+                {getStatusDescription(transcriptionStatus)}
+              </p>
             </div>
             {diarizationEnabled && (
-              <div className="flex items-start gap-2">
-                <Info className="h-4 w-4 text-gray-500 mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm">
-                    Diarization: {diarizationConfig?.label || "Not started"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {getStatusDescription(diarizationStatus || "pending", true)}
-                  </p>
-                </div>
+              <div>
+                <p className="font-medium">
+                  Diarization: {diarizationConfig?.label || "Not started"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {getStatusDescription(diarizationStatus || "pending", true)}
+                </p>
               </div>
             )}
           </div>
