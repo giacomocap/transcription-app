@@ -136,10 +136,10 @@ export const JobDetailPage = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4 md:space-y-6">
+    <div className="px-6 max-w-4xl mx-auto space-y-4 md:space-y-6">
       {job && (
         <div className="space-y-4">
-          <CardHeader>
+          <CardHeader className="p-0">
             <div className="flex items-center justify-between">
               <CardTitle>{job.file_name}</CardTitle>
               <div className="flex items-center gap-2 md:gap-4">
@@ -167,14 +167,14 @@ export const JobDetailPage = () => {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction  onClick={handleDelete}>Delete the transcription</AlertDialogAction>
+                      <AlertDialogAction onClick={handleDelete}>Delete the transcription</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
             </div>
           </CardHeader>
-          
+
           {job.file_url && (
             <div className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
               <audio

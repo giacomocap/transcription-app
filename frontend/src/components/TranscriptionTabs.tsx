@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Sparkles } from "lucide-react";
 import { Job } from "../types";
 import { TranscriptView } from "./TranscriptView";
-// import { SummaryView } from "@/src/components/SummaryView";
+import { SummaryView } from "./SummaryView";
 // import { TasksView } from "./TasksView";
 // import { NotesView } from "./NotesView";
 // import { ActionsView } from "./ActionsView";
@@ -34,16 +34,21 @@ export const TranscriptionTabs = ({ job, currentTime, onTimeSelect, isPlaying }:
 
     return (
         <Tabs defaultValue="transcript" className="w-full">
-            <TabsList className="grid grid-cols-2 w-full">
+            <TabsList className="grid grid-cols-3 w-full">
                 <TabsTrigger value="transcript">Raw Transcript</TabsTrigger>
-                <TabsTrigger value="refined" className="relative">
+                <TabsTrigger value="refined" className={`${showAnimation && "relative"}`}>
                     Refined
                     <Sparkles className={`w-4 h-4 ml-2 text-yellow-500 ${showAnimation && "animate-bounce"} inline-block`} />
                     {showAnimation &&
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full animate-ping" />}
                 </TabsTrigger>
-                {/* <TabsTrigger value="summary">Summary</TabsTrigger>
-                <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                <TabsTrigger value="summary" className={`${showAnimation && "relative"}`}>
+                    Summary
+                    <Sparkles className={`w-4 h-4 ml-2 text-yellow-500 ${showAnimation && "animate-bounce"} inline-block`} />
+                    {showAnimation &&
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full animate-ping" />}
+                </TabsTrigger>
+                {/* <TabsTrigger value="tasks">Tasks</TabsTrigger>
                 <TabsTrigger value="notes">Notes</TabsTrigger>
                 <TabsTrigger value="actions">Actions</TabsTrigger> */}
             </TabsList>
@@ -58,10 +63,10 @@ export const TranscriptionTabs = ({ job, currentTime, onTimeSelect, isPlaying }:
             <TabsContent value="refined">
                 <RefinedTranscriptView job={job} />
             </TabsContent>
-            {/* <TabsContent value="summary">
+            <TabsContent value="summary">
                 <SummaryView job={job} />
             </TabsContent>
-            <TabsContent value="tasks">
+            {/* <TabsContent value="tasks">
                 <TasksView job={job} />
             </TabsContent>
             <TabsContent value="notes">

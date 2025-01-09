@@ -12,6 +12,7 @@ export interface Job {
     audio_hash?: string;
     created_at: string;
     updated_at: string;
+    summary: string;
 }
 
 export interface AdminSettings {

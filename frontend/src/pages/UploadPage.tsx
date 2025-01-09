@@ -74,7 +74,7 @@ export const UploadPage = () => {
                     </Label>
                     <Input
                         type="file"
-                        accept="audio/mpeg, audio/wav, audio/ogg, audio/aac, audio/webm, audio/x-m4a, video/mp4, video/ogg, video/webm, video/x-matroska"
+                        accept="audio/mpeg, audio/wav, audio/ogg, audio/aac, audio/webm, audio/x-m4a, audio/amr, video/mp4, video/ogg, video/webm, video/x-matroska"
                         // capture="user"
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             setFile(e.target.files?.[0] || null)
