@@ -311,7 +311,14 @@ const refinementWorker = new Worker(
         console.log(`Starting refinement for job ${jobId}`);
 
         try {
-            const openaiConfig = (await pool.query('SELECT * FROM refinement_config')).rows[0] as RefinementConfig;
+            const openaiConfig = {
+                model_name: process.env.REFINEMENT_MODEL,
+                openai_api_key: process.env.OPENAI_API_KEY,
+                openai_api_url: process.env.OPENAI_API_URL,
+                fast_model_name: process.env.FAST_REFINEMENT_MODEL,
+            } as RefinementConfig;
+
+
 
             // Start refinement
             console.log(`Beginning text refinement for job ${jobId}`);
@@ -370,7 +377,7 @@ async function summarizeText(text: string): Promise<string> {
     const summaryPrompt = `
     <prompt>
       <task>
-        Provide a concise summary of the following text, focusing on the main points and key information. The summary should be no more than 100 words. Directly respond with the summary. Do not translate the text.
+        Provide a concise summary of the following text, focusing on the main points and key information. The summary should be no more than 100 words. Directly respond with the summary. Do not translate the text ever!!
       </task>
       <text>
         ${text}
@@ -499,6 +506,7 @@ async function generateSingleSummary(text: string, config: RefinementConfig): Pr
         - Be written in a professional, business-appropriate tone
         - Include any critical action items or next steps if present
         - Maintain the original context and intent of the discussion
+        - mantain the original language of the transcription, do not translate the text ever!!
       </task>
       <text>
         ${text}
@@ -530,6 +538,7 @@ async function generateIntermediateSummary(text: string, config: RefinementConfi
         - Key points and main ideas
         - Important details and context
         - Any decisions or action items
+        - mantain the original language of the transcription, do not translate the text ever!!
         Keep the summary to around 150 words while maintaining all crucial information.
       </task>
       <text>
