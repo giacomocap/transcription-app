@@ -118,7 +118,12 @@ const transcriptionWorker = new Worker(
         const { jobId, filePath, fileName, diarizationEnabled } = job.data;
 
         //get openai params from transcription_config
-        const openaiConfig = (await pool.query('SELECT * FROM transcription_config')).rows[0] as TranscriptionConfig;
+        const openaiConfig = {
+            model_name: process.env.AUDIO_MODEL,
+            openai_api_key: process.env.AUDIO_OPENAI_API_KEY,
+            openai_api_url: process.env.AUDIO_OPENAI_API_URL,
+            max_concurrent_jobs: process.env.MAX_CONCURRENT_JOBS || 3,
+        } as TranscriptionConfig;
         console.log('openaiConfig', openaiConfig);
         const apiModel = openaiConfig.model_name;
         const apiKey = openaiConfig.openai_api_key;
@@ -266,7 +271,7 @@ const diarizationWorker = new Worker(
 const refinementQueue = new Queue('refinementQueue', { connection: redisOptions });
 
 async function refineTranscription(segments: TranscriptionSegment[], config: RefinementConfig): Promise<string> {
-    const MAX_TOKENS_PER_CHUNK = 8000; // Adjust based on the model's output window and your testing
+    const MAX_TOKENS_PER_CHUNK = 4000; // Adjust based on the model's output window and your testing
     const openai = new OpenAI({
         apiKey: config.openai_api_key,
         baseURL: config.openai_api_url,
@@ -293,7 +298,7 @@ async function refineTranscription(segments: TranscriptionSegment[], config: Ref
 
         // Summarize the refined chunk for context in the next iteration, only if it's not the last chunk.
         if (i < chunks.length - 1) {
-            previousChunkSummary = await summarizeText(refinedChunk);
+            previousChunkSummary = await summarizeText(refinedChunk, config);
         }
 
         // Concatenate the refined chunk to the overall result 
@@ -317,8 +322,6 @@ const refinementWorker = new Worker(
                 openai_api_url: process.env.OPENAI_API_URL,
                 fast_model_name: process.env.FAST_REFINEMENT_MODEL,
             } as RefinementConfig;
-
-
 
             // Start refinement
             console.log(`Beginning text refinement for job ${jobId}`);
@@ -373,11 +376,11 @@ function chunkTranscription(segments: TranscriptionSegment[], maxTokens: number)
     return chunks;
 }
 
-async function summarizeText(text: string): Promise<string> {
+async function summarizeText(text: string, config: RefinementConfig): Promise<string> {
     const summaryPrompt = `
     <prompt>
       <task>
-        Provide a concise summary of the following text, focusing on the main points and key information. The summary should be no more than 100 words. Directly respond with the summary. Do not translate the text ever!!
+        Provide a concise summary of the following text, focusing on the main points and key information. The summary should be no more than 100 words. Directly respond with the summary. Mantain the original language, Do not translate the text ever!!
       </task>
       <text>
         ${text}
@@ -386,12 +389,12 @@ async function summarizeText(text: string): Promise<string> {
     `;
 
     const openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY1,
-        baseURL: process.env.OPENAI_API_URL1,
+        apiKey: config.openai_api_key,
+        baseURL: config.openai_api_url,
     });
 
     const response = await openai.chat.completions.create({
-        model: process.env.FAST_REFINEMENT_MODEL!,
+        model: config.fast_model_name,
         messages: [
             { role: 'user', content: summaryPrompt },
         ],
