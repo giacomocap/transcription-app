@@ -16,17 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import DeleteJobAlert from "@/components/DeleteJobAlert";
 
 export const JobDetailPage = () => {
   const [job, setJob] = useState<Job | null>(null);
@@ -148,29 +138,14 @@ export const JobDetailPage = () => {
                   diarizationEnabled={job.diarization_enabled}
                   diarizationStatus={job.diarization_status}
                 />
-                <AlertDialog>
-                  <AlertDialogTrigger>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                    >
-                      <Trash className="w-4 h-4 md:w-5 md:h-5" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Transcription</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this transcription? This action
-                        cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete}>Delete the transcription</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <DeleteJobAlert confirmAction={handleDelete}>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                  >
+                    <Trash className="w-4 h-4 md:w-5 md:h-5" />
+                  </Button>
+                </DeleteJobAlert>
               </div>
             </div>
           </CardHeader>

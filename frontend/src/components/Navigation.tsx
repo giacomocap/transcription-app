@@ -1,16 +1,20 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from './ui/dropdown-menu';
 import { MenuIcon } from 'lucide-react';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+} from './ui/drawer';
 
 export const Navigation = () => {
     const { user, isAuthenticated, logout, login } = useAuth();
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     return (
         <nav className="bg-white shadow">
@@ -59,6 +63,9 @@ export const Navigation = () => {
                                         />
                                     )}
                                     <span className="text-sm text-gray-700">{user?.display_name}</span>
+                                    <Button onClick={logout} variant="outline" size="sm">
+                                        Logout
+                                    </Button>
                                 </div>
                             ) : (
                                 <Button onClick={login}>Login</Button>
@@ -66,37 +73,43 @@ export const Navigation = () => {
                         </div>
                         {isAuthenticated && (
                             <div className="sm:hidden">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
+                                <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                                    <DrawerTrigger asChild>
                                         <Button variant="outline" size="icon">
                                             <MenuIcon className="h-6 w-6" />
                                         </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-56">
-                                        <DropdownMenuItem asChild>
+                                    </DrawerTrigger>
+                                    <DrawerContent>
+                                        <DrawerHeader>
+                                            <DrawerTitle>Menu</DrawerTitle>
+                                            <DrawerDescription>
+                                                Access the main features
+                                            </DrawerDescription>
+                                        </DrawerHeader>
+                                        <div className="flex flex-col space-y-4 p-4">
                                             <Link
                                                 to="/upload"
-                                                className="w-full"
+                                                className="hover:underline"
+                                                onClick={() => setIsDrawerOpen(false)}
                                             >
                                                 Upload
                                             </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem asChild>
                                             <Link
                                                 to="/jobs"
-                                                className="w-full"
+                                                className="hover:underline"
+                                                onClick={() => setIsDrawerOpen(false)}
                                             >
                                                 Transcriptions
                                             </Link>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={logout}
-                                            className="w-full"
-                                        >
-                                            Logout
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                            <Button onClick={() => {
+                                                logout();
+                                                setIsDrawerOpen(false);
+                                            }} variant="outline" size="sm">
+                                                Logout
+                                            </Button>
+                                        </div>
+                                    </DrawerContent>
+                                </Drawer>
                             </div>
                         )}
                         {!isAuthenticated && (

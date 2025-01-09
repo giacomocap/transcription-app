@@ -10,17 +10,8 @@ import {
 } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Trash } from "lucide-react";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import DeleteJobAlert from "@/components/DeleteJobAlert";
 
 export const JobsDashboard = () => {
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -78,9 +69,23 @@ export const JobsDashboard = () => {
                         <Card key={job.id} className="hover:shadow-md transition-shadow">
                             <CardHeader>
                                 <CardTitle className="flex items-center justify-between">
-                                    <Link to={`/jobs/${job.id}`} className="flex-1">
-                                        {job.file_name}
-                                    </Link>
+                                    <div className="flex-1">
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Link
+                                                        to={`/jobs/${job.id}`}
+                                                        className="flex-1"
+                                                    >
+                                                        {job.file_name}
+                                                    </Link>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>{job.file_name}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
                                     <div className="flex gap-1 items-center">
                                         <Badge
                                             variant="secondary"
@@ -95,32 +100,17 @@ export const JobsDashboard = () => {
                                         >
                                             {job.status}
                                         </Badge>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => {
-                                                        setJobToDelete(job.id);
-                                                    }}
-                                                >Delete
-                                                    <Trash className="w-4 h-4 md:w-5 md:h-5" />
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Delete Transcription</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Are you sure you want to delete this transcription? This action
-                                                        cannot be undone.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel onClick={() => setJobToDelete(null)}>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => jobToDelete && onDelete(jobToDelete)}>Delete the transcription</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <DeleteJobAlert cancelAction={() => setJobToDelete(null)} confirmAction={() => jobToDelete && onDelete(jobToDelete)}>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setJobToDelete(job.id);
+                                                }}
+                                            >Delete
+                                                <Trash className="w-4 h-4 md:w-5 md:h-5" />
+                                            </Button>
+                                        </DeleteJobAlert>
                                     </div>
                                 </CardTitle>
                                 <CardDescription>

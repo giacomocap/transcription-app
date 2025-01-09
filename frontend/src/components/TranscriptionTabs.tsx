@@ -35,9 +35,9 @@ export const TranscriptionTabs = ({ job, currentTime, onTimeSelect, isPlaying }:
     return (
         <Tabs defaultValue="transcript" className="w-full">
             <TabsList className="grid grid-cols-3 w-full">
-                <TabsTrigger value="transcript">Raw Transcript</TabsTrigger>
+                <TabsTrigger value="transcript">Transcript</TabsTrigger>
                 <TabsTrigger value="refined" className={`${showAnimation && "relative"}`}>
-                    Refined
+                    AI
                     <Sparkles className={`w-4 h-4 ml-2 text-yellow-500 ${showAnimation && "animate-bounce"} inline-block`} />
                     {showAnimation &&
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full animate-ping" />}
