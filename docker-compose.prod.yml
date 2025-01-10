@@ -39,19 +39,21 @@ services:
     depends_on:
       - backend
 
-  # diarization:
-  #   build:
-  #     context: ./diarization-service
-  #     dockerfile: Dockerfile
-  #   restart: unless-stopped
-  #   environment:
-  #     - PYTHONUNBUFFERED=1
-  #     - UPLOAD_DIR=/app/uploads
-  #   volumes:
-  #     - ./backend/uploads:/app/uploads
-  #   depends_on:
-  #     - db
-  #     - redis
+  diarization:
+    build:
+      context: ./diarization-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    environment:
+      - PYTHONUNBUFFERED=1
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - db
+      - redis
 
   worker:
     build:
