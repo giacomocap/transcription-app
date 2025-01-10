@@ -44,6 +44,7 @@ export const EditJobDialog = ({
   };
 
   const getUniqueSpeakers = (segments: Segment[] = []): string[] => {
+    if (!segments || segments.length === 0) return [];
     const uniqueSpeakers = new Set<string>();
     segments.forEach((segment) => {
       if (segment.speaker) {
@@ -53,13 +54,13 @@ export const EditJobDialog = ({
     return Array.from(uniqueSpeakers);
   };
 
-  const uniqueSpeakers = getUniqueSpeakers(editedJob.speaker_segments);
+  const [uniqueSpeakers] = useState(getUniqueSpeakers(editedJob.speaker_segments));
 
   const handleRenameSpeaker = useCallback((oldLabel: string, newLabel: string) => {
     setEditedJob(prev => {
       // Create a new speaker_profiles object with the updated speaker name
       const updatedProfiles = prev.speaker_profiles ? { ...prev.speaker_profiles } : {};
-      
+
       // Only update if the labels are different and old label exists
       if (oldLabel !== newLabel && prev.speaker_profiles?.[oldLabel]) {
         // Copy the stats from old label to new label
@@ -93,11 +94,11 @@ export const EditJobDialog = ({
         <div className="space-y-4 py-2 pb-4">
           <div className="space-y-2">
             <Label htmlFor="file-name">File Name</Label>
-              <Input
-                id="file-name"
-                value={editedJob.file_name}
-                onChange={(e) => setEditedJob(prev => ({ ...prev, file_name: e.target.value }))}
-              />
+            <Input
+              id="file-name"
+              value={editedJob.file_name}
+              onChange={(e) => setEditedJob(prev => ({ ...prev, file_name: e.target.value }))}
+            />
           </div>
           {editedJob.speaker_segments && editedJob.speaker_segments.length > 0 && (
             <div className="space-y-2">
