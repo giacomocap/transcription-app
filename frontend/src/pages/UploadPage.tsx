@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Info, Upload } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const UploadPage = () => {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [diarizationEnabled, setDiarizationEnabled] = useState(false);
 
     const handleUpload = async () => {
         if (!file) return;
@@ -18,6 +20,7 @@ export const UploadPage = () => {
         setUploadProgress(0);
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('diarization', diarizationEnabled.toString());
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/upload', true);
@@ -89,7 +92,7 @@ export const UploadPage = () => {
                             <span className="text-sm text-muted-foreground">Selected:</span>
                             <span className="text-sm">{file.name}</span>
                         </div>
-                        {/* <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2">
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input 
                                 type="checkbox" 
@@ -122,7 +125,7 @@ export const UploadPage = () => {
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                    </div> */}
+                    </div>
 
                         {uploading && <Progress value={uploadProgress} className="w-full" />}
                         <Button onClick={handleUpload} disabled={uploading} className="w-full">

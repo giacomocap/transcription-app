@@ -1,33 +1,32 @@
-import { useEffect, useState, useRef } from "react";
-import { Job } from "../types/index";
-import { useParams, useNavigate } from "react-router-dom";
-import { Play, Pause, RotateCcw, Trash } from "lucide-react";
-import { JobStatus } from "../components/JobStatus";
-import { TranscriptionTabs } from "../components/TranscriptionTabs";
-import { Button } from "../components/ui/button";
-import {
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import { Slider } from "../components/ui/slider";
+import { useEffect, useState, useRef } from 'react';
+import { Job } from '../types/index';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Play, Pause, RotateCcw, Trash, Edit } from 'lucide-react';
+import { JobStatus } from '../components/JobStatus';
+import { TranscriptionTabs } from '../components/TranscriptionTabs';
+import { Button } from '../components/ui/button';
+import { CardTitle } from '../components/ui/card';
+import { Slider } from '../components/ui/slider';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
-import DeleteJobAlert from "@/components/DeleteJobAlert";
+} from '../components/ui/dropdown-menu';
+import DeleteJobAlert from '@/components/DeleteJobAlert';
+import { EditJobDialog } from '@/components/EditJobDialog';
 
 export const JobDetailPage = () => {
   const [job, setJob] = useState<Job | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [duration, setDuration] = useState(0);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const [duration, setDuration] = useState(0)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -39,12 +38,15 @@ export const JobDetailPage = () => {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    // Don't poll while edit dialog is open
+    if (!isEditDialogOpen) {
+      const interval = setInterval(() => {
+        fetchJob();
+      }, 5000);
       fetchJob();
-    }, 5000);
-    fetchJob();
-    return () => clearInterval(interval);
-  }, []);
+      return () => clearInterval(interval);
+    }
+  }, [isEditDialogOpen]);
 
   const fetchJob = async () => {
     if (!id) return;
@@ -129,26 +131,77 @@ export const JobDetailPage = () => {
     <div className="px-6 max-w-4xl mx-auto space-y-4 md:space-y-6">
       {job && (
         <div className="space-y-4">
-          <CardHeader className="p-0">
-            <div className="flex items-center justify-between">
-              <CardTitle>{job.file_name}</CardTitle>
-              <div className="flex items-center gap-2 md:gap-4">
-                <JobStatus
-                  transcriptionStatus={job.status}
-                  diarizationEnabled={job.diarization_enabled}
-                  diarizationStatus={job.diarization_status}
-                />
-                <DeleteJobAlert confirmAction={handleDelete}>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                  >
-                    <Trash className="w-4 h-4 md:w-5 md:h-5" />
-                  </Button>
-                </DeleteJobAlert>
-              </div>
+          <div className="flex items-center justify-between">
+            <CardTitle>{job.file_name}</CardTitle>
+            <div className="flex items-center gap-2 md:gap-4">
+              <JobStatus
+                transcriptionStatus={job.status}
+                diarizationEnabled={job.diarization_enabled}
+                diarizationStatus={job.diarization_status}
+                diarizationProgress={job.diarization_progress}
+                isMobile
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsEditDialogOpen(true)}
+              >
+                <Edit className="w-4 h-4 md:w-5 md:h-5" />
+              </Button>
+              <DeleteJobAlert confirmAction={handleDelete}>
+                <Button variant="outline" size="icon">
+                  <Trash className="w-4 h-4 md:w-5 md:h-5" />
+                </Button>
+              </DeleteJobAlert>
+              <EditJobDialog
+                job={job}
+                isOpen={isEditDialogOpen}
+                onClose={() => setIsEditDialogOpen(false)}
+                onSave={async ({ file_name, speaker_profiles, speaker_segments }) => {
+                  try {
+                    const updatedFields = {
+                      ...(file_name !== job.file_name && { file_name }),
+                      ...(JSON.stringify(speaker_profiles) !== JSON.stringify(job.speaker_profiles) && { speaker_profiles }),
+                      ...(JSON.stringify(speaker_segments) !== JSON.stringify(job.speaker_segments) && { speaker_segments }),
+                    };
+                
+                    // Only send the request if there are updated fields
+                    if (Object.keys(updatedFields).length > 0) {
+                      // Update the job on the server
+                      const response = await fetch(`/api/jobs/${job.id}/update`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(updatedFields),
+                      });
+                      
+                      if (!response.ok) {
+                        throw new Error('Failed to update job');
+                      }
+                    }
+                
+                    // Update local state
+                    setJob(prevJob => {
+                      if (!prevJob) return null;
+                      return {
+                        ...prevJob,
+                        file_name: file_name ?? prevJob.file_name,
+                        speaker_profiles: speaker_profiles ?? prevJob.speaker_profiles,
+                        speaker_segments: speaker_segments ?? prevJob.speaker_segments,
+                      };
+                    });
+                    setIsEditDialogOpen(false);
+                    
+                    // Fetch fresh data
+                    fetchJob();
+                  } catch (error) {
+                    console.error('Error updating job:', error);
+                  }
+                }}
+              />
             </div>
-          </CardHeader>
+          </div>
 
           {job.file_url && (
             <div className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">

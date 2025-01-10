@@ -243,6 +243,94 @@ router.post('/jobs/:id/refine', isAuthenticated, isResourceOwner, async (req: Au
     }
 });
 
+/**
+ * @swagger
+ * /jobs/{id}/update:
+ *   patch:
+ *     summary: Update specific fields of a job
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The job ID
+ *       - in: body
+ *         name: body
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             file_name:
+ *               type: string
+ *             speaker_profiles:
+ *               type: array
+ *               items:
+ *                 type: object
+ *             speaker_segments:
+ *               type: array
+ *               items:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Successfully updated job
+ *       400:
+ *         description: Invalid request body
+ *       404:
+ *         description: Job not found
+ *       500:
+ *         description: Failed to update job
+ */
+router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res: Response) => {
+    const jobId = req.params.id;
+    const { file_name, speaker_profiles, speaker_segments } = req.body;
+
+    if (!file_name && !speaker_profiles && !speaker_segments) {
+        res.status(400).json({ error: 'Invalid request body' });
+        return;
+    }
+
+    try {
+        let updateQuery = 'UPDATE jobs SET ';
+        const updateParams = [];
+        let paramIndex = 1;
+
+        if (file_name) {
+            updateQuery += `file_name = $${paramIndex}, `;
+            updateParams.push(file_name);
+            paramIndex++;
+        }
+
+        if (speaker_profiles) {
+            updateQuery += `speaker_profiles = $${paramIndex}, `;
+            updateParams.push(JSON.stringify(speaker_profiles));
+            paramIndex++;
+        }
+
+        if (speaker_segments) {
+            updateQuery += `speaker_segments = $${paramIndex}, `;
+            updateParams.push(JSON.stringify(speaker_segments));
+            paramIndex++;
+        }
+
+        updateQuery = updateQuery.slice(0, -2); // Remove trailing comma and space
+        updateQuery += ` WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}`;
+        updateParams.push(jobId, req.user?.id);
+
+        const result = await pool.query(updateQuery, updateParams);
+
+        if (result.rowCount === 0) {
+            res.status(404).json({ error: 'Job not found' });
+            return;
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Failed to update job:', error);
+        res.status(500).json({ error: 'Failed to update job' });
+    }
+});
+
 router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: AuthenticatedRequest, res: Response) => {
     try {
         // Query to get total number of jobs

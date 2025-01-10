@@ -40,6 +40,13 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
+    //update table jobs add column diarization_progress and transcription_progress, speaker_segments
+    await client.query(`
+      ALTER TABLE jobs
+      ADD COLUMN IF NOT EXISTS diarization_progress FLOAT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS transcription_progress FLOAT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS speaker_segments JSONB;
+    `);
 
     // // Create speaker_segments table for diarization results
     // await client.query(`

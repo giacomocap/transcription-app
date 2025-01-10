@@ -100,16 +100,25 @@
         //     "justMyCode": true
         // },
         {
-            "name": "Python: Diarization Service",
+            "name": "Diarization Service",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/diarization-service/src/main.py",
-            "cwd": "${workspaceFolder}/diarization-service",
-            "python": "${workspaceFolder}/diarization-service/.venv/bin/python",
-            "console": "integratedTerminal",
+            "module": "uvicorn",
+            "args": [
+                "app.main:app",
+                "--reload",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000"
+            ],
+            "jinja": true,
             "justMyCode": true,
-            "preLaunchTask": "activate-venv"
-        },
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/diarization-service"
+            },
+            "cwd": "${workspaceFolder}/diarization-service"
+        }
         // {
         //     "name": "Python: Audio Enhancement Service",
         //     "type": "debugpy",
@@ -128,8 +137,8 @@
                 "Backend - Dev Server",
                 "Backend - Worker",
                 "Frontend - Dev Server",
-                "Frontend - Chrome Debug",
-                // "Python: Diarization Service",
+                // "Frontend - Chrome Debug",
+                "Diarization Service",
                 // "Python: Audio Enhancement Service"
             ]
         }

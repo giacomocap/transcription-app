@@ -43,12 +43,18 @@ async function pollDiarizationStatus(jobId: string, maxAttempts = 360): Promise<
         const status = await response.json();
 
         if (status.status === 'completed') {
-            return JSON.parse(status.result);
+            console.log('Diarization completed for job:', jobId);
+            return status.result;
         }
 
         if (status.status === 'failed') {
             throw new Error(`Diarization failed: ${status.error}`);
         }
+
+        await pool.query(
+            'UPDATE jobs SET diarization_progress = $1 WHERE id = $2',
+            [status.progress, jobId]
+        );
 
         // Wait for 10 seconds before next attempt
         await new Promise(resolve => setTimeout(resolve, 10000));
@@ -187,38 +193,38 @@ const transcriptionWorker = new Worker(
             });
 
             // If diarization is enabled, start it asynchronously
-            // if (diarizationEnabled) {
-            //     try {
-            //         // Start diarization
-            //         const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
-            //             method: 'POST',
-            //             headers: {
-            //                 'Content-Type': 'application/json',
-            //             },
-            //             body: JSON.stringify({
-            //                 job_id: jobId,
-            //                 file_path: enhancedAudioPath,
-            //             }),
-            //         });
+            if (diarizationEnabled) {
+                try {
+                    // Start diarization
+                    const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            job_id: jobId,
+                            file_path: enhancedAudioPath,
+                        }),
+                    });
 
-            //         if (!diarizeResponse.ok) {
-            //             throw new Error(`Failed to start diarization: ${diarizeResponse.statusText}`);
-            //         }
+                    if (!diarizeResponse.ok) {
+                        throw new Error(`Failed to start diarization: ${diarizeResponse.statusText}`);
+                    }
 
-            //         // Add diarization polling job to separate queue
-            //         await diarizationQueue.add('pollDiarization', {
-            //             jobId,
-            //             transcriptionSegments: transcription.segments,
-            //         });
+                    // Add diarization polling job to separate queue
+                    await diarizationQueue.add('pollDiarization', {
+                        jobId,
+                        transcriptionSegments: transcription.segments,
+                    });
 
-            //     } catch (error: any) {
-            //         console.error('Diarization error:', error);
-            //         await pool.query(
-            //             'UPDATE jobs SET diarization_status = $1 WHERE id = $3',
-            //             ['failed', jobId]
-            //         );
-            //     }
-            // }
+                } catch (error: any) {
+                    console.error('Diarization error:', error);
+                    await pool.query(
+                        'UPDATE jobs SET diarization_status = $1 WHERE id = $3',
+                        ['failed', jobId]
+                    );
+                }
+            }
 
             return { jobId, status: 'transcribed' };
 
@@ -247,12 +253,12 @@ const diarizationWorker = new Worker(
             await pool.query('UPDATE jobs SET diarization_status = $1 WHERE id = $2', ['running', jobId]);
 
             const diarizationResult = await pollDiarizationStatus(jobId);
-            const finalText = combineTranscriptionAndDiarization(transcriptionSegments, diarizationResult.segments);
+            // const finalText = combineTranscriptionAndDiarization(transcriptionSegments, diarizationResult.segments);
 
             // Update job with diarized result
             await pool.query(
-                'UPDATE jobs SET subtitle_content = $1, diarization_status = $2, speaker_profiles = $3 WHERE id = $4',
-                [finalText, 'completed', JSON.stringify(diarizationResult.speaker_profiles), jobId]
+                'UPDATE jobs SET diarization_status = $1, speaker_profiles = $2, speaker_segments = $3, diarization_progress = $4 WHERE id = $5',
+                ['completed', JSON.stringify(diarizationResult.speaker_profiles), JSON.stringify(diarizationResult.segments), 100, jobId]
             );
 
             return { jobId, status: 'completed' };
@@ -628,8 +634,6 @@ function timeToSeconds(timeString: string): number {
     return hours * 3600 + minutes * 60 + seconds;
 }
 
-
-
 // Convert segments to SRT format
 function segmentsToSRT(segments: TranscriptionSegment[]): string {
     return segments?.map((segment, index) => {
@@ -648,31 +652,6 @@ function formatSRTTime(seconds: number): string {
     const ms = date.getUTCMilliseconds();
 
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
-}
-
-function combineTranscriptionAndDiarization(transcriptSegments: TranscriptionSegment[], diarizationSegments: any[]): string {
-    let combinedSegments: any[] = [];
-    let diarizationIndex = 0;
-
-    transcriptSegments.forEach(transcriptSegment => {
-        while (diarizationIndex < diarizationSegments.length &&
-            diarizationSegments[diarizationIndex].end <= transcriptSegment.start) {
-            diarizationIndex++;
-        }
-
-        if (diarizationIndex < diarizationSegments.length &&
-            diarizationSegments[diarizationIndex].start < transcriptSegment.end) {
-            const speaker = diarizationSegments[diarizationIndex].speaker;
-            combinedSegments.push({
-                ...transcriptSegment,
-                text: `[${speaker}] ${transcriptSegment.text}`
-            });
-        } else {
-            combinedSegments.push(transcriptSegment);
-        }
-    });
-
-    return segmentsToSRT(combinedSegments);
 }
 
 async function isTranscriptionComplete(jobId: string): Promise<boolean> {

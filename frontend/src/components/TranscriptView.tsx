@@ -15,6 +15,13 @@ interface Segment {
     startTime: number;
     endTime: number;
     text: string;
+    speaker?: string;
+}
+
+interface SpeakerSegment {
+    start: number;
+    end: number;
+    speaker: string;
 }
 
 export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: TranscriptViewProps) => {
@@ -27,11 +34,39 @@ export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: Tr
 
     useEffect(() => {
         if (job?.subtitle_content) {
-            const parsedSegments = parseSRT(job.subtitle_content);
+            let parsedSegments = parseSRT(job.subtitle_content);
+
+            // If speaker segments exist, combine them with transcript segments
+            if (job.speaker_segments) {
+                parsedSegments = combineTranscriptAndSpeakers(parsedSegments, job.speaker_segments);
+            }
+
             setSegments(parsedSegments);
             segmentRefs.current = parsedSegments.map(() => null);
         }
-    }, [job?.subtitle_content]);
+    }, [job?.subtitle_content, job?.speaker_segments]);
+
+    const combineTranscriptAndSpeakers = (transcriptSegments: Segment[], speakerSegments: SpeakerSegment[]): Segment[] => {
+        let diarizationIndex = 0;
+
+        return transcriptSegments.map(segment => {
+            // Find the speaker segment that overlaps with this transcript segment
+            while (diarizationIndex < speakerSegments.length &&
+                speakerSegments[diarizationIndex].end <= segment.startTime) {
+                diarizationIndex++;
+            }
+
+            if (diarizationIndex < speakerSegments.length &&
+                speakerSegments[diarizationIndex].start <= segment.endTime) {
+                return {
+                    ...segment,
+                    speaker: speakerSegments[diarizationIndex].speaker
+                };
+            }
+
+            return segment;
+        });
+    };
 
     useEffect(() => {
         const activeIndex = segments.findIndex(
@@ -49,15 +84,15 @@ export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: Tr
     const scrollToCenter = (index: number) => {
         const container = containerRef.current;
         const segment = segmentRefs.current[index];
-        
+
         if (container && segment) {
             isAutoScrolling.current = true;
             const containerHeight = container.clientHeight;
             const segmentTop = segment.offsetTop;
             const segmentHeight = segment.clientHeight;
-            
+
             const targetScroll = segmentTop - (containerHeight / 2) + (segmentHeight / 2);
-            
+
             container.scrollTo({
                 top: targetScroll,
                 behavior: 'smooth'
@@ -97,9 +132,10 @@ export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: Tr
     };
 
     const getContentWithTimestamps = () => {
-        return segments.map(segment => 
-            `${formatTime(segment.startTime)} - ${formatTime(segment.endTime)}\n${segment.text}`
-        ).join('\n\n');
+        return segments.map(segment => {
+            const speakerPrefix = segment.speaker ? `[${segment.speaker}] ` : '';
+            return `${formatTime(segment.startTime)} - ${formatTime(segment.endTime)}\n${speakerPrefix}${segment.text}`;
+        }).join('\n\n');
     };
 
     return (
@@ -118,7 +154,7 @@ export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: Tr
             <CardContent>
                 {segments.length > 0 ? (
                     <div className="relative">
-                        <div 
+                        <div
                             ref={containerRef}
                             className="max-h-[500px] overflow-y-auto p-4"
                             onScroll={() => {
@@ -129,18 +165,35 @@ export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: Tr
                         >
                             <div className="text-gray-800 text-base leading-relaxed">
                                 {segments.map((segment, index) => (
-                                    <span
-                                        key={segment.index}
-                                        ref={el => segmentRefs.current[index] = el}
-                                        onClick={() => onTimeSelect(segment.startTime)}
-                                        className={`
-                                            inline cursor-pointer hover:bg-gray-50 rounded px-0.5
-                                            ${activeSegment === index ? 'bg-blue-100' : ''}
-                                        `}
-                                        title={`${formatTime(segment.startTime)} - ${formatTime(segment.endTime)}`}
-                                    >
-                                        {segment.text}{' '}
-                                    </span>
+                                    segment.speaker ? (
+                                        <div key={segment.index} className="mb-2">
+                                            <span
+                                                ref={el => segmentRefs.current[index] = el}
+                                                onClick={() => onTimeSelect(segment.startTime)}
+                                                className={`
+                                                    inline cursor-pointer hover:bg-gray-50 rounded px-0.5
+                                                    ${activeSegment === index ? 'bg-blue-100' : ''}
+                                                `}
+                                                title={`${formatTime(segment.startTime)} - ${formatTime(segment.endTime)}`}
+                                            >
+                                                <span className="font-semibold">[{segment.speaker}] </span>
+                                                {segment.text}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <span
+                                            key={segment.index}
+                                            ref={el => segmentRefs.current[index] = el}
+                                            onClick={() => onTimeSelect(segment.startTime)}
+                                            className={`
+                                                inline cursor-pointer hover:bg-gray-50 rounded px-0.5
+                                                ${activeSegment === index ? 'bg-blue-100' : ''}
+                                            `}
+                                            title={`${formatTime(segment.startTime)} - ${formatTime(segment.endTime)}`}
+                                        >
+                                            {segment.text}
+                                        </span>
+                                    )
                                 ))}
                             </div>
                         </div>
@@ -157,9 +210,7 @@ export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: Tr
                     </div>
                 ) : (
                     <div className="whitespace-pre-wrap font-mono text-sm bg-gray-50 p-4 rounded-lg">
-                        {job.transcript || (
-                            <p className="text-gray-500 italic">No transcript available yet.</p>
-                        )}
+                        <p className="text-gray-500 italic">No transcript available yet.</p>
                     </div>
                 )}
             </CardContent>
