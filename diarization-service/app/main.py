@@ -11,16 +11,18 @@ from .diarizer import Diarizer
 
 app = FastAPI(title="Diarization Service")
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+logger.info(f"Connecting to Redis at {settings.redis_host}:{settings.redis_port}")
+
 # Initialize Redis client
 redis_client = redis.Redis(
     host=settings.redis_host, 
     port=settings.redis_port, 
     decode_responses=True
 )
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Initialize diarizer
 diarizer = Diarizer(redis_client)

@@ -19,42 +19,62 @@ export const LoginPage = () => {
   }
 
   return (
-    <div className="flex items-center justify-center  bg-gray-50 px-4 sm:px-6 lg:px-8">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <CardTitle>Sign in to your account</CardTitle>
-          {/* <CardDescription>Enter your email and password below</CardDescription> */}
-        </CardHeader>
-        {/* <CardContent>
-          <form>
-            <div className="grid w-full items-center gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" placeholder="Email" />
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-4xl w-full space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Welcome Back to Claire!</h1>
+          <p className="mt-2 text-gray-600">
+            Sign in to access your account and continue your transcription projects
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8"><div className="space-y-6">
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>New to Claire.AI?</CardTitle>
+            </CardHeader>
+            <CardFooter className="flex flex-col space-y-4">
+              <div className="space-y-2">
+                <h3 className="font-medium">What can you do:</h3>
+                <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                  <li>AI-Enhanced Transcription</li>
+                  <li>Best in class speaker identification</li>
+                  <li>Chat with your meeting and with your lectures</li>
+                  <li>Receive personalized recommendations</li>
+                </ul>
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="Password" />
-              </div>
-            </div>
-          </form>
-        </CardContent> */}
-        <CardFooter className="flex flex-col">
-          {/* <Button className="w-full">Sign In</Button> */}
-          <Button
-            onClick={login}
-            variant="outline"
-            className="mt-2 w-full flex items-center justify-center"
-          >
-            <img
-              className="h-5 w-5 mr-2"
-              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-              alt="Google logo"
-            />
-            Sign in with Google
-          </Button>
-        </CardFooter>
-      </Card>
+              <Button
+                onClick={login}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Create New Account
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+          <div className="space-y-6">
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle>Sign in to your account</CardTitle>
+              </CardHeader>
+              <CardFooter className="flex flex-col">
+                <Button
+                  onClick={login}
+                  variant="outline"
+                  className="w-full flex items-center justify-center"
+                >
+                  <img
+                    className="h-5 w-5 mr-2"
+                    src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                    alt="Google logo"
+                  />
+                  Sign in with Google
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
