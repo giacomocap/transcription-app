@@ -233,39 +233,41 @@ export const JobDetailPage = () => {
                   <div className="text-sm text-gray-600 font-medium">
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </div>
-                  {isMobile ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          {playbackSpeed}x
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="center">
+                  <div className="flex justify-end flex-1">
+                    {isMobile ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            {playbackSpeed}x
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center">
+                          {[0.5, 1, 1.25, 1.5, 2].map((speed) => (
+                            <DropdownMenuItem
+                              key={speed}
+                              onSelect={() => handleSpeedChange(speed)}
+                            >
+                              {speed}x
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <div className="flex items-center space-x-2">
                         {[0.5, 1, 1.25, 1.5, 2].map((speed) => (
-                          <DropdownMenuItem
+                          <Button
                             key={speed}
-                            onSelect={() => handleSpeedChange(speed)}
+                            variant={playbackSpeed === speed ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => handleSpeedChange(speed)}
+                            className="text-xs"
                           >
                             {speed}x
-                          </DropdownMenuItem>
+                          </Button>
                         ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      {[0.5, 1, 1.25, 1.5, 2].map((speed) => (
-                        <Button
-                          key={speed}
-                          variant={playbackSpeed === speed ? "default" : "ghost"}
-                          size="sm"
-                          onClick={() => handleSpeedChange(speed)}
-                          className="text-xs"
-                        >
-                          {speed}x
-                        </Button>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Slider
                   value={[currentTime]}

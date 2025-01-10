@@ -185,15 +185,19 @@ const transcriptionWorker = new Worker(
                 ['transcribed', transcription.text, srtContent, jobId]
             );
 
-            // Enqueue refinement job
-            await refinementQueue.add('refine', {
-                jobId,
-                segments: transcription.segments,
-                fullText: transcription.text
-            });
-
-            // If diarization is enabled, start it asynchronously
-            if (diarizationEnabled) {
+            // Start refinement immediately if diarization is disabled
+            if (!diarizationEnabled) {
+                await refinementQueue.add('refine', {
+                    jobId,
+                    segments: transcription.segments,
+                    fullText: transcription.text
+                });
+            } else {
+                // Set needs_user_confirmation flag and wait for user confirmation
+                await pool.query(
+                    'UPDATE jobs SET refinement_pending = $1 WHERE id = $2',
+                    [true, jobId]
+                );
                 try {
                     // Start diarization
                     const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
@@ -255,9 +259,9 @@ const diarizationWorker = new Worker(
             const diarizationResult = await pollDiarizationStatus(jobId);
             // const finalText = combineTranscriptionAndDiarization(transcriptionSegments, diarizationResult.segments);
 
-            // Update job with diarized result
+            // Update job with diarized result and set needs_user_confirmation flag
             await pool.query(
-                'UPDATE jobs SET diarization_status = $1, speaker_profiles = $2, speaker_segments = $3, diarization_progress = $4 WHERE id = $5',
+                'UPDATE jobs SET diarization_status = $1, speaker_profiles = $2, speaker_segments = $3, diarization_progress = $4, needs_user_confirmation = true WHERE id = $5',
                 ['completed', JSON.stringify(diarizationResult.speaker_profiles), JSON.stringify(diarizationResult.segments), 100, jobId]
             );
 

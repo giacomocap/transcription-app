@@ -45,7 +45,8 @@ async function initializeDatabase() {
       ALTER TABLE jobs
       ADD COLUMN IF NOT EXISTS diarization_progress FLOAT DEFAULT 0,
       ADD COLUMN IF NOT EXISTS transcription_progress FLOAT DEFAULT 0,
-      ADD COLUMN IF NOT EXISTS speaker_segments JSONB;
+      ADD COLUMN IF NOT EXISTS speaker_segments JSONB,
+      ADD COLUMN IF NOT EXISTS refinement_pending BOOLEAN DEFAULT FALSE
     `);
 
     // // Create speaker_segments table for diarization results

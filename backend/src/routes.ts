@@ -291,6 +291,21 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
     }
 
     try {
+        // First check if refinement is pending
+        const jobResult = await pool.query(
+            'SELECT refinement_pending, transcript, speaker_segments, subtitle_content FROM jobs WHERE id = $1 AND user_id = $2',
+            [jobId, req.user?.id]
+        );
+
+        if (jobResult.rowCount === 0) {
+            res.status(404).json({ error: 'Job not found' });
+            return;
+        }
+
+        const job = jobResult.rows[0];
+        const refinementPending = job.refinement_pending;
+
+        // Update job fields
         let updateQuery = 'UPDATE jobs SET ';
         const updateParams = [];
         let paramIndex = 1;
@@ -313,15 +328,70 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
             paramIndex++;
         }
 
+        // Always set refinement_pending to false after save
+        updateQuery += `refinement_pending = false, `;
+
         updateQuery = updateQuery.slice(0, -2); // Remove trailing comma and space
         updateQuery += ` WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1}`;
         updateParams.push(jobId, req.user?.id);
 
-        const result = await pool.query(updateQuery, updateParams);
+        await pool.query(updateQuery, updateParams);
 
-        if (result.rowCount === 0) {
-            res.status(404).json({ error: 'Job not found' });
-            return;
+        // If this was the first save after diarization (refinement was pending), start refinement
+        if (refinementPending) {
+            const refinementQueue = new Queue('refinementQueue', { connection: redisOptions });
+            
+            // Combine transcript segments with speaker segments
+            const combineTranscriptAndSpeakers = (transcriptSegments: any[], speakerSegments: any[]): any[] => {
+                let diarizationIndex = 0;
+                return transcriptSegments.map(segment => {
+                    while (diarizationIndex < speakerSegments.length &&
+                        speakerSegments[diarizationIndex].end <= segment.start) {
+                        diarizationIndex++;
+                    }
+
+                    if (diarizationIndex < speakerSegments.length &&
+                        speakerSegments[diarizationIndex].start <= segment.end) {
+                        return {
+                            ...segment,
+                            text: `[${speakerSegments[diarizationIndex].speaker}]: ${segment.text}`
+                        };
+                    }
+                    return segment;
+                });
+            };
+
+            // Parse SRT content to get transcript segments
+            const parseSRT = (srtContent: string): any[] => {
+                const segments: any[] = [];
+                const blocks = srtContent.trim().split('\n\n');
+                blocks.forEach(block => {
+                    const lines = block.split('\n');
+                    if (lines.length >= 3) {
+                        const index = parseInt(lines[0]);
+                        const [startTime, endTime] = lines[1].split(' --> ').map(timeStr => {
+                            const [h, m, s] = timeStr.split(':');
+                            const [seconds, ms] = s.split(',');
+                            return parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(seconds) + parseInt(ms) / 1000;
+                        });
+                        const text = lines.slice(2).join('\n');
+                        segments.push({ index, start: startTime, end: endTime, text });
+                    }
+                });
+                return segments;
+            };
+
+            const transcriptSegments = parseSRT(job.subtitle_content || '');
+            const speakerSegments = speaker_segments || job.speaker_segments || [];
+            
+            // Combine segments and add speaker labels
+            const combinedSegments = combineTranscriptAndSpeakers(transcriptSegments, speakerSegments);
+
+            await refinementQueue.add('refine', {
+                jobId,
+                segments: combinedSegments,
+                fullText: job.transcript
+            });
         }
 
         res.json({ success: true });
