@@ -18,7 +18,7 @@ const redisOptions = {
 };
 const DIARIZATION_URL = process.env.NODE_ENV === 'development'
     ? 'http://localhost:8000'
-    : 'http://diarization:8001';
+    : 'http://diarization:8000';
 const ENHANCEMENT_SERVICE_URL = 'http://audio-enhancement:3003';
 
 interface EnhancementJob {
