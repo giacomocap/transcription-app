@@ -31,7 +31,16 @@ export const SummaryView = ({ job }: SummaryViewProps) => {
             </CardHeader>
             <CardContent>
                 <div className="max-h-[500px] overflow-y-auto p-4">
-                    {job.summary ? (
+                    {job.diarization_enabled && job.diarization_status !== 'completed' ? (
+                        <div className="text-gray-500 italic space-y-2">
+                            <p>AI summary will be available after speaker identification is complete.</p>
+                            <p>Current status: {job.diarization_status === 'running' ? 'Identifying speakers...' : 'Waiting to process...'}</p>
+                        </div>
+                    ) : job.diarization_enabled && job.refinement_pending ? (
+                        <div className="text-gray-500 italic">
+                            <p>Please review and confirm speaker names to begin AI processing.</p>
+                        </div>
+                    ) : job.summary ? (
                         <div className="text-gray-800 text-base leading-relaxed">
                             {job.summary.split('\n\n').map((paragraph, index) => (
                                 <div key={index} className="mb-4">

@@ -4,14 +4,23 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "./ui/label";
 import { SpeakerLabelEditor } from "./SpeakerLabelEditor";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface EditJobDialogProps {
   job: Job;
@@ -20,12 +29,87 @@ interface EditJobDialogProps {
   onSave: (updatedJob: Partial<Job>) => void;
 }
 
+const DialogFormContent = ({ 
+  job,
+  editedJob,
+  setEditedJob,
+  uniqueSpeakers,
+  handleRenameSpeaker,
+  onClose,
+  handleSave,
+  className = ""
+}: {
+  job: Job;
+  editedJob: Job;
+  setEditedJob: (fn: (prev: Job) => Job) => void;
+  uniqueSpeakers: string[];
+  handleRenameSpeaker: (oldLabel: string, newLabel: string) => void;
+  onClose: () => void;
+  handleSave: () => void;
+  className?: string;
+}) => (
+  <div className={`space-y-4 ${className}`}>
+    <div className="space-y-2">
+      <Label htmlFor="file-name">File Name</Label>
+      <Input
+        id="file-name"
+        value={editedJob.file_name}
+        onChange={(e) => setEditedJob(prev => ({ ...prev, file_name: e.target.value }))}
+      />
+    </div>
+    {editedJob.speaker_segments && editedJob.speaker_segments.length > 0 && (
+      <div className="space-y-2">
+        <Label>Speaker Labels</Label>
+        <p className="text-sm text-muted-foreground">
+          Edit the speaker label to rename this speaker across all segments.
+          Click Save to apply your changes.
+        </p>
+        {uniqueSpeakers.map((speakerLabel) => (
+          <SpeakerLabelEditor
+            key={speakerLabel}
+            speakerLabel={speakerLabel}
+            segments={editedJob.speaker_segments!.filter(
+              (segment) => segment.speaker === speakerLabel
+            )}
+            audioUrl={job.file_url || ""}
+            onRename={(newLabel) =>
+              handleRenameSpeaker(speakerLabel, newLabel)
+            }
+          />
+        ))}
+      </div>
+    )}
+    {job.diarization_enabled &&
+      job.diarization_status === 'completed' &&
+      job.refinement_pending && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+          <p className="text-sm text-blue-700">
+            After saving, Claire AI will begin enhancing your transcription with:
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>Improved punctuation and formatting</li>
+              <li>Enhanced readability</li>
+              <li>Smart paragraph breaks</li>
+              <li>Context-aware speaker attribution</li>
+            </ul>
+          </p>
+        </div>
+      )}
+    <div className="flex justify-end gap-4 pt-4">
+      <Button variant="outline" onClick={onClose}>
+        Cancel
+      </Button>
+      <Button onClick={handleSave}>Save</Button>
+    </div>
+  </div>
+);
+
 export const EditJobDialog = ({
   job,
   isOpen,
   onClose,
   onSave,
 }: EditJobDialogProps) => {
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [editedJob, setEditedJob] = useState<Job>(job);
 
   useEffect(() => {
@@ -82,54 +166,61 @@ export const EditJobDialog = ({
     });
   }, []);
 
+  const title = job.diarization_enabled &&
+    job.diarization_status === 'completed' &&
+    job.refinement_pending ? "Confirm Speaker Names" : "Edit";
+
+  const description = job.diarization_enabled &&
+    job.diarization_status === 'completed' &&
+    job.refinement_pending
+    ? "Please review and confirm the speaker names before AI enhancement begins. Once confirmed, Claire AI will start enhancing your transcription"
+    : "Update the transcription's details";
+
+  if (isDesktop) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
+          <DialogFormContent
+            job={job}
+            editedJob={editedJob}
+            setEditedJob={setEditedJob}
+            uniqueSpeakers={uniqueSpeakers}
+            handleRenameSpeaker={handleRenameSpeaker}
+            onClose={onClose}
+            handleSave={handleSave}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Job</DialogTitle>
-          <DialogDescription>
-            Update the job's filename and speaker names.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2 pb-4">
-          <div className="space-y-2">
-            <Label htmlFor="file-name">File Name</Label>
-            <Input
-              id="file-name"
-              value={editedJob.file_name}
-              onChange={(e) => setEditedJob(prev => ({ ...prev, file_name: e.target.value }))}
-            />
-          </div>
-          {editedJob.speaker_segments && editedJob.speaker_segments.length > 0 && (
-            <div className="space-y-2">
-              <Label>Speaker Labels</Label>
-              <p className="text-sm text-muted-foreground">
-                Edit the speaker label to rename this speaker across all segments.
-                Click Save to apply your changes.
-              </p>
-              {uniqueSpeakers.map((speakerLabel) => (
-                <SpeakerLabelEditor
-                  key={speakerLabel}
-                  speakerLabel={speakerLabel}
-                  segments={editedJob.speaker_segments!.filter(
-                    (segment) => segment.speaker === speakerLabel
-                  )}
-                  audioUrl={job.file_url || ""}
-                  onRename={(newLabel) =>
-                    handleRenameSpeaker(speakerLabel, newLabel)
-                  }
-                />
-              ))}
-            </div>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <Drawer open={isOpen} onOpenChange={onClose}>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>{title}</DrawerTitle>
+          <DrawerDescription>{description}</DrawerDescription>
+        </DrawerHeader>
+        <DialogFormContent
+          job={job}
+          editedJob={editedJob}
+          setEditedJob={setEditedJob}
+          uniqueSpeakers={uniqueSpeakers}
+          handleRenameSpeaker={handleRenameSpeaker}
+          onClose={onClose}
+          handleSave={handleSave}
+          className="px-4"
+        />
+        <DrawerFooter className="pt-2">
+          <DrawerClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 };

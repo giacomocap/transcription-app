@@ -27,6 +27,7 @@ export const JobDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [hasDialogBeenShown, setHasDialogBeenShown] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -47,6 +48,19 @@ export const JobDetailPage = () => {
       return () => clearInterval(interval);
     }
   }, [isEditDialogOpen]);
+
+  // Auto-open edit dialog only on first load when diarization is complete and refinement is pending
+  useEffect(() => {
+    if (job && 
+        job.diarization_enabled && 
+        job.diarization_status === 'completed' && 
+        job.refinement_pending && 
+        !isEditDialogOpen && 
+        !hasDialogBeenShown) {
+      setIsEditDialogOpen(true);
+      setHasDialogBeenShown(true);
+    }
+  }, [job, isEditDialogOpen, hasDialogBeenShown]);
 
   const fetchJob = async () => {
     if (!id) return;

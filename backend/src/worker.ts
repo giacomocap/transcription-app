@@ -261,7 +261,7 @@ const diarizationWorker = new Worker(
 
             // Update job with diarized result and set needs_user_confirmation flag
             await pool.query(
-                'UPDATE jobs SET diarization_status = $1, speaker_profiles = $2, speaker_segments = $3, diarization_progress = $4, needs_user_confirmation = true WHERE id = $5',
+                'UPDATE jobs SET diarization_status = $1, speaker_profiles = $2, speaker_segments = $3, diarization_progress = $4, refinement_pending = true WHERE id = $5',
                 ['completed', JSON.stringify(diarizationResult.speaker_profiles), JSON.stringify(diarizationResult.segments), 100, jobId]
             );
 

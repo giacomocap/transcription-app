@@ -13,7 +13,7 @@ import {
 } from './ui/drawer';
 
 export const Navigation = () => {
-    const { user, isAuthenticated, logout, login } = useAuth();
+    const { user, isAuthenticated, logout } = useAuth();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     return (
@@ -68,7 +68,9 @@ export const Navigation = () => {
                                     </Button>
                                 </div>
                             ) : (
-                                <Button onClick={login}>Login</Button>
+                                <Button asChild >
+                                    <Link to="/login">Login</Link>
+                                </Button>
                             )}
                         </div>
                         {isAuthenticated && (
@@ -114,7 +116,9 @@ export const Navigation = () => {
                         )}
                         {!isAuthenticated && (
                             <div className="sm:hidden">
-                                <Button onClick={login}>Login</Button>
+                                <Button asChild>
+                                    <Link to="/login">Login</Link>
+                                </Button>
                             </div>
                         )}
                     </div>
