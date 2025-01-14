@@ -69,7 +69,6 @@ export const JobDetailPage = () => {
 
   const fetchJob = async () => {
     if (!id) return;
-    debugger
     const response = await fetch(`/api/jobs/${id}${isPublicAccess ? '?token=' + searchParams.get('token') : ''}`);
     const data = await response.json();
     setJob(data);

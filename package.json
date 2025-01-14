@@ -5,5 +5,8 @@
     "dev": "echo 'No dev script'"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "wait-on": "^8.0.2"
+  }
 }

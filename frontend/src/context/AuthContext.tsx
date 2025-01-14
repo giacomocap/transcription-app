@@ -21,7 +21,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const checkAuthStatus = async () => {
         try {
-            debugger
             const response = await fetch('/api/auth/user', {
                 credentials: 'include'
             });
