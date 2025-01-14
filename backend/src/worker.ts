@@ -514,6 +514,7 @@ async function generateSingleSummary(text: string, config: RefinementConfig): Pr
         - Highlight the most important points, key decisions, and main conclusions
         - Be written in a professional, business-appropriate tone
         - Include any critical action items or next steps if present
+        - If speaker profiles are available, include attributions where appropriate
         - Maintain the original context and intent of the discussion
         - mantain the original language of the transcription, do not translate the text ever!!
       </task>
@@ -547,6 +548,7 @@ async function generateIntermediateSummary(text: string, config: RefinementConfi
         - Key points and main ideas
         - Important details and context
         - Any decisions or action items
+        - If speaker profiles are available, include attributions where appropriate
         - mantain the original language of the transcription, do not translate the text ever!!
         Keep the summary to around 150 words while maintaining all crucial information.
       </task>

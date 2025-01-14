@@ -12,6 +12,9 @@ COPY backend/package*.json ./
 RUN npm install
 RUN npm install -g typescript ts-node nodemon
 
+# Generate Prisma Client
+RUN npx prisma generate
+
 # Copy the rest of the backend code
 COPY backend/ ./
 
@@ -21,8 +24,14 @@ RUN npm run build
 # Make sure the build succeeded
 RUN test -f dist/index.js && test -f dist/worker.js
 
+# Copy entrypoint script
+COPY backend/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose the port
 EXPOSE 5001
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # The command will be overridden by docker-compose
 CMD ["npm", "start"]

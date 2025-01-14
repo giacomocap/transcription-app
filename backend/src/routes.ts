@@ -6,9 +6,10 @@ import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import { refineTranscription } from './refinement';
 import path from 'path';
-import { isAuthenticated, isResourceOwner, configureAuthRoutes, checkAdmin } from './auth';
+import { isAuthenticated, isResourceOwner, configureAuthRoutes, checkAdmin, hasJobAccess } from './auth';
 import { AuthenticatedRequest } from './types/auth';
 import fs from 'fs/promises';
+import { generateURLSafeToken } from './helper/helper';
 
 dotenv.config();
 
@@ -16,6 +17,69 @@ const router = Router();
 
 // Configure auth routes
 configureAuthRoutes(router);
+
+// Share management endpoints
+router.post('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
+    const jobId = req.params.id;
+    const userId = req.user?.id;
+    const { type, email } = req.body;
+    const token = generateURLSafeToken();
+
+    try {
+        // Create share record
+        const share = await prisma.job_shares.create({
+            data: {
+                id: uuidv4(),
+                job_id: jobId,
+                type,
+                email,
+                token,
+                created_by: userId!,
+                status: 'pending'
+            }
+        });
+
+        res.json(share);
+    } catch (error) {
+        console.error('Error creating share:', error);
+        res.status(500).json({ error: 'Failed to create share' });
+    }
+});
+
+router.get('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
+    const jobId = req.params.id;
+    const userId = req.user?.id;
+
+    try {
+
+        // Get all shares for this job
+        const shares = await prisma.job_shares.findMany({
+            where: { job_id: jobId }
+        });
+
+        res.json(shares);
+    } catch (error) {
+        console.error('Error fetching shares:', error);
+        res.status(500).json({ error: 'Failed to fetch shares' });
+    }
+});
+
+router.delete('/jobs/:id/shares/:shareId', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
+    const { id: jobId, shareId } = req.params;
+    const userId = req.user?.id;
+
+    try {
+        // Delete the share
+        await prisma.job_shares.delete({
+            where: { id: shareId, job_id: jobId }
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting share:', error);
+        res.status(500).json({ error: 'Failed to delete share' });
+    }
+});
 
 const storage = multer.diskStorage({
     destination: 'uploads/',
@@ -241,15 +305,51 @@ router.post('/config/transcription', isAuthenticated, checkAdmin, async (req, re
  *       200:
  *         description: Successfully retrieved job
  */
-router.get('/jobs/:id', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res: Response) => {
+// Validate share token
+router.get('/jobs/:id/validate-token', async (req: AuthenticatedRequest, res: Response) => {
+    const jobId = req.params.id;
+    const token = req.query.token as string;
+
+    if (!token) {
+        res.status(400).json({ error: 'Token is required' });
+        return;
+    }
+
+    try {
+        const job = await prisma.jobs.findUnique({
+            where: { id: jobId },
+            include: { shares: true }
+        });
+
+        if (!job) {
+            res.status(404).json({ error: 'Job not found' });
+            return
+        }
+
+        const publicShare = job.shares.find(share =>
+            share.type === 'public' &&
+            share.token === token
+        );
+
+        if (publicShare) {
+            res.json({ valid: true });
+            return;
+        }
+
+        res.status(403).json({ error: 'Invalid token' });
+    } catch (error) {
+        console.error('Error validating token:', error);
+        res.status(500).json({ error: 'Failed to validate token' });
+    }
+});
+
+router.get('/jobs/:id', hasJobAccess, async (req: AuthenticatedRequest, res: Response) => {
     const jobId = req.params.id;
 
     try {
         const job = await prisma.jobs.findUnique({
-            where: {
-                id: jobId,
-                user_id: req.user?.id
-            }
+            where: { id: jobId },
+            include: { shares: true }
         });
 
         if (!job) {

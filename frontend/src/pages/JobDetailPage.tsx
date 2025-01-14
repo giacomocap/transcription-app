@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Job } from '../types/index';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Play, Pause, RotateCcw, Trash, Edit } from 'lucide-react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { Play, Pause, RotateCcw, Trash, Edit, Share } from 'lucide-react';
 import { JobStatus } from '../components/JobStatus';
 import { TranscriptionTabs } from '../components/TranscriptionTabs';
 import { Button } from '../components/ui/button';
@@ -15,27 +15,32 @@ import {
 } from '../components/ui/dropdown-menu';
 import DeleteJobAlert from '@/components/DeleteJobAlert';
 import { EditJobDialog } from '@/components/EditJobDialog';
+import { ShareModal } from '../components/ShareModal';
+import { Badge } from '../components/ui/badge';
 
 export const JobDetailPage = () => {
   const [job, setJob] = useState<Job | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [duration, setDuration] = useState(0)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const { id } = useParams()
-  const navigate = useNavigate()
+  const [duration, setDuration] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [hasDialogBeenShown, setHasDialogBeenShown] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const isPublicAccess = searchParams.has('token');
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -51,12 +56,12 @@ export const JobDetailPage = () => {
 
   // Auto-open edit dialog only on first load when diarization is complete and refinement is pending
   useEffect(() => {
-    if (job && 
-        job.diarization_enabled && 
-        job.diarization_status === 'completed' && 
-        job.refinement_pending && 
-        !isEditDialogOpen && 
-        !hasDialogBeenShown) {
+    if (job &&
+      job.diarization_enabled &&
+      job.diarization_status === 'completed' &&
+      job.refinement_pending &&
+      !isEditDialogOpen &&
+      !hasDialogBeenShown) {
       setIsEditDialogOpen(true);
       setHasDialogBeenShown(true);
     }
@@ -64,8 +69,8 @@ export const JobDetailPage = () => {
 
   const fetchJob = async () => {
     if (!id) return;
-
-    const response = await fetch(`/api/jobs/${id}`);
+    debugger
+    const response = await fetch(`/api/jobs/${id}${isPublicAccess ? '?token=' + searchParams.get('token') : ''}`);
     const data = await response.json();
     setJob(data);
   };
@@ -120,102 +125,122 @@ export const JobDetailPage = () => {
 
     try {
       const response = await fetch(`/api/jobs/${job.id}`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
 
       if (response.ok) {
-        navigate("/jobs", { replace: true });
+        navigate('/jobs', { replace: true });
       } else {
-        console.error("Failed to delete job");
+        console.error('Failed to delete job');
       }
     } catch (error) {
-      console.error("Error deleting job:", error);
+      console.error('Error deleting job:', error);
     }
   };
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-    return `${minutes.toString().padStart(2, "0")}:${seconds
+    return `${minutes.toString().padStart(2, '0')}:${seconds
       .toString()
-      .padStart(2, "0")}`;
+      .padStart(2, '0')}`;
   };
 
   return (
     <div className="px-6 max-w-4xl mx-auto space-y-4 md:space-y-6">
       {job && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <CardTitle>{job.file_name}</CardTitle>
-            <div className="flex items-center gap-2 md:gap-4">
-              <JobStatus
-                transcriptionStatus={job.status}
-                diarizationEnabled={job.diarization_enabled}
-                diarizationStatus={job.diarization_status}
-                diarizationProgress={job.diarization_progress}
-                isMobile
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsEditDialogOpen(true)}
-              >
-                <Edit className="w-4 h-4 md:w-5 md:h-5" />
-              </Button>
-              <DeleteJobAlert confirmAction={handleDelete}>
-                <Button variant="outline" size="icon">
-                  <Trash className="w-4 h-4 md:w-5 md:h-5" />
-                </Button>
-              </DeleteJobAlert>
-              <EditJobDialog
-                job={job}
-                isOpen={isEditDialogOpen}
-                onClose={() => setIsEditDialogOpen(false)}
-                onSave={async ({ file_name, speaker_profiles, speaker_segments }) => {
-                  try {
-                    const updatedFields = {
-                      ...(file_name !== job.file_name && { file_name }),
-                      ...(JSON.stringify(speaker_profiles) !== JSON.stringify(job.speaker_profiles) && { speaker_profiles }),
-                      ...(JSON.stringify(speaker_segments) !== JSON.stringify(job.speaker_segments) && { speaker_segments }),
-                    };
-                
-                    // Only send the request if there are updated fields
-                    if (Object.keys(updatedFields).length > 0) {
-                      // Update the job on the server
-                      const response = await fetch(`/api/jobs/${job.id}/update`, {
-                        method: 'PATCH',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(updatedFields),
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error('Failed to update job');
-                      }
-                    }
-                
-                    // Update local state
-                    setJob(prevJob => {
-                      if (!prevJob) return null;
-                      return {
-                        ...prevJob,
-                        file_name: file_name ?? prevJob.file_name,
-                        speaker_profiles: speaker_profiles ?? prevJob.speaker_profiles,
-                        speaker_segments: speaker_segments ?? prevJob.speaker_segments,
-                      };
-                    });
-                    setIsEditDialogOpen(false);
-                    
-                    // Fetch fresh data
-                    fetchJob();
-                  } catch (error) {
-                    console.error('Error updating job:', error);
-                  }
-                }}
-              />
+          {isPublicAccess ? (
+            <div className="flex items-center justify-between border-b pb-4 mb-4">
+              <div>
+                <CardTitle className="mb-2">{job.file_name}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">Shared</Badge>
+                  <JobStatus
+                    transcriptionStatus={job.status}
+                    diarizationEnabled={job.diarization_enabled}
+                    diarizationStatus={job.diarization_status}
+                    diarizationProgress={job.diarization_progress}
+                    isMobile
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <CardTitle>{job.file_name}</CardTitle>
+              <div className="flex items-center gap-2 md:gap-4">
+                <JobStatus
+                  transcriptionStatus={job.status}
+                  diarizationEnabled={job.diarization_enabled}
+                  diarizationStatus={job.diarization_status}
+                  diarizationProgress={job.diarization_progress}
+                  isMobile
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsEditDialogOpen(true)}
+                >
+                  <Edit className="w-4 h-4 md:w-5 md:h-5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsShareModalOpen(true)}
+                >
+                  <Share className="w-4 h-4 md:w-5 md:h-5" />
+                </Button>
+                <DeleteJobAlert confirmAction={handleDelete}>
+                  <Button variant="outline" size="icon">
+                    <Trash className="w-4 h-4 md:w-5 md:h-5" />
+                  </Button>
+                </DeleteJobAlert>
+                <EditJobDialog
+                  job={job}
+                  isOpen={isEditDialogOpen}
+                  onClose={() => setIsEditDialogOpen(false)}
+                  onSave={async ({ file_name, speaker_profiles, speaker_segments }) => {
+                    try {
+                      const updatedFields = {
+                        ...(file_name !== job.file_name && { file_name }),
+                        ...(JSON.stringify(speaker_profiles) !== JSON.stringify(job.speaker_profiles) && { speaker_profiles }),
+                        ...(JSON.stringify(speaker_segments) !== JSON.stringify(job.speaker_segments) && { speaker_segments }),
+                      };
+
+                      if (Object.keys(updatedFields).length > 0) {
+                        const response = await fetch(`/api/jobs/${job.id}/update`, {
+                          method: 'PATCH',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify(updatedFields),
+                        });
+
+                        if (!response.ok) {
+                          throw new Error('Failed to update job');
+                        }
+                      }
+
+                      setJob(prevJob => {
+                        if (!prevJob) return null;
+                        return {
+                          ...prevJob,
+                          file_name: file_name ?? prevJob.file_name,
+                          speaker_profiles: speaker_profiles ?? prevJob.speaker_profiles,
+                          speaker_segments: speaker_segments ?? prevJob.speaker_segments,
+                        };
+                      });
+                      setIsEditDialogOpen(false);
+                      fetchJob();
+                    } catch (error) {
+                      console.error('Error updating job:', error);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           {job.file_url && (
             <div className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
@@ -271,7 +296,7 @@ export const JobDetailPage = () => {
                         {[0.5, 1, 1.25, 1.5, 2].map((speed) => (
                           <Button
                             key={speed}
-                            variant={playbackSpeed === speed ? "default" : "ghost"}
+                            variant={playbackSpeed === speed ? 'default' : 'ghost'}
                             size="sm"
                             onClick={() => handleSpeedChange(speed)}
                             className="text-xs"
@@ -310,6 +335,12 @@ export const JobDetailPage = () => {
               }
             }}
             isPlaying={isPlaying}
+          />
+
+          <ShareModal
+            jobId={job.id}
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
           />
         </div>
       )}

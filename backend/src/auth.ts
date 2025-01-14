@@ -126,6 +126,62 @@ export const isResourceOwner = (
     checkOwnership();
 };
 
+
+
+// Middleware to check if user has access to job (owner or shared)
+export const hasJobAccess = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const checkJobAccess = async () => {
+        const jobId = req.params.id;
+        const userId = req.user?.id;
+        const token = req.query.token as string | undefined;
+
+        try {
+            const job = await prisma.jobs.findUnique({
+                where: { id: jobId },
+                include: { shares: true }
+            });
+
+            if (!job) {
+                return res.status(404).json({ error: 'Job not found' });
+            }
+
+            // Allow access if user is owner
+            if (job.user_id === userId) {
+                return next();
+            }
+
+            // Check for valid public share token
+            if (token) {
+                const publicShare = job.shares.find(share =>
+                    share.type === 'public' &&
+                    share.token === token 
+                );
+                if (publicShare) {
+                    return next();
+                }
+            }
+
+            // Check for email-based sharing
+            if (userId) {
+                const emailShare = job.shares.find(share =>
+                    share.type === 'email' &&
+                    share.email === req.user?.email &&
+                    share.status === 'accepted'
+                );
+                if (emailShare) {
+                    return next();
+                }
+            }
+
+            return res.status(403).json({ error: 'Access denied' });
+        } catch (error) {
+            console.error('Error checking job access:', error);
+            return res.status(500).json({ error: 'Failed to verify access' });
+        }
+    }
+    checkJobAccess();
+};
+
 // Auth routes
 export const configureAuthRoutes = (router: any) => {
     router.get(

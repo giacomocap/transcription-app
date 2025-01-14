@@ -21,15 +21,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const checkAuthStatus = async () => {
         try {
+            debugger
             const response = await fetch('/api/auth/user', {
                 credentials: 'include'
             });
             if (response.ok) {
                 const userData = await response.json();
                 setUser(userData);
+            } else {
+                setUser(null);
             }
         } catch (error) {
             console.error('Error checking auth status:', error);
+            setUser(null);
         } finally {
             setIsLoading(false);
         }
