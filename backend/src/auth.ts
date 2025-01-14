@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
 import { Request, Response, NextFunction } from 'express';
-import pool from './db';
+import prisma from './db';
 import { v4 as uuidv4 } from 'uuid';
 import { UserData, AuthenticatedRequest } from './types/auth';
 
@@ -17,49 +17,35 @@ passport.use(
         async (accessToken: string, refreshToken: string, profile: Profile, done: any) => {
             try {
                 // Check if user exists
-                const existingUserResult = await pool.query(
-                    'SELECT * FROM users WHERE google_id = $1',
-                    [profile.id]
-                );
+                const existingUser = await prisma.users.findUnique({
+                    where: { google_id: profile.id }
+                });
 
-                if (existingUserResult.rows[0]) {
+                if (existingUser) {
                     // Update existing user
-                    const updatedUser = await pool.query(
-                        `UPDATE users
-                         SET display_name = $1,
-                             profile_picture = $2,
-                             updated_at = NOW()
-                         WHERE google_id = $3
-                         RETURNING *`,
-                        [
-                            profile.displayName,
-                            profile.photos?.[0]?.value,
-                            profile.id,
-                        ]
-                    );
-                    return done(null, updatedUser.rows[0]);
+                    const updatedUser = await prisma.users.update({
+                        where: { google_id: profile.id },
+                        data: {
+                            display_name: profile.displayName,
+                            profile_picture: profile.photos?.[0]?.value,
+                            updated_at: new Date()
+                        }
+                    });
+                    return done(null, updatedUser);
                 }
 
                 // Create new user
-                const newUser = await pool.query(
-                    `INSERT INTO users (
-                        id,
-                        google_id,
-                        email,
-                        display_name,
-                        profile_picture
-                    ) VALUES ($1, $2, $3, $4, $5)
-                    RETURNING *`,
-                    [
-                        uuidv4(),
-                        profile.id,
-                        profile.emails?.[0]?.value,
-                        profile.displayName,
-                        profile.photos?.[0]?.value,
-                    ]
-                );
+                const newUser = await prisma.users.create({
+                    data: {
+                        id: uuidv4(),
+                        google_id: profile.id,
+                        email: profile.emails?.[0]?.value!,
+                        display_name: profile.displayName,
+                        profile_picture: profile.photos?.[0]?.value
+                    }
+                });
 
-                return done(null, newUser.rows[0]);
+                return done(null, newUser);
             } catch (error) {
                 return done(error as Error);
             }
@@ -75,8 +61,8 @@ passport.serializeUser((user: UserData, done) => {
 // Deserialize user from the session
 passport.deserializeUser(async (id: string, done) => {
     try {
-        const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
-        done(null, result.rows[0]);
+        const user = await prisma.users.findUnique({ where: { id } });
+        done(null, user as any);
     } catch (error) {
         done(error);
     }
@@ -116,17 +102,17 @@ export const isResourceOwner = (
             const jobId = req.params.id;
             const userId = req.user?.id;
 
-            const result = await pool.query(
-                'SELECT user_id FROM jobs WHERE id = $1',
-                [jobId]
-            );
+            const job = await prisma.jobs.findUnique({
+                where: { id: jobId },
+                select: { user_id: true }
+            });
 
-            if (!result.rows[0]) {
+            if (!job) {
                 res.status(404).json({ error: 'Job not found' });
                 return;
             }
 
-            if (result.rows[0].user_id !== userId) {
+            if (job.user_id !== userId) {
                 res.status(403).json({ error: 'Forbidden' });
                 return;
             }

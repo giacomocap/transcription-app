@@ -1,29 +1,22 @@
-// backend/src/config/db.ts or wherever your pool configuration is
-import { Pool } from 'pg';
+import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'password',
-    database: process.env.DB_NAME || 'transcription'
-});
+const prisma = new PrismaClient();
 
 // Test the connection
-pool.connect((err, client, release) => {
-    if (err) {
-        return console.error('Error acquiring client:', err.stack);
-    }
-    client!.query('SELECT NOW()', (err, result) => {
-        release();
-        if (err) {
-            return console.error('Error executing query:', err.stack);
-        }
-        console.log('Database connected successfully');
-    });
-});
+async function testConnection() {
+  try {
+    await prisma.$connect();
+    console.log('Database connected successfully via Prisma');
+    await prisma.$disconnect();
+  } catch (error) {
+    console.error('Error connecting to database:', error);
+    process.exit(1);
+  }
+}
 
-export default pool;
+testConnection();
+
+export default prisma;

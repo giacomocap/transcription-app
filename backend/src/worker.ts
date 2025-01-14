@@ -1,6 +1,5 @@
-// backend/src/worker.ts  
 import { Worker, Queue } from 'bullmq';
-import pool from './db';
+import prisma from './db';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import fs from 'fs';
@@ -51,10 +50,10 @@ async function pollDiarizationStatus(jobId: string, maxAttempts = 360): Promise<
             throw new Error(`Diarization failed: ${status.error}`);
         }
 
-        await pool.query(
-            'UPDATE jobs SET diarization_progress = $1 WHERE id = $2',
-            [status.progress, jobId]
-        );
+        await prisma.jobs.update({
+            where: { id: jobId },
+            data: { diarization_progress: status.progress }
+        });
 
         // Wait for 10 seconds before next attempt
         await new Promise(resolve => setTimeout(resolve, 10000));
@@ -66,7 +65,6 @@ async function pollDiarizationStatus(jobId: string, maxAttempts = 360): Promise<
 
 async function processAudioEnhancement(audioPath: string): Promise<string> {
     try {
-        // Create enhancement job
         const jobId = crypto.randomUUID();
         const createResponse = await fetch(`${ENHANCEMENT_SERVICE_URL}/enhance`, {
             method: 'POST',
@@ -83,7 +81,6 @@ async function processAudioEnhancement(audioPath: string): Promise<string> {
             throw new Error(`Enhancement job creation failed: ${createResponse.statusText}`);
         }
 
-        // Poll for job completion
         while (true) {
             const statusResponse = await fetch(`${ENHANCEMENT_SERVICE_URL}/status/${jobId}`);
 
@@ -99,7 +96,6 @@ async function processAudioEnhancement(audioPath: string): Promise<string> {
                 throw new Error(`Enhancement failed: ${status.error}`);
             }
 
-            // Wait before next poll
             await new Promise((resolve) => setTimeout(resolve, 1000));
         }
     } catch (error) {
@@ -130,21 +126,18 @@ const transcriptionWorker = new Worker(
             openai_api_url: process.env.AUDIO_OPENAI_API_URL,
             max_concurrent_jobs: process.env.MAX_CONCURRENT_JOBS || 3,
         } as TranscriptionConfig;
-        console.log('openaiConfig', openaiConfig);
-        const apiModel = openaiConfig.model_name;
-        const apiKey = openaiConfig.openai_api_key;
-        const apiBaseUrl = openaiConfig.openai_api_url;
 
         const openai = new OpenAI({
-            apiKey: apiKey || process.env.OPENAI_API_KEY || '',
-            baseURL: apiBaseUrl || process.env.OPENAI_API_URL || 'https://api.openai.com/v1',
+            apiKey: openaiConfig.openai_api_key || process.env.OPENAI_API_KEY || '',
+            baseURL: openaiConfig.openai_api_url || process.env.OPENAI_API_URL || 'https://api.openai.com/v1',
         });
 
-        // Update job status to 'running'  
-        await pool.query('UPDATE jobs SET status = $1 WHERE id = $2', ['running', jobId]);
+        await prisma.jobs.update({
+            where: { id: jobId },
+            data: { status: 'running' }
+        });
 
         try {
-            // Read the file from disk  
             const absoluteFilePath = path.resolve(filePath);
 
             // Convert file to Opus if it's not already an Opus
@@ -168,22 +161,28 @@ const transcriptionWorker = new Worker(
 
             const fileUrl = `/api/uploads/${path.basename(filePath)}`;
 
-            // Store the file URL
-            await pool.query('UPDATE jobs SET file_url = $1 WHERE id = $2', [fileUrl, jobId]);
+            await prisma.jobs.update({
+                where: { id: jobId },
+                data: { file_url: fileUrl }
+            });
 
             // Start transcription with Whisper
             const transcription = await openai.audio.transcriptions.create({
                 file: fs.createReadStream(enhancedAudioPath),
-                model: apiModel,
+                model: openaiConfig.model_name,
                 response_format: 'verbose_json',
             });
 
             // Save initial transcription result
             const srtContent = segmentsToSRT(transcription.segments!);
-            await pool.query(
-                'UPDATE jobs SET status = $1, transcript = $2, subtitle_content=$3, updated_at = NOW() WHERE id = $4',
-                ['transcribed', transcription.text, srtContent, jobId]
-            );
+            await prisma.jobs.update({
+                where: { id: jobId },
+                data: {
+                    status: 'transcribed',
+                    transcript: transcription.text,
+                    subtitle_content: srtContent
+                }
+            });
 
             // Start refinement immediately if diarization is disabled
             if (!diarizationEnabled) {
@@ -194,12 +193,12 @@ const transcriptionWorker = new Worker(
                 });
             } else {
                 // Set needs_user_confirmation flag and wait for user confirmation
-                await pool.query(
-                    'UPDATE jobs SET refinement_pending = $1 WHERE id = $2',
-                    [true, jobId]
-                );
+                await prisma.jobs.update({
+                    where: { id: jobId },
+                    data: { refinement_pending: true }
+                });
+
                 try {
-                    // Start diarization
                     const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
                         method: 'POST',
                         headers: {
@@ -215,7 +214,6 @@ const transcriptionWorker = new Worker(
                         throw new Error(`Failed to start diarization: ${diarizeResponse.statusText}`);
                     }
 
-                    // Add diarization polling job to separate queue
                     await diarizationQueue.add('pollDiarization', {
                         jobId,
                         transcriptionSegments: transcription.segments,
@@ -223,10 +221,10 @@ const transcriptionWorker = new Worker(
 
                 } catch (error: any) {
                     console.error('Diarization error:', error);
-                    await pool.query(
-                        'UPDATE jobs SET diarization_status = $1 WHERE id = $3',
-                        ['failed', jobId]
-                    );
+                    await prisma.jobs.update({
+                        where: { id: jobId },
+                        data: { diarization_status: 'failed' }
+                    });
                 }
             }
 
@@ -234,10 +232,13 @@ const transcriptionWorker = new Worker(
 
         } catch (error: any) {
             console.error('Error processing job:', error);
-            await pool.query(
-                'UPDATE jobs SET status = $1,transcript = $2 WHERE id = $3',
-                ['failed', error.message, jobId]
-            );
+            await prisma.jobs.update({
+                where: { id: jobId },
+                data: {
+                    status: 'failed',
+                    transcript: error.message
+                }
+            });
             throw error;
         }
     },
@@ -246,32 +247,40 @@ const transcriptionWorker = new Worker(
 
 const diarizationQueue = new Queue('diarizationQueue', { connection: redisOptions });
 
-// Separate worker for diarization polling
 const diarizationWorker = new Worker(
     'diarizationQueue',
     async job => {
         const { jobId, transcriptionSegments } = job.data;
 
         try {
-            //Update job status to 'diarizing'
-            await pool.query('UPDATE jobs SET diarization_status = $1 WHERE id = $2', ['running', jobId]);
+            await prisma.jobs.update({
+                where: { id: jobId },
+                data: { diarization_status: 'running' }
+            });
 
             const diarizationResult = await pollDiarizationStatus(jobId);
-            // const finalText = combineTranscriptionAndDiarization(transcriptionSegments, diarizationResult.segments);
 
-            // Update job with diarized result and set needs_user_confirmation flag
-            await pool.query(
-                'UPDATE jobs SET diarization_status = $1, speaker_profiles = $2, speaker_segments = $3, diarization_progress = $4, refinement_pending = true WHERE id = $5',
-                ['completed', JSON.stringify(diarizationResult.speaker_profiles), JSON.stringify(diarizationResult.segments), 100, jobId]
-            );
+            await prisma.jobs.update({
+                where: { id: jobId },
+                data: {
+                    diarization_status: 'completed',
+                    speaker_profiles: diarizationResult.speaker_profiles,
+                    speaker_segments: diarizationResult.segments,
+                    diarization_progress: 100,
+                    refinement_pending: true
+                }
+            });
 
             return { jobId, status: 'completed' };
         } catch (error: any) {
             console.error('Diarization polling error:', error);
-            await pool.query(
-                'UPDATE jobs SET diarization_status = $1, diarization_error = $2 WHERE id = $3',
-                ['failed', error.message, jobId]
-            );
+            await prisma.jobs.update({
+                where: { id: jobId },
+                data: {
+                    diarization_status: 'failed',
+                    // diarization_error: error.message
+                }
+            });
             throw error;
         }
     },
@@ -281,7 +290,7 @@ const diarizationWorker = new Worker(
 const refinementQueue = new Queue('refinementQueue', { connection: redisOptions });
 
 async function refineTranscription(segments: TranscriptionSegment[], config: RefinementConfig): Promise<string> {
-    const MAX_TOKENS_PER_CHUNK = 4000; // Adjust based on the model's output window and your testing
+    const MAX_TOKENS_PER_CHUNK = 4000;
     const openai = new OpenAI({
         apiKey: config.openai_api_key,
         baseURL: config.openai_api_url,
@@ -296,9 +305,9 @@ async function refineTranscription(segments: TranscriptionSegment[], config: Ref
         const prompt = buildPrompt(chunk, previousChunkSummary);
 
         const response = await openai.chat.completions.create({
-            model: config.model_name, // or another suitable model
+            model: config.model_name,
             messages: [
-                { role: 'system', content: systemPrompt }, // Your system prompt (see below)
+                { role: 'system', content: systemPrompt },
                 { role: 'user', content: prompt },
             ],
             temperature: 0.4,
@@ -306,24 +315,20 @@ async function refineTranscription(segments: TranscriptionSegment[], config: Ref
 
         const refinedChunk = response.choices[0].message.content || '';
 
-        // Summarize the refined chunk for context in the next iteration, only if it's not the last chunk.
         if (i < chunks.length - 1) {
             previousChunkSummary = await summarizeText(refinedChunk, config);
         }
 
-        // Concatenate the refined chunk to the overall result 
         refinedText += refinedChunk;
     }
 
     return refinedText.trim();
 }
 
-// Replace the existing refinement worker with this new implementation
 const refinementWorker = new Worker(
     'refinementQueue',
     async job => {
         const { jobId, segments, fullText } = job.data;
-        console.log(`Starting refinement for job ${jobId}`);
 
         try {
             const openaiConfig = {
@@ -333,22 +338,18 @@ const refinementWorker = new Worker(
                 fast_model_name: process.env.FAST_REFINEMENT_MODEL,
             } as RefinementConfig;
 
-            // Start refinement
-            console.log(`Beginning text refinement for job ${jobId}`);
             const refinedText = await refineTranscription(segments, openaiConfig);
-            console.log(`Refinement completed for job ${jobId}`);
-
-            // Generate executive summary
-            console.log(`Generating executive summary for job ${jobId}`);
             const executiveSummary = await generateExecutiveSummary(refinedText, openaiConfig);
-            console.log(`Executive summary generated for job ${jobId}`);
 
-            // Final update
-            await pool.query(
-                'UPDATE jobs SET status = $1, refined_transcript = $2, summary = $3, updated_at = NOW() WHERE id = $4',
-                ['transcribed', refinedText, executiveSummary, jobId]
-            );
-            console.log(`Database update completed for job ${jobId}`);
+            await prisma.jobs.update({
+                where: { id: jobId },
+                data: {
+                    status: 'transcribed',
+                    refined_transcript: refinedText,
+                    summary: executiveSummary
+                }
+            });
+            console.log(`Refinement update completed for job ${jobId}`);
 
         } catch (error) {
             console.error(`Refinement error for job ${jobId}:`, error);
@@ -366,15 +367,13 @@ function chunkTranscription(segments: TranscriptionSegment[], maxTokens: number)
 
     for (const segment of segments) {
         const segmentText = segment.text;
-        const segmentTokens = estimateTokens(segmentText); // Implement your token estimation
-        // If adding this segment would exceed maxTokens, start a new chunk
+        const segmentTokens = estimateTokens(segmentText);
         if (currentChunkTokens + segmentTokens > maxTokens && currentChunk) {
             chunks.push(currentChunk);
             currentChunk = '';
             currentChunkTokens = 0;
         }
 
-        // Add segment to current chunk
         currentChunk += segmentText + ' ';
         currentChunkTokens += segmentTokens;
     }
@@ -482,24 +481,21 @@ const systemPrompt = `
 `
 
 async function generateExecutiveSummary(text: string, config: RefinementConfig): Promise<string> {
-    const MAX_TOKENS_PER_SUMMARY_CHUNK = 6000; // Conservative limit for summary generation
+    const MAX_TOKENS_PER_SUMMARY_CHUNK = 6000;
     const openai = new OpenAI({
         apiKey: config.openai_api_key,
         baseURL: config.openai_api_url,
     });
 
-    // If text is short enough, process directly
-    if (text.length < MAX_TOKENS_PER_SUMMARY_CHUNK * 4) { // Approximate token estimation
+    if (text.length < MAX_TOKENS_PER_SUMMARY_CHUNK * 4) {
         return await generateSingleSummary(text, config);
     }
 
-    // For longer texts, use a two-stage summarization
     const textChunks = chunkText(text, MAX_TOKENS_PER_SUMMARY_CHUNK);
     const intermediateSummaries = await Promise.all(
         textChunks.map(chunk => generateIntermediateSummary(chunk, config))
     );
 
-    // Combine intermediate summaries into final executive summary
     const combinedSummary = intermediateSummaries.join('\n\n');
     return await generateSingleSummary(combinedSummary, config);
 }
@@ -571,9 +567,7 @@ async function generateIntermediateSummary(text: string, config: RefinementConfi
     return response.choices[0].message.content || '';
 }
 
-//Helper function to chunk text for summarization
 function chunkText(text: string, maxTokens: number): string[] {
-    // Rough approximation: 1 token ≈ 4 characters
     const chunkSize = maxTokens * 4;
     const chunks: string[] = [];
 
@@ -658,14 +652,14 @@ function formatSRTTime(seconds: number): string {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
 }
 
-async function isTranscriptionComplete(jobId: string): Promise<boolean> {
-    const result = await pool.query(
-        'SELECT status FROM jobs WHERE id = $1',
-        [jobId]
-    );
-    const status = result.rows[0]?.status;
-    return status === 'completed' || status === 'failed';
-}
+// async function isTranscriptionComplete(jobId: string): Promise<boolean> {
+//     const result = await pool.query(
+//         'SELECT status FROM jobs WHERE id = $1',
+//         [jobId]
+//     );
+//     const status = result.rows[0]?.status;
+//     return status === 'completed' || status === 'failed';
+// }
 
 transcriptionWorker.on('completed', job => {
     console.log(`Job ${job.id} has completed!`);
