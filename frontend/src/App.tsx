@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import { JobsDashboard } from './pages/JobsDashboard';
 import { UploadPage } from './pages/UploadPage';
 import { JobDetailPage } from './pages/JobDetailPage';
@@ -11,6 +11,7 @@ import { AdminPage } from './pages/AdminPage';
 // import { LandingPage } from './pages/LandingPage';
 
 import { usePublicAccess } from './hooks/use-public-access';
+import { Button } from './components/ui/button';
 
 // Create a new component to handle the conditional rendering of the Navigation
 const AppContent = () => {
@@ -21,21 +22,18 @@ const AppContent = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {isPublicAccess ? (
-        <div className="bg-primary text-primary-foreground">
-          <div className="max-w-7xl mx-auto py-3 px-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">
-                Sign up to access all features including transcription, speaker diarization, and more.
+        <nav className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16 items-center">
+              <p className="text-base font-medium text-gray-900">
+                <span className="text-primary">Unlock the full potential:</span> Sign up to Claire.AI now to access all features including meeting and lectures transcription and AI insights!
               </p>
-              <a
-                href="/login"
-                className="ml-4 px-4 py-1.5 rounded-md bg-white text-primary hover:bg-primary-foreground text-sm font-medium transition-colors"
-              >
-                Sign up
-              </a>
+              <Button asChild className="bg-primary hover:bg-primary/90">
+                <Link to="/login" className="font-semibold">Sign Up Now</Link>
+              </Button>
             </div>
           </div>
-        </div>
+        </nav>
       ) : (
         !isLandingPage && <Navigation />
       )}

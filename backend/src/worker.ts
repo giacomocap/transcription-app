@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { RefinementConfig, TranscriptionConfig } from './types';
 import { TranscriptionSegment } from 'openai/resources/audio/transcriptions';
-import { convertToOpus } from './converter';
+// import { convertToOpus } from './converter';
 import crypto from 'crypto';
 
 dotenv.config();
@@ -52,7 +52,7 @@ async function pollDiarizationStatus(jobId: string, maxAttempts = 360): Promise<
 
         await prisma.jobs.update({
             where: { id: jobId },
-            data: { diarization_progress: status.progress }
+            data: { diarization_progress: +status.progress }
         });
 
         // Wait for 10 seconds before next attempt

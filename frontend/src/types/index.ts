@@ -27,6 +27,7 @@ export interface Job {
   updated_at: string;
   summary: string;
   refinement_pending: boolean;
+  user_id: string;
 }
 
 export interface AdminSettings {
