@@ -20,6 +20,7 @@ configureAuthRoutes(router);
 
 // Share management endpoints
 router.post('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
+    console.log(`Creating share for job ${req.params.id} by user ${req.user?.id}`);
     const jobId = req.params.id;
     const userId = req.user?.id;
     const { type, email } = req.body;
@@ -47,6 +48,7 @@ router.post('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: Au
 });
 
 router.get('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
+    console.log(`Fetching shares for job ${req.params.id}`);
     const jobId = req.params.id;
     const userId = req.user?.id;
 
@@ -65,6 +67,7 @@ router.get('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: Aut
 });
 
 router.delete('/jobs/:id/shares/:shareId', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
+    console.log(`Deleting share ${req.params.shareId} for job ${req.params.id}`);
     const { id: jobId, shareId } = req.params;
     const userId = req.user?.id;
 
@@ -113,10 +116,11 @@ const transcriptionQueue = new Queue('transcriptionQueue', { connection: redisOp
  *         description: Successfully uploaded
  */
 router.post('/upload', isAuthenticated, upload.single('file'), async (req: AuthenticatedRequest, res) => {
+    console.log(`File upload request received from user ${req.user?.id}`);
     const file = req.file;
     const jobId = uuidv4();
     const diarizationEnabled = req.body.diarization === 'true';
-
+    const language = req.body.language;
     try {
         await prisma.jobs.create({
             data: {
@@ -134,9 +138,11 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
             filePath: file?.path,
             fileName: file?.originalname,
             diarizationEnabled,
-            userId: req.user?.id
+            userId: req.user?.id,
+            language
         });
 
+        console.log(`Job ${jobId} created successfully for file ${file?.originalname}`);
         res.json({ jobId });
     } catch (error) {
         console.error('Error creating job:', error);
@@ -145,6 +151,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
 });
 
 router.delete('/jobs/:id', isAuthenticated, isResourceOwner, async (req, res) => {
+    console.log(`Deleting job ${req.params.id}`);
     const jobId = req.params.id;
 
     try {
@@ -171,6 +178,7 @@ router.delete('/jobs/:id', isAuthenticated, isResourceOwner, async (req, res) =>
             }
         }
 
+        console.log(`Job ${req.params.id} and associated files deleted successfully`);
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting job:', error);
@@ -192,6 +200,7 @@ router.delete('/jobs/:id', isAuthenticated, isResourceOwner, async (req, res) =>
  *   description: Failed to retrieve jobs
  */
 router.get('/jobs', isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    console.log(`Fetching jobs for user ${req.user?.id}`);
     try {
         const jobs = await prisma.jobs.findMany({
             where: { user_id: req.user?.id },
@@ -205,6 +214,7 @@ router.get('/jobs', isAuthenticated, async (req: AuthenticatedRequest, res) => {
 });
 
 router.get('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
+    console.log('Fetching transcription config');
     try {
         const config = await prisma.transcription_config.findFirst({
             orderBy: { created_at: 'desc' }
@@ -229,6 +239,7 @@ router.get('/config/refinement', isAuthenticated, checkAdmin, async (req, res) =
 });
 
 router.post('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
+    console.log('Updating transcription config');
     const { openai_api_url, openai_api_key, model_name, max_concurrent_jobs } = req.body;
 
     try {
@@ -385,6 +396,7 @@ router.get('/jobs/:id', hasJobAccess, async (req: AuthenticatedRequest, res: Res
  *         description: Transcription refinement failed
  */
 router.post('/jobs/:id/refine', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res: Response) => {
+    console.log(`Starting refinement for job ${req.params.id}`);
     const jobId = req.params.id;
 
     try {
@@ -414,6 +426,7 @@ router.post('/jobs/:id/refine', isAuthenticated, isResourceOwner, async (req: Au
             data: { refined_transcript: refinedText }
         });
 
+        console.log(`Refinement completed for job ${req.params.id}`);
         res.json({ success: true, refinedText });
     } catch (error) {
         console.error('Error refining transcription:', error);
@@ -460,6 +473,7 @@ router.post('/jobs/:id/refine', isAuthenticated, isResourceOwner, async (req: Au
  *         description: Failed to update job
  */
 router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res: Response) => {
+    console.log(`Updating job ${req.params.id}`, { updatedFields: Object.keys(req.body) });
     const jobId = req.params.id;
     const { file_name, speaker_profiles, speaker_segments } = req.body;
 
@@ -546,6 +560,7 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
             });
         }
 
+        console.log(`Job ${req.params.id} updated successfully`);
         res.json({ success: true });
     } catch (error) {
         console.error('Error updating job:', error);
@@ -554,6 +569,7 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
 });
 
 router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: AuthenticatedRequest, res: Response) => {
+    console.log('Fetching admin statistics');
     try {
         const stats = await prisma.$transaction([
             prisma.jobs.count(),

@@ -117,19 +117,12 @@ async function downloadFile(url: string, filePath: string): Promise<void> {
 const transcriptionWorker = new Worker(
     'transcriptionQueue',
     async job => {
-        const { jobId, filePath, fileName, diarizationEnabled } = job.data;
-
-        //get openai params from transcription_config
-        const openaiConfig = {
-            model_name: process.env.AUDIO_MODEL,
-            openai_api_key: process.env.AUDIO_OPENAI_API_KEY,
-            openai_api_url: process.env.AUDIO_OPENAI_API_URL,
-            max_concurrent_jobs: process.env.MAX_CONCURRENT_JOBS || 3,
-        } as TranscriptionConfig;
+        const { jobId, filePath, fileName, diarizationEnabled, language } = job.data;
 
         const openai = new OpenAI({
-            apiKey: openaiConfig.openai_api_key || process.env.OPENAI_API_KEY || '',
-            baseURL: openaiConfig.openai_api_url || process.env.OPENAI_API_URL || 'https://api.openai.com/v1',
+            apiKey: process.env.AUDIO_OPENAI_API_KEY || '',
+            baseURL: process.env.AUDIO_OPENAI_API_URL || 'https://api.openai.com/v1',
+            timeout: 600000,
         });
 
         await prisma.jobs.update({
@@ -166,12 +159,32 @@ const transcriptionWorker = new Worker(
                 data: { file_url: fileUrl }
             });
 
-            // Start transcription with Whisper
-            const transcription = await openai.audio.transcriptions.create({
-                file: fs.createReadStream(enhancedAudioPath),
-                model: openaiConfig.model_name,
-                response_format: 'verbose_json',
-            });
+            // Start transcription with Whisper and measure time
+            let transcription;
+            try {
+                transcription = await openai.audio.transcriptions.create({
+                    file: fs.createReadStream(enhancedAudioPath),
+                    model: process.env.AUDIO_MODEL || '',
+                    response_format: 'verbose_json',
+                    language: language
+                });
+            } catch (error) {
+                console.log('Primary transcription failed, attempting with fallback credentials...', error);
+
+                // Attempt with fallback credentials
+                const fallbackOpenai = new OpenAI({
+                    apiKey: process.env.AUDIO_OPENAI_API_KEY1 || '',
+                    baseURL: process.env.AUDIO_OPENAI_API_URL1 || 'https://api.openai.com/v1',
+                    timeout: 600000,
+                });
+
+                transcription = await fallbackOpenai.audio.transcriptions.create({
+                    file: fs.createReadStream(enhancedAudioPath),
+                    model: process.env.AUDIO_MODEL1 || '',
+                    response_format: 'verbose_json',
+                    language: language
+                });
+            }
 
             // Save initial transcription result
             const srtContent = segmentsToSRT(transcription.segments!);

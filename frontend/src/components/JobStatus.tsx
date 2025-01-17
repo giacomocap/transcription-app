@@ -24,6 +24,11 @@ interface JobStatusProps {
 }
 
 const statusConfig = {
+  queued: {
+    variant: "secondary",
+    label: "Queued",
+    icon: Clock,
+  },
   pending: {
     variant: "secondary",
     label: "Pending",
@@ -204,6 +209,8 @@ function getStatusDescription(
 ): string {
   const type = isDiarization ? "Speaker detection" : "Transcription";
   switch (status) {
+    case "queued":
+      return `${type} is queued and waiting for available resources...`;
     case "pending":
       return `${type} is waiting to start...`;
     case "running":

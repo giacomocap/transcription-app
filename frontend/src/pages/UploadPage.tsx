@@ -6,12 +6,20 @@ import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export const UploadPage = () => {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [diarizationEnabled, setDiarizationEnabled] = useState(false);
+    const [language, setLanguage] = useState<string | undefined>(undefined);
 
     const handleUpload = async () => {
         if (!file) return;
@@ -21,6 +29,9 @@ export const UploadPage = () => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('diarization', diarizationEnabled.toString());
+        if (language) {
+            formData.append('language', language);
+        }
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/upload', true);
@@ -92,6 +103,7 @@ export const UploadPage = () => {
                             <span className="text-sm text-muted-foreground">Selected:</span>
                             <span className="text-sm">{file.name}</span>
                         </div>
+                        <div className="w-full space-y-4">
                         <div className="flex items-center space-x-2">
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input 
@@ -125,6 +137,40 @@ export const UploadPage = () => {
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Audio Language (optional)</Label>
+                            <div className="flex items-center gap-2">
+                                <Select onValueChange={setLanguage} value={language}>
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="Auto-detect" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="en">English</SelectItem>
+                                        <SelectItem value="es">Spanish</SelectItem>
+                                        <SelectItem value="fr">French</SelectItem>
+                                        <SelectItem value="de">German</SelectItem>
+                                        <SelectItem value="it">Italian</SelectItem>
+                                        <SelectItem value="pt">Portuguese</SelectItem>
+                                        <SelectItem value="zh">Chinese</SelectItem>
+                                        <SelectItem value="ja">Japanese</SelectItem>
+                                        <SelectItem value="ru">Russian</SelectItem>
+                                        <SelectItem value="ar">Arabic</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-4 w-4 text-gray-500 cursor-help" />
+                                        </TooltipTrigger>
+                                        <TooltipContent className="max-w-[300px] p-4">
+                                            <p>Selecting the audio language can improve transcription accuracy. If no language is selected, the system will attempt to automatically detect the language.</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                        </div>
                     </div>
 
                         {uploading && <Progress value={uploadProgress} className="w-full" />}

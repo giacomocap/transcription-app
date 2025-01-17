@@ -42,4 +42,4 @@ export interface AdminSettings {
 
 export type Status = 'pending' | 'running' | 'completed' | 'failed';
 
-export type TranscriptionStatus = Status | 'transcribed';
+export type TranscriptionStatus = Status | 'transcribed' | 'queued';

@@ -164,8 +164,11 @@ export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: Tr
                             }}
                         >
                             <div className="text-gray-800 text-base leading-relaxed">
-                                {segments.map((segment, index) => (
-                                    segment.speaker ? (
+                                {segments.reduce((acc, segment, index) => {
+                                    const showSpeaker = segment.speaker && 
+                                        (index === 0 || segment.speaker !== segments[index - 1].speaker);
+                                    
+                                    const element = segment.speaker ? (
                                         <div key={segment.index} className="mb-2">
                                             <span
                                                 ref={el => segmentRefs.current[index] = el}
@@ -176,7 +179,9 @@ export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: Tr
                                                 `}
                                                 title={`${formatTime(segment.startTime)} - ${formatTime(segment.endTime)}`}
                                             >
-                                                <span className="font-semibold">[{segment.speaker}] </span>
+                                                {showSpeaker && (
+                                                    <span className="font-semibold">[{segment.speaker}] </span>
+                                                )}
                                                 {segment.text}
                                             </span>
                                         </div>
@@ -193,8 +198,10 @@ export const TranscriptView = ({ job, currentTime, onTimeSelect, isPlaying }: Tr
                                         >
                                             {segment.text}
                                         </span>
-                                    )
-                                ))}
+                                    );
+                                    
+                                    return [...acc, element];
+                                }, [] as JSX.Element[])}
                             </div>
                         </div>
                         {!autoScroll && isPlaying && (
