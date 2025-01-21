@@ -1,0 +1,232 @@
+// import { S3Client, DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+// import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+// import { Readable } from 'stream';
+// import path from 'path';
+
+// export class StorageService {
+//     private s3Client: S3Client;
+//     private bucket: string;
+//     private endpoint: string;
+//     private credentials: {
+//         accessKeyId: string;
+//         secretAccessKey: string;
+//     };
+
+//     constructor() {
+//         this.bucket = process.env.S3_BUCKET_ID || '';
+//         this.endpoint = process.env.S3_BUCKET_ENDPOINT || '';
+//         this.credentials = {
+//             accessKeyId: process.env.S3_APPLICATION_KEY_ID || '',
+//             secretAccessKey: process.env.S3_APPLICATION_KEY || ''
+//         };
+
+//         // Initialize S3Client for other operations
+//         this.s3Client = new S3Client({
+//             endpoint: this.endpoint,
+//             credentials: this.credentials,
+//             region: process.env.S3_BUCKET_REGION || ''
+//         });
+//     }
+
+//     async uploadFile(fileBuffer: Buffer, fileName: string, userId: string): Promise<string> {
+//         if (fileBuffer.length > 5 * 1024 * 1024) {
+//             return this.uploadLargeFile(fileBuffer, fileName, userId);
+//         }
+//         const key = `uploads/${userId}-${Date.now()}-${fileName}`;
+//         const url = `${this.endpoint}/file/${this.bucket}/${key}`;
+
+//         try {
+//             // Convert Buffer to ReadableStream with proper duplex option
+//             const stream = new ReadableStream({
+//                 start(controller) {
+//                     controller.enqueue(fileBuffer);
+//                     controller.close();
+//                 }
+//             });
+
+//             const response = await fetch(url, {
+//                 method: 'POST',
+//                 body: stream,
+//                 duplex: 'half', // Required when sending a body as per fetch spec
+//                 headers: {
+//                     'Authorization': `Basic ${Buffer.from(
+//                         `${this.credentials.accessKeyId}:${this.credentials.secretAccessKey}`
+//                     ).toString('base64')}`,
+//                     'Content-Type': this.getContentType(fileName),
+//                     'Content-Length': fileBuffer.length.toString(),
+//                     'X-Bz-File-Name': encodeURIComponent(key),
+//                     'X-Bz-Content-Sha1': 'do_not_verify' // B2 will verify the SHA1 hash
+//                 }
+//             });
+
+//             if (!response.ok) {
+//                 const error = await response.text();
+//                 throw new Error(`Upload failed: ${error}`);
+//             }
+
+//             const result = await response.json();
+//             return result.fileId || key;
+//         } catch (error) {
+//             console.error('Error uploading file:', error);
+//             throw new Error('Failed to upload file to storage');
+//         }
+//     }
+
+//     // For larger files (>3GB), we should use the large file upload API
+//     async uploadLargeFile(fileBuffer: Buffer, fileName: string, userId: string): Promise<string> {
+//         const key = `uploads/${userId}-${Date.now()}-${fileName}`;
+
+//         try {
+//             // Step 1: Start large file upload
+//             const startUrl = `${this.endpoint}/b2_start_large_file`;
+//             const startResponse = await fetch(startUrl, {
+//                 method: 'POST',
+//                 headers: {
+//                     'Authorization': `Basic ${Buffer.from(
+//                         `${this.credentials.accessKeyId}:${this.credentials.secretAccessKey}`
+//                     ).toString('base64')}`,
+//                     'Content-Type': 'application/json'
+//                 },
+//                 body: JSON.stringify({
+//                     bucketId: this.bucket,
+//                     fileName: key,
+//                     contentType: this.getContentType(fileName)
+//                 })
+//             });
+
+//             if (!startResponse.ok) {
+//                 throw new Error('Failed to start large file upload');
+//             }
+
+//             const { fileId } = await startResponse.json();
+
+//             // Step 2: Upload parts
+//             const PART_SIZE = 100 * 1024 * 1024; // 100MB chunks
+//             const parts = [];
+
+//             for (let i = 0; i < fileBuffer.length; i += PART_SIZE) {
+//                 const chunk = fileBuffer.slice(i, i + PART_SIZE);
+//                 const partNumber = Math.floor(i / PART_SIZE) + 1;
+
+//                 // Get upload URL for part
+//                 const getUrlResponse = await fetch(`${this.endpoint}/b2_get_upload_part_url`, {
+//                     method: 'POST',
+//                     headers: {
+//                         'Authorization': `Basic ${Buffer.from(
+//                             `${this.credentials.accessKeyId}:${this.credentials.secretAccessKey}`
+//                         ).toString('base64')}`
+//                     },
+//                     body: JSON.stringify({ fileId })
+//                 });
+
+//                 const { uploadUrl, authorizationToken } = await getUrlResponse.json();
+
+//                 const uploadResponse = await fetch(uploadUrl, {
+//                     method: 'POST',
+//                     body: chunk,
+//                     duplex: 'half',
+//                     headers: {
+//                         'Authorization': authorizationToken,
+//                         'X-Bz-Part-Number': partNumber.toString(),
+//                         'X-Bz-Content-Sha1': 'do_not_verify', // B2 will verify the SHA1 hash
+//                         'Content-Length': chunk.length.toString()
+//                     }
+//                 });
+
+//                 if (!uploadResponse.ok) {
+//                     throw new Error(`Failed to upload part ${partNumber}`);
+//                 }
+
+//                 const partResult = await uploadResponse.json();
+//                 parts.push({
+//                     partNumber,
+//                     sha1: partResult.contentSha1
+//                 });
+//             }
+
+//             // Step 3: Finish large file
+//             const finishResponse = await fetch(`${this.endpoint}/b2_finish_large_file`, {
+//                 method: 'POST',
+//                 headers: {
+//                     'Authorization': `Basic ${Buffer.from(
+//                         `${this.credentials.accessKeyId}:${this.credentials.secretAccessKey}`
+//                     ).toString('base64')}`,
+//                     'Content-Type': 'application/json'
+//                 },
+//                 body: JSON.stringify({
+//                     fileId,
+//                     partSha1Array: parts.map(part => part.sha1)
+//                 })
+//             });
+
+//             if (!finishResponse.ok) {
+//                 throw new Error('Failed to finish large file upload');
+//             }
+
+//             return key;
+//         } catch (error) {
+//             console.error('Error uploading large file:', error);
+//             throw new Error('Failed to upload large file to storage');
+//         }
+//     }
+
+//     async deleteFile(key: string): Promise<void> {
+//         try {
+//             await this.s3Client.send(new DeleteObjectCommand({
+//                 Bucket: this.bucket,
+//                 Key: key
+//             }));
+//         } catch (error) {
+//             console.error('Error deleting file:', error);
+//             throw new Error('Failed to delete file from storage');
+//         }
+//     }
+
+//     async getFileStream(key: string): Promise<Readable> {
+//         try {
+//             const response = await this.s3Client.send(new GetObjectCommand({
+//                 Bucket: this.bucket,
+//                 Key: key
+//             }));
+
+//             if (!response.Body) {
+//                 throw new Error('No file body received');
+//             }
+
+//             return response.Body as Readable;
+//         } catch (error) {
+//             console.error('Error getting file stream:', error);
+//             throw new Error('Failed to get file from storage');
+//         }
+//     }
+
+//     async getPresignedUrl(key: string, expiresIn = 3600): Promise<string> {
+//         try {
+//             const command = new GetObjectCommand({
+//                 Bucket: this.bucket,
+//                 Key: key,
+//             });
+
+//             const url = await getSignedUrl(this.s3Client, command, { expiresIn });
+//             return url;
+//         } catch (error) {
+//             console.error('Error generating presigned URL:', error);
+//             throw new Error('Failed to generate presigned URL');
+//         }
+//     }
+
+//     private getContentType(fileName: string): string {
+//         const ext = path.extname(fileName).toLowerCase();
+//         const contentTypes: { [key: string]: string } = {
+//             '.mp3': 'audio/mpeg',
+//             '.wav': 'audio/wav',
+//             '.mp4': 'video/mp4',
+//             '.avi': 'video/x-msvideo',
+//             '.mov': 'video/quicktime',
+//             '.mkv': 'video/x-matroska'
+//         };
+//         return contentTypes[ext] || 'application/octet-stream';
+//     }
+// }
+
+// export const storageService = new StorageService();

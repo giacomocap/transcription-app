@@ -1,15 +1,17 @@
-import { Router, Response, NextFunction } from 'express';
+import { Router, Response } from 'express';
 import multer from 'multer';
 import { Queue } from 'bullmq';
 import prisma from './db';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import { refineTranscription } from './refinement';
-import path from 'path';
 import { isAuthenticated, isResourceOwner, configureAuthRoutes, checkAdmin, hasJobAccess } from './auth';
 import { AuthenticatedRequest } from './types/auth';
-import fs from 'fs/promises';
 import { generateURLSafeToken } from './helper/helper';
+import { storageService } from './services/storage-service';
+import path from 'path';
+import ffmpeg from 'fluent-ffmpeg';
+import fs from 'fs/promises';
 
 dotenv.config();
 
@@ -18,79 +20,73 @@ const router = Router();
 // Configure auth routes
 configureAuthRoutes(router);
 
-// Share management endpoints
-router.post('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
-    console.log(`Creating share for job ${req.params.id} by user ${req.user?.id}`);
-    const jobId = req.params.id;
-    const userId = req.user?.id;
-    const { type, email } = req.body;
-    const token = generateURLSafeToken();
+const ACCEPTED_MIME_TYPES = {
+    audio: [
+        'audio/mpeg', // MP3
+        'audio/wav',  // WAV
+        'audio/ogg',  // OGG
+        'audio/x-m4a', // M4A
+        'audio/mp3',  // MP3 (alternative)
+        'audio/flac', // FLAC
+        'audio/mp4',  // MP4 (audio)
+        'audio/mpeg', // MPEG
+        'audio/mpga', // MPGA
+        'audio/webm'  // WEBM (audio)
+    ],
+    video: [
+        'video/mp4',      // MP4
+        'video/webm',     // WEBM
+        'video/ogg',      // OGG
+        'video/quicktime', // QuickTime
+        'video/x-msvideo', // AVI
+        'video/x-matroska', // MKV
+        'video/x-flv',    // FLV
+        'video/3gpp',     // 3GP
+        'video/3gpp2',    // 3G2
+        'video/x-ms-wmv', // WMV
+        'video/x-m4v',    // M4V
+        'video/x-mpeg',   // MPEG
+        'video/x-dv',     // DV
+        'video/x-ms-asf'  // ASF
+        // Add more video formats if needed
+    ]
+};
 
+const upload = multer({
+    storage: multer.memoryStorage(),
+    fileFilter: (req, file, cb) => {
+        const isAcceptedType = [...ACCEPTED_MIME_TYPES.audio, ...ACCEPTED_MIME_TYPES.video].includes(file.mimetype);
+        if (!isAcceptedType) {
+            cb(new Error('Invalid file type. Only the following audio and video formats are accepted: ' +
+                'FLAC, MP3, MP4, MPEG, MPGA, M4A, OGG, WAV, WEBM for audio; and MP4, WEBM, OGG, QuickTime, AVI, MKV, FLV, 3GP, 3G2, WMV, M4V, MPEG, DV, ASF for video.'));
+            return;
+        }
+        cb(null, true);
+    }
+});
+// Helper function to extract audio from video
+const extractAudioFromVideo = async (inputPath: string): Promise<string> => {
+    const outputPath = inputPath.replace(path.extname(inputPath), '.mp3');
+
+    return new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+            .toFormat('mp3')
+            .on('end', () => resolve(outputPath))
+            .on('error', (err) => reject(err))
+            .save(outputPath);
+    });
+};
+
+// Helper function to ensure temp directory exists
+const ensureTempDir = async () => {
+    const tempDir = path.join(process.cwd(), 'uploads');
     try {
-        // Create share record
-        const share = await prisma.job_shares.create({
-            data: {
-                id: uuidv4(),
-                job_id: jobId,
-                type,
-                email,
-                token,
-                created_by: userId!,
-                status: 'pending'
-            }
-        });
-
-        res.json(share);
-    } catch (error) {
-        console.error('Error creating share:', error);
-        res.status(500).json({ error: 'Failed to create share' });
+        await fs.access(tempDir);
+    } catch {
+        await fs.mkdir(tempDir);
     }
-});
-
-router.get('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
-    console.log(`Fetching shares for job ${req.params.id}`);
-    const jobId = req.params.id;
-    const userId = req.user?.id;
-
-    try {
-
-        // Get all shares for this job
-        const shares = await prisma.job_shares.findMany({
-            where: { job_id: jobId }
-        });
-
-        res.json(shares);
-    } catch (error) {
-        console.error('Error fetching shares:', error);
-        res.status(500).json({ error: 'Failed to fetch shares' });
-    }
-});
-
-router.delete('/jobs/:id/shares/:shareId', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
-    console.log(`Deleting share ${req.params.shareId} for job ${req.params.id}`);
-    const { id: jobId, shareId } = req.params;
-    const userId = req.user?.id;
-
-    try {
-        // Delete the share
-        await prisma.job_shares.delete({
-            where: { id: shareId, job_id: jobId }
-        });
-
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error deleting share:', error);
-        res.status(500).json({ error: 'Failed to delete share' });
-    }
-});
-
-const storage = multer.diskStorage({
-    destination: 'uploads/',
-    filename: function (req, file, cb) {
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-    }
-});
-const upload = multer({ storage });
+    return tempDir;
+};
 
 const redisOptions = {
     host: process.env.REDIS_HOST || 'redis',
@@ -121,12 +117,48 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
     const jobId = uuidv4();
     const diarizationEnabled = req.body.diarization === 'true';
     const language = req.body.language;
+    const userId = req.user?.id;
+
+    if (!userId) {
+        res.status(400).json({ error: 'User not found' });
+        return;
+    }
+
+    if (!file) {
+        res.status(400).json({ error: 'No file uploaded' });
+        return;
+    }
+
     try {
+        const tempDir = await ensureTempDir();
+        const tempFilePath = path.join(tempDir, `${jobId}${path.extname(file.originalname)}`);
+
+        // Save the uploaded file locally
+        await fs.writeFile(tempFilePath, file.buffer);
+
+        let audioFilePath = tempFilePath;
+        let finalBuffer = file.buffer;
+
+        // If it's a video file, extract the audio
+        if (ACCEPTED_MIME_TYPES.video.includes(file.mimetype)) {
+            try {
+                audioFilePath = await extractAudioFromVideo(tempFilePath);
+                finalBuffer = await fs.readFile(audioFilePath);
+            } catch (error) {
+                console.error('Error extracting audio:', error);
+                throw new Error('Failed to extract audio from video');
+            }
+        }
+
+        // Upload file to B2
+        const fileKey = await storageService.uploadFile(finalBuffer, file.originalname, userId);
+
         await prisma.jobs.create({
             data: {
                 id: jobId,
-                user_id: req.user?.id || '',
-                file_name: file?.originalname || '',
+                user_id: userId,
+                file_name: file.originalname,
+                file_url: fileKey,
                 status: 'queued',
                 diarization_enabled: diarizationEnabled,
                 diarization_status: diarizationEnabled ? 'pending' : null
@@ -135,10 +167,10 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
 
         await transcriptionQueue.add('transcribe', {
             jobId,
-            filePath: file?.path,
+            audioFilePath,
             fileName: file?.originalname,
             diarizationEnabled,
-            userId: req.user?.id,
+            userId: userId,
             language
         });
 
@@ -170,11 +202,10 @@ router.delete('/jobs/:id', isAuthenticated, isResourceOwner, async (req, res) =>
         });
 
         if (job.file_url) {
-            const filePath = job.file_url.replace('/api/', '');
             try {
-                await fs.unlink(filePath);
+                await storageService.deleteFile(job.file_url);
             } catch (err) {
-                console.error('Error deleting file:', err);
+                console.error('Error deleting file from storage:', err);
             }
         }
 
@@ -210,168 +241,6 @@ router.get('/jobs', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     } catch (error) {
         console.error('Error fetching jobs:', error);
         res.status(500).json({ error: 'Failed to fetch jobs' });
-    }
-});
-
-router.get('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
-    console.log('Fetching transcription config');
-    try {
-        const config = await prisma.transcription_config.findFirst({
-            orderBy: { created_at: 'desc' }
-        });
-        res.json(config);
-    } catch (error) {
-        console.error('Error fetching transcription config:', error);
-        res.status(500).json({ error: 'Failed to fetch config' });
-    }
-});
-
-router.get('/config/refinement', isAuthenticated, checkAdmin, async (req, res) => {
-    try {
-        const config = await prisma.refinement_config.findFirst({
-            orderBy: { created_at: 'desc' }
-        });
-        res.json(config);
-    } catch (error) {
-        console.error('Error fetching refinement config:', error);
-        res.status(500).json({ error: 'Failed to fetch config' });
-    }
-});
-
-router.post('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
-    console.log('Updating transcription config');
-    const { openai_api_url, openai_api_key, model_name, max_concurrent_jobs } = req.body;
-
-    try {
-        const config = await prisma.transcription_config.updateMany({
-            data: {
-                openai_api_url,
-                openai_api_key,
-                model_name,
-                max_concurrent_jobs
-            }
-        });
-        res.json(config);
-    } catch (error) {
-        console.error('Error updating transcription config:', error);
-        res.status(500).json({ error: 'Failed to update config' });
-    }
-});
-
-/**
- * @swagger
- * /config/refinement:
- *   post:
- *     summary: Add refinement configuration
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               openai_api_url:
- *                 type: string
- *               openai_api_key:
- *                 type: string
- *               model_name:
- *                 type: string
- *               system_prompt:
- *                 type: string
- *     responses:
- *       200:
- *         description: Successfully added refinement configuration
- */router.post('/config/refinement', isAuthenticated, checkAdmin, async (req, res) => {
-    const { openai_api_url, openai_api_key, model_name, system_prompt } = req.body;
-
-    try {
-        const config = await prisma.refinement_config.updateMany({
-            data: {
-                openai_api_url,
-                openai_api_key,
-                model_name,
-                system_prompt
-            }
-        });
-        res.json(config);
-    } catch (error) {
-        console.error('Error updating refinement config:', error);
-        res.status(500).json({ error: 'Failed to update config' });
-    }
-});
-
-/**
- * @swagger
- * /jobs/{id}:
- *   get:
- *     summary: Get job by ID
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: The job ID
- *     responses:
- *       200:
- *         description: Successfully retrieved job
- */
-// Validate share token
-router.get('/jobs/:id/validate-token', async (req: AuthenticatedRequest, res: Response) => {
-    const jobId = req.params.id;
-    const token = req.query.token as string;
-
-    if (!token) {
-        res.status(400).json({ error: 'Token is required' });
-        return;
-    }
-
-    try {
-        const job = await prisma.jobs.findUnique({
-            where: { id: jobId },
-            include: { shares: true }
-        });
-
-        if (!job) {
-            res.status(404).json({ error: 'Job not found' });
-            return
-        }
-
-        const publicShare = job.shares.find(share =>
-            share.type === 'public' &&
-            share.token === token
-        );
-
-        if (publicShare) {
-            res.json({ valid: true });
-            return;
-        }
-
-        res.status(403).json({ error: 'Invalid token' });
-    } catch (error) {
-        console.error('Error validating token:', error);
-        res.status(500).json({ error: 'Failed to validate token' });
-    }
-});
-
-router.get('/jobs/:id', hasJobAccess, async (req: AuthenticatedRequest, res: Response) => {
-    const jobId = req.params.id;
-
-    try {
-        const job = await prisma.jobs.findUnique({
-            where: { id: jobId },
-            include: { shares: true }
-        });
-
-        if (!job) {
-            res.status(404).json({ error: 'Job not found' });
-            return;
-        }
-
-        res.json(job);
-    } catch (error) {
-        console.error('Error fetching job:', error);
-        res.status(500).json({ error: 'Failed to fetch job' });
     }
 });
 
@@ -568,6 +437,203 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
     }
 });
 
+router.get('/jobs/:id/presignedaudio', hasJobAccess, async (req: AuthenticatedRequest, res: Response) => {
+    const jobId = req.params.id;
+    try {
+        // Check cache first
+        const cacheKey = `presigned_url:${jobId}`;
+        const cachedUrl = await (await transcriptionQueue.client).get(cacheKey);
+
+        if (cachedUrl) {
+            res.json({ url: cachedUrl });
+            return;
+        }
+
+        const job = await prisma.jobs.findUnique({
+            select: { file_url: true },
+            where: { id: jobId },
+        });
+        if (!job) {
+            res.status(404).json({ error: 'Job not found' });
+            return;
+        }
+
+        const url = await storageService.getPresignedUrl(job.file_url!);
+
+        // Cache the URL for 1 hour
+        await (await transcriptionQueue.client).set(cacheKey, url, 'EX', 3600);
+
+        res.json({ url });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to generate URL' });
+    }
+});
+
+/**
+ * @swagger
+ * /jobs/{id}:
+ *   get:
+ *     summary: Get job by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The job ID
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved job
+ */
+// Validate share token
+router.get('/jobs/:id/validate-token', async (req: AuthenticatedRequest, res: Response) => {
+    const jobId = req.params.id;
+    const token = req.query.token as string;
+
+    if (!token) {
+        res.status(400).json({ error: 'Token is required' });
+        return;
+    }
+
+    try {
+        const job = await prisma.jobs.findUnique({
+            where: { id: jobId },
+            include: { shares: true }
+        });
+
+        if (!job) {
+            res.status(404).json({ error: 'Job not found' });
+            return
+        }
+
+        const publicShare = job.shares.find(share =>
+            share.type === 'public' &&
+            share.token === token
+        );
+
+        if (publicShare) {
+            res.json({ valid: true });
+            return;
+        }
+
+        res.status(403).json({ error: 'Invalid token' });
+    } catch (error) {
+        console.error('Error validating token:', error);
+        res.status(500).json({ error: 'Failed to validate token' });
+    }
+});
+
+router.get('/jobs/:id', hasJobAccess, async (req: AuthenticatedRequest, res: Response) => {
+    const jobId = req.params.id;
+
+    try {
+        const job = await prisma.jobs.findUnique({
+            where: { id: jobId },
+            include: { shares: true }
+        });
+
+        if (!job) {
+            res.status(404).json({ error: 'Job not found' });
+            return;
+        }
+
+        res.json(job);
+    } catch (error) {
+        console.error('Error fetching job:', error);
+        res.status(500).json({ error: 'Failed to fetch job' });
+    }
+});
+
+router.get('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
+    console.log('Fetching transcription config');
+    try {
+        const config = await prisma.transcription_config.findFirst({
+            orderBy: { created_at: 'desc' }
+        });
+        res.json(config);
+    } catch (error) {
+        console.error('Error fetching transcription config:', error);
+        res.status(500).json({ error: 'Failed to fetch config' });
+    }
+});
+
+router.get('/config/refinement', isAuthenticated, checkAdmin, async (req, res) => {
+    try {
+        const config = await prisma.refinement_config.findFirst({
+            orderBy: { created_at: 'desc' }
+        });
+        res.json(config);
+    } catch (error) {
+        console.error('Error fetching refinement config:', error);
+        res.status(500).json({ error: 'Failed to fetch config' });
+    }
+});
+
+router.post('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
+    console.log('Updating transcription config');
+    const { openai_api_url, openai_api_key, model_name, max_concurrent_jobs } = req.body;
+
+    try {
+        const config = await prisma.transcription_config.updateMany({
+            data: {
+                openai_api_url,
+                openai_api_key,
+                model_name,
+                max_concurrent_jobs
+            }
+        });
+        res.json(config);
+    } catch (error) {
+        console.error('Error updating transcription config:', error);
+        res.status(500).json({ error: 'Failed to update config' });
+    }
+});
+
+/**
+ * @swagger
+ * /config/refinement:
+ *   post:
+ *     summary: Add refinement configuration
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               openai_api_url:
+ *                 type: string
+ *               openai_api_key:
+ *                 type: string
+ *               model_name:
+ *                 type: string
+ *               system_prompt:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Successfully added refinement configuration
+ */
+router.post('/config/refinement', isAuthenticated, checkAdmin, async (req, res) => {
+    const { openai_api_url, openai_api_key, model_name, system_prompt } = req.body;
+
+    try {
+        const config = await prisma.refinement_config.updateMany({
+            data: {
+                openai_api_url,
+                openai_api_key,
+                model_name,
+                system_prompt
+            }
+        });
+        res.json(config);
+    } catch (error) {
+        console.error('Error updating refinement config:', error);
+        res.status(500).json({ error: 'Failed to update config' });
+    }
+});
+
+
+
 router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: AuthenticatedRequest, res: Response) => {
     console.log('Fetching admin statistics');
     try {
@@ -630,5 +696,72 @@ router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: Authenticate
         res.status(500).json({ error: 'Failed to fetch stats' });
     }
 });
+
+// Share management endpoints
+router.post('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
+    console.log(`Creating share for job ${req.params.id} by user ${req.user?.id}`);
+    const jobId = req.params.id;
+    const userId = req.user?.id;
+    const { type, email } = req.body;
+    const token = generateURLSafeToken();
+
+    try {
+        // Create share record
+        const share = await prisma.job_shares.create({
+            data: {
+                id: uuidv4(),
+                job_id: jobId,
+                type,
+                email,
+                token,
+                created_by: userId!,
+                status: 'pending'
+            }
+        });
+
+        res.json(share);
+    } catch (error) {
+        console.error('Error creating share:', error);
+        res.status(500).json({ error: 'Failed to create share' });
+    }
+});
+
+router.get('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
+    console.log(`Fetching shares for job ${req.params.id}`);
+    const jobId = req.params.id;
+    const userId = req.user?.id;
+
+    try {
+
+        // Get all shares for this job
+        const shares = await prisma.job_shares.findMany({
+            where: { job_id: jobId }
+        });
+
+        res.json(shares);
+    } catch (error) {
+        console.error('Error fetching shares:', error);
+        res.status(500).json({ error: 'Failed to fetch shares' });
+    }
+});
+
+router.delete('/jobs/:id/shares/:shareId', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
+    console.log(`Deleting share ${req.params.shareId} for job ${req.params.id}`);
+    const { id: jobId, shareId } = req.params;
+    const userId = req.user?.id;
+
+    try {
+        // Delete the share
+        await prisma.job_shares.delete({
+            where: { id: shareId, job_id: jobId }
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting share:', error);
+        res.status(500).json({ error: 'Failed to delete share' });
+    }
+});
+
 
 export { router };

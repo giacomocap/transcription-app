@@ -2,12 +2,11 @@ import { Worker, Queue } from 'bullmq';
 import prisma from './db';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
-import fs from 'fs';
-import path from 'path';
-import { RefinementConfig, TranscriptionConfig } from './types';
+import { createReadStream } from 'fs';
+import { RefinementConfig } from './types';
 import { TranscriptionSegment } from 'openai/resources/audio/transcriptions';
-// import { convertToOpus } from './converter';
 import crypto from 'crypto';
+import { unlink } from 'fs/promises';
 
 dotenv.config();
 
@@ -104,20 +103,10 @@ async function processAudioEnhancement(audioPath: string): Promise<string> {
     }
 }
 
-async function downloadFile(url: string, filePath: string): Promise<void> {
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Failed to download file: ${response.statusText}`);
-    }
-
-    const buffer = await response.arrayBuffer();
-    await fs.promises.writeFile(filePath, Buffer.from(buffer));
-}
-
 const transcriptionWorker = new Worker(
     'transcriptionQueue',
     async job => {
-        const { jobId, filePath, fileName, diarizationEnabled, language } = job.data;
+        const { jobId, audioFilePath, diarizationEnabled, language } = job.data;
 
         const openai = new OpenAI({
             apiKey: process.env.AUDIO_OPENAI_API_KEY || '',
@@ -131,39 +120,12 @@ const transcriptionWorker = new Worker(
         });
 
         try {
-            const absoluteFilePath = path.resolve(filePath);
-
-            // Convert file to Opus if it's not already an Opus
-            let transcriptionFilePath = absoluteFilePath;
-            // if (!filePath.toLowerCase().endsWith('.opus')) {
-            //     console.log(`Converting ${fileName} to Opus format...`);
-            //     transcriptionFilePath = await convertToOpus(absoluteFilePath);
-            //     console.log(`File converted successfully to: ${transcriptionFilePath}`);
-            // }
-
-            let enhancedAudioPath = transcriptionFilePath;
-            // First enhance the audio
-            // const enhancedAudioUrl = await processAudioEnhancement(transcriptionFilePath);
-
-            // // Download enhanced audio
-            // enhancedAudioPath = path.join(
-            //   os.tmpdir(),
-            //   `enhanced_${path.basename(transcriptionFilePath)}`
-            // );
-            // await downloadFile(enhancedAudioUrl, enhancedAudioPath);
-
-            const fileUrl = `/api/uploads/${path.basename(filePath)}`;
-
-            await prisma.jobs.update({
-                where: { id: jobId },
-                data: { file_url: fileUrl }
-            });
 
             // Start transcription with Whisper and measure time
             let transcription;
             try {
                 transcription = await openai.audio.transcriptions.create({
-                    file: fs.createReadStream(enhancedAudioPath),
+                    file: createReadStream(audioFilePath),
                     model: process.env.AUDIO_MODEL || '',
                     response_format: 'verbose_json',
                     language: language
@@ -179,13 +141,12 @@ const transcriptionWorker = new Worker(
                 });
 
                 transcription = await fallbackOpenai.audio.transcriptions.create({
-                    file: fs.createReadStream(enhancedAudioPath),
+                    file: createReadStream(audioFilePath),
                     model: process.env.AUDIO_MODEL1 || '',
                     response_format: 'verbose_json',
                     language: language
                 });
             }
-
             // Save initial transcription result
             const srtContent = segmentsToSRT(transcription.segments!);
             await prisma.jobs.update({
@@ -204,6 +165,11 @@ const transcriptionWorker = new Worker(
                     segments: transcription.segments,
                     fullText: transcription.text
                 });
+                try {
+                    await unlink(audioFilePath);
+                } catch (err) {
+                    console.error('Error deleting file:', err);
+                }
             } else {
                 // Set needs_user_confirmation flag and wait for user confirmation
                 await prisma.jobs.update({
@@ -219,7 +185,7 @@ const transcriptionWorker = new Worker(
                         },
                         body: JSON.stringify({
                             job_id: jobId,
-                            file_path: enhancedAudioPath,
+                            file_path: audioFilePath,
                         }),
                     });
 
@@ -252,6 +218,11 @@ const transcriptionWorker = new Worker(
                     transcript: error.message
                 }
             });
+            try {
+                await unlink(audioFilePath);
+            } catch (err) {
+                console.error('Error deleting file:', err);
+            }
             throw error;
         }
     },
@@ -263,7 +234,7 @@ const diarizationQueue = new Queue('diarizationQueue', { connection: redisOption
 const diarizationWorker = new Worker(
     'diarizationQueue',
     async job => {
-        const { jobId, transcriptionSegments } = job.data;
+        const { jobId } = job.data;
 
         try {
             await prisma.jobs.update({
@@ -341,7 +312,7 @@ async function refineTranscription(segments: TranscriptionSegment[], config: Ref
 const refinementWorker = new Worker(
     'refinementQueue',
     async job => {
-        const { jobId, segments, fullText } = job.data;
+        const { jobId, segments } = job.data;
 
         try {
             const openaiConfig = {

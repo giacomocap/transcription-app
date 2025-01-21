@@ -66,7 +66,6 @@ class Diarizer:
 
             # Handle video conversion if needed
             file_path = request.file_path
-            delete_after_process = False
             
             if file_path.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
                 file_path = await asyncio.get_event_loop().run_in_executor(
@@ -74,7 +73,9 @@ class Diarizer:
                     self._convert_video_to_audio,
                     file_path
                 )
-                delete_after_process = True
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.info(f"Temporary audio file {file_path} deleted.")
 
             # Run diarization in thread pool
             diarization = await asyncio.get_event_loop().run_in_executor(
@@ -105,7 +106,7 @@ class Diarizer:
                 speaker_profiles[speaker]["segments_count"] += 1
 
             # Cleanup
-            if delete_after_process and os.path.exists(file_path):
+            if os.path.exists(file_path):
                 os.remove(file_path)
                 logger.info(f"Temporary audio file {file_path} deleted.")
 
@@ -116,4 +117,7 @@ class Diarizer:
 
         except Exception as e:
             logger.error(f"Error during diarization: {str(e)}")
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"Temporary audio file {file_path} deleted.")
             raise

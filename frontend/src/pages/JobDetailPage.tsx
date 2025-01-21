@@ -17,6 +17,7 @@ import DeleteJobAlert from '@/components/DeleteJobAlert';
 import { EditJobDialog } from '@/components/EditJobDialog';
 import { ShareModal } from '../components/ShareModal';
 import { Badge } from '../components/ui/badge';
+import { AudioPlayer } from '@/components/AudioPlayer';
 
 export const JobDetailPage = () => {
   const [job, setJob] = useState<Job | null>(null);
@@ -243,14 +244,7 @@ export const JobDetailPage = () => {
 
           {job.file_url && (
             <div className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
-              <audio
-                ref={audioRef}
-                src={`${job.file_url}`}
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
-                onEnded={() => setIsPlaying(false)}
-                className="hidden"
-              />
+              <AudioPlayer audioRef={audioRef} jobid={job.id} handleLoadedMetadata={handleLoadedMetadata} handleTimeUpdate={handleTimeUpdate} setIsPlaying={() => setIsPlaying(false)} />
               <div className="flex flex-col space-y-2 md:space-y-4 w-full">
                 <div className="flex items-center space-x-2 md:space-x-4">
                   <Button

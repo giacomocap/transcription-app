@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "./ui/label";
 import { SpeakerLabelEditor } from "./SpeakerLabelEditor";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { fetchAudioUrl } from "@/lib/audioutils";
 
 interface EditJobDialogProps {
   job: Job;
@@ -29,9 +30,10 @@ interface EditJobDialogProps {
   onSave: (updatedJob: Partial<Job>) => void;
 }
 
-const DialogFormContent = ({ 
+const DialogFormContent = ({
   job,
   editedJob,
+  audioUrl,
   setEditedJob,
   uniqueSpeakers,
   handleRenameSpeaker,
@@ -41,6 +43,7 @@ const DialogFormContent = ({
 }: {
   job: Job;
   editedJob: Job;
+  audioUrl: string;
   setEditedJob: (fn: (prev: Job) => Job) => void;
   uniqueSpeakers: string[];
   handleRenameSpeaker: (oldLabel: string, newLabel: string) => void;
@@ -71,7 +74,7 @@ const DialogFormContent = ({
             segments={editedJob.speaker_segments!.filter(
               (segment) => segment.speaker === speakerLabel
             )}
-            audioUrl={job.file_url || ""}
+            audioUrl={audioUrl}
             onRename={(newLabel) =>
               handleRenameSpeaker(speakerLabel, newLabel)
             }
@@ -111,12 +114,31 @@ export const EditJobDialog = ({
 }: EditJobDialogProps) => {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [editedJob, setEditedJob] = useState<Job>(job);
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [uniqueSpeakers, setUniqueSpeakers] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchUrl = async () => {
+      try {
+        const url = await fetchAudioUrl(job.id);
+        setAudioUrl(url);
+      } catch (error) {
+        console.error('Error fetching audio URL:', error);
+      }
+    };
+
+    fetchUrl();
+  }, [job.id]);
 
   useEffect(() => {
     if (isOpen) {
       setEditedJob(job);
     }
   }, [isOpen, job]);
+
+  useEffect(() => {
+    setUniqueSpeakers(getUniqueSpeakers(editedJob.speaker_segments));
+  }, [editedJob.speaker_segments]);
 
   const handleSave = () => {
     onSave({
@@ -138,7 +160,6 @@ export const EditJobDialog = ({
     return Array.from(uniqueSpeakers);
   };
 
-  const [uniqueSpeakers] = useState(getUniqueSpeakers(editedJob.speaker_segments));
 
   const handleRenameSpeaker = useCallback((oldLabel: string, newLabel: string) => {
     setEditedJob(prev => {
@@ -187,6 +208,7 @@ export const EditJobDialog = ({
           <DialogFormContent
             job={job}
             editedJob={editedJob}
+            audioUrl={audioUrl}
             setEditedJob={setEditedJob}
             uniqueSpeakers={uniqueSpeakers}
             handleRenameSpeaker={handleRenameSpeaker}
@@ -208,6 +230,7 @@ export const EditJobDialog = ({
         <DialogFormContent
           job={job}
           editedJob={editedJob}
+          audioUrl={audioUrl}
           setEditedJob={setEditedJob}
           uniqueSpeakers={uniqueSpeakers}
           handleRenameSpeaker={handleRenameSpeaker}
