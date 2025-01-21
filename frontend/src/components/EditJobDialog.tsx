@@ -157,7 +157,9 @@ export const EditJobDialog = ({
         uniqueSpeakers.add(segment.speaker);
       }
     });
-    return Array.from(uniqueSpeakers);
+    // Sort only the first time when editedJob equals job (initial open)
+    const speakerArray = Array.from(uniqueSpeakers);
+    return editedJob === job ? speakerArray.sort() : speakerArray;
   };
 
 

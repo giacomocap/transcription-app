@@ -2,6 +2,16 @@ import prisma from './db';
 
 async function initializeDatabase() {
   try {
+
+    //update job where id = 9b912be6-6549-4a2e-a8f0-038c070bcfdc set refinement_pending = true
+    // await prisma.jobs.update({
+    //   where: {
+    //     id: '9b912be6-6549-4a2e-a8f0-038c070bcfdc'
+    //   },
+    //   data: {
+    //     refinement_pending: true
+    //   }
+    // });
     // Check if database is already initialized
     const existingConfig = await prisma.transcription_config.findFirst();
     if (existingConfig) {

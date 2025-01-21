@@ -12,16 +12,19 @@ import { AdminPage } from './pages/AdminPage';
 
 import { usePublicAccess } from './hooks/use-public-access';
 import { Button } from './components/ui/button';
+import LandingPage from './pages/LandingPage';
+import { useAuth } from './context/AuthContext';  // Add this import at the top
 
 // Create a new component to handle the conditional rendering of the Navigation
 const AppContent = () => {
   const location = useLocation();
   const { isPublicAccess } = usePublicAccess();
+  const { isAuthenticated } = useAuth();  // Add this line
   const isLandingPage = location.pathname === '/';
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {isPublicAccess ? (
+      {isPublicAccess || isLandingPage ? (
         <nav className="bg-white shadow">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16 items-center">
@@ -35,11 +38,12 @@ const AppContent = () => {
           </div>
         </nav>
       ) : (
-        !isLandingPage && <Navigation />
+        !isLandingPage &&
+        <Navigation />
       )}
       <main className="max-w-7xl mx-auto py-6">
         <Routes>
-          {/* <Route path="/" element={<LandingPage />} /> */}
+          <Route path="/" element={isAuthenticated ? <Navigate to="/upload" /> : <LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
             path="/upload"
@@ -73,7 +77,8 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/upload" />} />
+          {/* Remove or comment out the last route that redirects "/" to "/upload" */}
+          {/* <Route path="/" element={<Navigate to="/upload" />} /> */}
         </Routes>
       </main>
     </div>

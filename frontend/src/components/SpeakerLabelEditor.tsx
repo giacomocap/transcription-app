@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, ChangeEvent } from "react";
+import React, { useState, useRef, useEffect, ChangeEvent, useMemo } from "react";
 import { Segment } from "@/types";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -18,6 +18,16 @@ export const SpeakerLabelEditor: React.FC<SpeakerLabelEditorProps> = ({
   audioUrl,
   onRename,
 }) => {
+  const sortedSegments = useMemo(() => {
+    return [...segments]
+      .map((segment, index) => ({
+        ...segment,
+        originalIndex: index,
+        duration: segment.end - segment.start
+      }))
+      .sort((a, b) => b.duration - a.duration);
+  }, [segments]);
+
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -29,18 +39,18 @@ export const SpeakerLabelEditor: React.FC<SpeakerLabelEditorProps> = ({
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !segments || !segments[currentSegmentIndex]) return;
+    if (!audio || !sortedSegments || !sortedSegments[currentSegmentIndex]) return;
 
     const handleTimeUpdate = () => {
-      if (audio.currentTime >= segments[currentSegmentIndex].end) {
+      if (audio.currentTime >= sortedSegments[currentSegmentIndex].end) {
         audio.pause();
         setIsPlaying(false);
-        audio.currentTime = segments[currentSegmentIndex].start;
+        audio.currentTime = sortedSegments[currentSegmentIndex].start;
       }
     };
 
     audio.src = audioUrl;
-    audio.currentTime = segments[currentSegmentIndex].start;
+    audio.currentTime = sortedSegments[currentSegmentIndex].start;
 
     if (isPlaying) {
       audio.play();
@@ -51,7 +61,7 @@ export const SpeakerLabelEditor: React.FC<SpeakerLabelEditorProps> = ({
     return () => {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [currentSegmentIndex, segments, audioUrl, isPlaying]);
+  }, [currentSegmentIndex, sortedSegments, audioUrl, isPlaying]);
 
   const handlePlayPause = () => {
     if (audioRef.current) {
@@ -65,7 +75,7 @@ export const SpeakerLabelEditor: React.FC<SpeakerLabelEditorProps> = ({
   };
 
   const handleNext = () => {
-    if (currentSegmentIndex < segments.length - 1) {
+    if (currentSegmentIndex < sortedSegments.length - 1) {
       setCurrentSegmentIndex(currentSegmentIndex + 1);
     }
   };
@@ -120,7 +130,7 @@ export const SpeakerLabelEditor: React.FC<SpeakerLabelEditorProps> = ({
           variant="outline"
           size="icon"
           onClick={handleNext}
-          disabled={currentSegmentIndex === segments.length - 1}
+          disabled={currentSegmentIndex === sortedSegments.length - 1}
         >
           <ChevronRight className="w-4 h-4" />
         </Button>
