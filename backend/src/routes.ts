@@ -11,7 +11,7 @@ import { generateURLSafeToken } from './helper/helper';
 import { storageService } from './services/storage-service';
 import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
-import fs from 'fs/promises';
+import { access, mkdir, readFile, unlink, writeFile } from 'fs/promises';
 
 dotenv.config();
 
@@ -81,9 +81,9 @@ const extractAudioFromVideo = async (inputPath: string): Promise<string> => {
 const ensureTempDir = async () => {
     const tempDir = path.join(process.cwd(), 'uploads');
     try {
-        await fs.access(tempDir);
+        await access(tempDir);
     } catch {
-        await fs.mkdir(tempDir);
+        await mkdir(tempDir);
     }
     return tempDir;
 };
@@ -134,7 +134,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
         const tempFilePath = path.join(tempDir, `${jobId}${path.extname(file.originalname)}`);
 
         // Save the uploaded file locally
-        await fs.writeFile(tempFilePath, file.buffer);
+        await writeFile(tempFilePath, file.buffer);
 
         let audioFilePath = tempFilePath;
         let finalBuffer = file.buffer;
@@ -143,7 +143,8 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
         if (ACCEPTED_MIME_TYPES.video.includes(file.mimetype)) {
             try {
                 audioFilePath = await extractAudioFromVideo(tempFilePath);
-                finalBuffer = await fs.readFile(audioFilePath);
+                finalBuffer = await readFile(audioFilePath);
+                await unlink(tempFilePath);
             } catch (error) {
                 console.error('Error extracting audio:', error);
                 throw new Error('Failed to extract audio from video');

@@ -348,22 +348,40 @@ function chunkTranscription(segments: TranscriptionSegment[], maxTokens: number)
     const chunks: string[] = [];
     let currentChunk = '';
     let currentChunkTokens = 0;
+    let previousSpeaker: string | null = null;
 
     for (const segment of segments) {
-        const segmentText = segment.text;
-        const segmentTokens = estimateTokens(segmentText);
-        if (currentChunkTokens + segmentTokens > maxTokens && currentChunk) {
-            chunks.push(currentChunk);
-            currentChunk = '';
-            currentChunkTokens = 0;
+        // Extract speaker name from the segment text
+        const match = segment.text.match(/^\[(.*?)\]:/);
+        const currentSpeaker = match ? match[1] : null;
+
+        // Determine the text to add - either with or without speaker prefix
+        let textToAdd: string;
+        if (currentSpeaker === previousSpeaker && previousSpeaker !== null) {
+            // If same speaker, just add the content without the speaker prefix
+            textToAdd = segment.text.replace(/^\[.*?\]: /, '');
+        } else {
+            // If different speaker, add the full text
+            textToAdd = segment.text;
+            previousSpeaker = currentSpeaker;
         }
 
-        currentChunk += segmentText + ' ';
+        const segmentTokens = estimateTokens(textToAdd);
+
+        if (currentChunkTokens + segmentTokens > maxTokens && currentChunk) {
+            chunks.push(currentChunk.trim());
+            currentChunk = '';
+            currentChunkTokens = 0;
+            // Reset previousSpeaker at chunk boundary to ensure speaker is identified in new chunk
+            previousSpeaker = null;
+        }
+
+        currentChunk += textToAdd + ' ';
         currentChunkTokens += segmentTokens;
     }
 
     if (currentChunk) {
-        chunks.push(currentChunk);
+        chunks.push(currentChunk.trim());
     }
 
     return chunks;
