@@ -9,60 +9,71 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { FileAudio, Share2, Brain, ArrowRight } from 'lucide-react';
+import { FileAudio, Share2, Brain, ArrowRight, PlayCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Canvas } from '@react-three/fiber';
+import AnimatedMesh from '@/components/landing/AnimatedMesh';
+import BloomScene from '@/components/landing/BloomScene';
+import useAudioAnalyzer from '@/hooks/useAudioAnalyzer';
 
-// Animation variants for fading in elements
+// Enhanced animation variants
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6 }
+    transition: { duration: 0.8, ease: "easeOut" }
+  }
+};
+
+const slideIn = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.6, ease: "easeOut" }
   }
 };
 
 const LandingPage = () => {
   const { scrollY } = useScroll();
   const heroRef = useRef(null);
+  const videoRef = useRef<HTMLElement>(null);
   const isHeroInView = useInView(heroRef);
+  const videoInView = useInView(videoRef);
+  const frequency = useAudioAnalyzer();
+
+  const scrollToVideo = () => {
+    videoRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     document.title = 'Claire - Audio & Video Intelligence Platform';
   }, []);
 
-  // Parallax effect for hero section
-  const heroY = useTransform(scrollY, [0, 500], [0, 150]);
-
-  // Animated wave background component
-  const WaveBackground = () => (
-    <div className="absolute inset-0 overflow-hidden opacity-10">
-      <svg className="w-full h-full" viewBox="0 0 1200 120" preserveAspectRatio="none">
-        <path
-          d="M0,0 C300,30 600,90 1200,80 L1200,120 L0,120 Z"
-          className="fill-primary/20"
-        >
-          <animate
-            attributeName="d"
-            dur="5s"
-            repeatCount="indefinite"
-            values="M0,0 C300,30 600,90 1200,80 L1200,120 L0,120 Z;
-                    M0,0 C300,60 600,30 1200,100 L1200,120 L0,120 Z;
-                    M0,0 C300,30 600,90 1200,80 L1200,120 L0,120 Z"
-          />
-        </path>
-      </svg>
-    </div>
-  );
+  // Enhanced parallax effect
+  const heroY = useTransform(scrollY, [0, 500], [0, 200]);
+  // const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
+    <div className="min-h-screen bg-background">
+      {/* Enhanced Hero Section */}
       <motion.section
         ref={heroRef}
-        style={{ y: heroY }}
-        className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 to-background"
+        style={{ y: heroY, }}
+        className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-primary-foreground/5 to-background"
       >
-        <WaveBackground />
+        <div className="absolute inset-0 z-0">
+          <Canvas>
+            <ambientLight intensity={0.5} />
+            <BloomScene frequency={frequency} />
+            <AnimatedMesh
+              ready={true}
+              active={false}
+              frequency={frequency}
+            />
+          </Canvas>
+        </div>
         <div className="container mx-auto px-4 text-center relative z-10">
           <motion.div
             initial="hidden"
@@ -70,14 +81,28 @@ const LandingPage = () => {
             variants={fadeIn}
             className="mb-8"
           >
-            <h1 className="text-3xl font-bold mb-2">Claire</h1>
-            <h2 className="text-6xl font-bold">Transform Your Audio & Video Content into Actionable Intelligence</h2>
+            <motion.h1
+              className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
+            >
+              Claire
+            </motion.h1>
+            <motion.h2
+              className="text-6xl font-bold text-black"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+            >
+              Transform Your Audio & Video Content into Actionable Intelligence
+            </motion.h2>
           </motion.div>
           <motion.p
             initial="hidden"
             animate={isHeroInView ? "visible" : "hidden"}
             variants={fadeIn}
-            className="text-xl text-muted-foreground mb-8"
+            className="text-xl text-gray-600 mb-8"
           >
             From meetings to lectures, Claire turns spoken words into organized, searchable knowledge - in seconds.
           </motion.p>
@@ -87,37 +112,90 @@ const LandingPage = () => {
             variants={fadeIn}
             className="space-x-4"
           >
-            <Button size="lg" className="group">
-              Try Claire Free
-              <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+            <Button size="lg" asChild>
+              <Link to="/login" className="group bg-primary hover:bg-primary/90 inline-flex items-center font-semibold">
+                Try Claire Free<ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </Button>
-            <Button size="lg" variant="outline">
+            <Button size="lg" variant="outline" className="border-primary/20 hover:bg-primary/10" onClick={scrollToVideo}>
               See How It Works
             </Button>
           </motion.div>
         </div>
       </motion.section>
 
-      {/* Social Proof Bar */}
+      {/* How It Works Video Section */}
       <motion.section
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        className="py-16 bg-primary/5 border-y border-primary/10"
+        ref={videoRef}
+        initial="hidden"
+        animate={videoInView ? "visible" : "hidden"}
+        variants={fadeIn}
+        className="py-24 relative z-10 bg-background"
       >
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xl font-medium mb-12 text-primary">Trusted by Leading Organizations</p>
-          <div className="grid grid-cols-3 gap-12 items-center max-w-4xl mx-auto">
-            {/* Replace with actual logos */}
-            <div className="h-16 bg-primary/10 rounded-lg shadow-sm hover:bg-primary/15 transition-colors" />
-            <div className="h-16 bg-primary/10 rounded-lg shadow-sm hover:bg-primary/15 transition-colors" />
-            <div className="h-16 bg-primary/10 rounded-lg shadow-sm hover:bg-primary/15 transition-colors" />
-          </div>
+          <motion.h2
+            className="text-4xl font-bold mb-8 text-black"
+            variants={slideIn}
+          >
+            See How Claire Works
+          </motion.h2>
+          <motion.div
+            className="relative max-w-4xl mx-auto rounded-xl overflow-hidden shadow-2xl"
+            variants={fadeIn}
+          >
+            <iframe
+              width="100%"
+              height="600"
+              src="https://www.youtube.com/embed/vLWeJZLV2qM?autoplay=1&loop=1&playlist=vLWeJZLV2qM"
+              title="How Claire Works"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="rounded-xl"
+            />
+          </motion.div>
         </div>
       </motion.section>
 
+      {/* Enhanced Social Proof Bar */}
+      {/* <motion.section
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="py-16 bg-primary/5 border-y border-primary/10 relative z-20"
+      >
+        <div className="container mx-auto px-4 text-center">
+          <motion.p
+            className="text-xl font-medium mb-12 text-primary"
+            variants={slideIn}
+          >
+            Trusted by Leading Organizations
+          </motion.p>
+          <div className="grid grid-cols-3 gap-12 items-center max-w-4xl mx-auto">
+            <motion.img
+              src="/images/claire-upload.png"
+              alt="Upload Feature"
+              className="h-16 rounded-lg shadow-lg hover:shadow-primary/20 transition-all duration-300 object-contain bg-primary/10"
+              whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+            />
+            <motion.img
+              src="/images/claire-sharing.png"
+              alt="Sharing Feature"
+              className="h-16 rounded-lg shadow-lg hover:shadow-primary/20 transition-all duration-300 object-contain bg-primary/10"
+              whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+            />
+            <motion.img
+              src="/images/claire-business-summary.png"
+              alt="Business Summary Feature"
+              className="h-16 rounded-lg shadow-lg hover:shadow-primary/20 transition-all duration-300 object-contain bg-primary/10"
+              whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+            />
+          </div>
+        </div>
+      </motion.section> */}
+
       {/* Main Benefits */}
-      <section className="py-24">
+      <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-8">
             {[
@@ -155,24 +233,24 @@ const LandingPage = () => {
       </section>
 
       {/* Features Showcase */}
-      <section className="py-24 bg-muted">
+      <section className="py-24 bg-primary/5">
         <div className="container mx-auto px-4">
           {[
             {
               title: "Smart Transcription",
               description: "Crystal-clear transcripts with speaker identification, automatically organized by topics and speakers.",
               // Replace with actual screenshot
-              image: "/api/placeholder/600/400"
+              image: "/images/claire-lecture-transcription.png"
             },
             {
               title: "AI-Enhanced Summaries",
               description: "Get the essence of any recording in seconds. Key points, action items, and concepts automatically extracted.",
-              image: "/api/placeholder/600/400"
+              image: "/images/claire-business-summary.png"
             },
             {
               title: "Interactive Experience",
               description: "Ask questions, extract specific information, or dive deeper into any topic. Your content becomes a knowledge base you can actually talk to.",
-              image: "/api/placeholder/600/400"
+              image: "/images/claire-lecture-ai.png"
             }
           ].map((feature, index) => (
             <motion.div
@@ -206,53 +284,96 @@ const LandingPage = () => {
       </section>
 
       {/* Usage Scenarios */}
-      <section className="py-24">
+      <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-12">Perfect for Every Scenario</h2>
-          <Tabs defaultValue="meetings" className="max-w-3xl mx-auto">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="meetings">Team Meetings</TabsTrigger>
-              <TabsTrigger value="lectures">Academic Lectures</TabsTrigger>
-              <TabsTrigger value="content">Content Creation</TabsTrigger>
-              <TabsTrigger value="personal">Personal Notes</TabsTrigger>
-            </TabsList>
-            {[
-              {
-                value: "meetings",
-                title: "Team Meetings & Collaboration",
-                description: "Never miss a detail in your meetings. Claire automatically identifies speakers, tracks action items, and makes your meetings searchable."
-              },
-              {
-                value: "lectures",
-                title: "Academic Lectures & Research",
-                description: "Transform lengthy lectures into organized study materials. Extract key concepts, create summaries, and interact with your notes."
-              },
-              {
-                value: "content",
-                title: "Content Creation & Podcasting",
-                description: "Streamline your content production workflow. Get transcripts, summaries, and key points from your recordings instantly."
-              },
-              {
-                value: "personal",
-                title: "Personal Voice Notes",
-                description: "Turn your thoughts into organized, actionable information. Claire helps you capture and structure your ideas effectively."
-              }
-            ].map((scenario) => (
-              <TabsContent key={scenario.value} value={scenario.value}>
-                <Card>
-                  <CardContent className="pt-6">
-                    <h3 className="text-2xl font-semibold mb-4">{scenario.title}</h3>
-                    <p className="text-muted-foreground">{scenario.description}</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            ))}
-          </Tabs>
+
+          {/* Tabs - Visible on desktop */}
+          <div className="hidden sm:block">
+            <Tabs defaultValue="meetings" className="max-w-3xl mx-auto">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="meetings">Team Meetings</TabsTrigger>
+                <TabsTrigger value="lectures">Academic Lectures</TabsTrigger>
+                <TabsTrigger value="content">Content Creation</TabsTrigger>
+                <TabsTrigger value="personal">Personal Notes</TabsTrigger>
+              </TabsList>
+              {[
+                {
+                  value: "meetings",
+                  title: "Team Meetings & Collaboration",
+                  description: "Never miss a detail in your meetings. Claire automatically identifies speakers, tracks action items, and makes your meetings searchable."
+                },
+                {
+                  value: "lectures",
+                  title: "Academic Lectures & Research",
+                  description: "Transform lengthy lectures into organized study materials. Extract key concepts, create summaries, and interact with your notes."
+                },
+                {
+                  value: "content",
+                  title: "Content Creation & Podcasting",
+                  description: "Streamline your content production workflow. Get transcripts, summaries, and key points from your recordings instantly."
+                },
+                {
+                  value: "personal",
+                  title: "Personal Voice Notes",
+                  description: "Turn your thoughts into organized, actionable information. Claire helps you capture and structure your ideas effectively."
+                }
+              ].map((scenario) => (
+                <TabsContent key={scenario.value} value={scenario.value}>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <h3 className="text-2xl font-semibold mb-4">{scenario.title}</h3>
+                      <p className="text-muted-foreground">{scenario.description}</p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+
+          {/* Accordion - Visible on mobile */}
+          <div className="sm:hidden space-y-4">
+            <Accordion type="single" defaultValue="scenario-0" collapsible className="w-full">
+              {[
+                {
+                  value: "meetings",
+                  title: "Team Meetings & Collaboration",
+                  description: "Never miss a detail in your meetings. Claire automatically identifies speakers, tracks action items, and makes your meetings searchable."
+                },
+                {
+                  value: "lectures",
+                  title: "Academic Lectures & Research",
+                  description: "Transform lengthy lectures into organized study materials. Extract key concepts, create summaries, and interact with your notes."
+                },
+                {
+                  value: "content",
+                  title: "Content Creation & Podcasting",
+                  description: "Streamline your content production workflow. Get transcripts, summaries, and key points from your recordings instantly."
+                },
+                {
+                  value: "personal",
+                  title: "Personal Voice Notes",
+                  description: "Turn your thoughts into organized, actionable information. Claire helps you capture and structure your ideas effectively."
+                }
+              ].map((scenario, index) => (
+                <AccordionItem key={index} value={`scenario-${index}`}>
+                  <AccordionTrigger className="text-foreground">{scenario.title}</AccordionTrigger>
+                  <AccordionContent>
+                    <Card>
+                      <CardContent className="pt-6">
+                        <p className="text-foreground">{scenario.description}</p>
+                      </CardContent>
+                    </Card>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section className="py-24 bg-muted">
+      <section className="py-24 bg-primary/5">
         <div className="container mx-auto px-4 max-w-3xl">
           <h2 className="text-4xl font-bold text-center mb-12">Frequently Asked Questions</h2>
           <Accordion type="single" collapsible>
@@ -289,7 +410,7 @@ const LandingPage = () => {
         whileInView="visible"
         viewport={{ once: true }}
         variants={fadeIn}
-        className="py-24 text-center"
+        className="py-24 text-center bg-background"
       >
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold mb-6">Start Converting Your Audio & Video Today</h2>
@@ -303,7 +424,7 @@ const LandingPage = () => {
       </motion.section>
 
       {/* Footer */}
-      <footer className="py-12 bg-muted">
+      <footer className="py-12 bg-primary/5">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
@@ -336,7 +457,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Claire. All rights reserved.
+            © {new Date().getFullYear()} Claire by Giacomo Cappellozza. All rights reserved.
           </div>
         </div>
       </footer>

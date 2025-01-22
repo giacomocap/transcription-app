@@ -14,6 +14,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import DeleteJobAlert from "@/components/DeleteJobAlert";
 
 export const JobsDashboard = () => {
+    useEffect(() => {
+        document.title = 'Transcriptions - Claire.AI';
+    }, []);
+
     const [jobs, setJobs] = useState<Job[]>([]);
     const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 

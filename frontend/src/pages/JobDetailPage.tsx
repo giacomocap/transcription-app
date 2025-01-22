@@ -68,6 +68,10 @@ export const JobDetailPage = () => {
     }
   }, [job, isEditDialogOpen, hasDialogBeenShown]);
 
+  useEffect(() => {
+    document.title = job ? `${job.file_name} - Claire.AI` : 'Transcription Details - Claire.AI';
+  }, [job]);
+
   const fetchJob = async () => {
     if (!id) return;
     const response = await fetch(`/api/jobs/${id}${isPublicAccess ? '?token=' + searchParams.get('token') : ''}`);

@@ -165,10 +165,10 @@ export const ShareModal = ({ jobId, isOpen, onClose }: ShareModalProps) => {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Share className="w-5 h-5" />
-            Share Job
+            Share Transcript
           </DialogTitle>
           <DialogDescription>
-            Share this job via email or public link
+            Share this transcript via email or public link
           </DialogDescription>
         </DialogHeader>
 

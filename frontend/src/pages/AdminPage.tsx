@@ -1,4 +1,4 @@
-// frontend/src/pages/AdminPage.tsx  
+import { useEffect } from 'react';
 import StatsView from '../components/StatsView';
 
 // interface TranscriptionConfig {
@@ -17,6 +17,10 @@ import StatsView from '../components/StatsView';
 // }
 
 export const AdminPage = () => {
+    useEffect(() => {
+        document.title = 'Admin Settings - Claire.AI';
+    }, []);
+
     // const [transcriptionConfig, setTranscriptionConfig] = useState<TranscriptionConfig>({
     //     openai_api_url: '',
     //     openai_api_key: '',

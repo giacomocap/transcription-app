@@ -2,8 +2,13 @@ import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Card, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { useEffect } from 'react';
 
 export const LoginPage = () => {
+  useEffect(() => {
+    document.title = 'Login - Claire.AI';
+  }, []);
+
   const { isAuthenticated, isLoading, login } = useAuth();
 
   if (isLoading) {

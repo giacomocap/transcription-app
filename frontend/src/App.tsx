@@ -14,31 +14,36 @@ import { usePublicAccess } from './hooks/use-public-access';
 import { Button } from './components/ui/button';
 import LandingPage from './pages/LandingPage';
 import { useAuth } from './context/AuthContext';  // Add this import at the top
+import { useEffect, useMemo } from 'react';
 
 // Create a new component to handle the conditional rendering of the Navigation
 const AppContent = () => {
   const location = useLocation();
   const { isPublicAccess } = usePublicAccess();
   const { isAuthenticated } = useAuth();  // Add this line
-  const isLandingPage = location.pathname === '/';
+  useEffect(() => {
+    document.title = 'Claire - Audio & Video Intelligence Platform';
+  }, []);
+  const isLandingPage = useMemo(() => location.pathname === '/', [location.pathname]);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {isPublicAccess || isLandingPage ? (
-        <nav className="bg-white shadow">
+        <nav className="bg-white shadow fixed top-0 w-full z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16 items-center">
-              <p className="text-base font-medium text-gray-900">
-                <span className="text-primary">Unlock the full potential:</span> Sign up to Claire.AI now to access all features including meeting and lectures transcription and AI insights!
+            <div className="flex flex-col sm:flex-row justify-between py-3 sm:py-0 sm:h-16 items-center gap-2 sm:gap-4">
+              <p className="text-sm sm:text-base font-medium text-gray-900 text-center sm:text-left">
+                <span className="text-primary">Try Claire:</span>
+                <span className="hidden sm:inline"> Sign up now to access all features including meeting transcription and AI insights!</span>
+                <span className="sm:hidden"> Sign up for full access!</span>
               </p>
-              <Button asChild className="bg-primary hover:bg-primary/90">
+              <Button asChild className="bg-primary hover:bg-primary/90 whitespace-nowrap">
                 <Link to="/login" className="font-semibold">Sign Up Now</Link>
               </Button>
             </div>
           </div>
         </nav>
       ) : (
-        !isLandingPage &&
         <Navigation />
       )}
       <main className="max-w-7xl mx-auto py-6">
