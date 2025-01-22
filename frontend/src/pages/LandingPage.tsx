@@ -9,7 +9,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { FileAudio, Share2, Brain, ArrowRight, PlayCircle } from 'lucide-react';
+import { FileAudio, Share2, Brain, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import AnimatedMesh from '@/components/landing/AnimatedMesh';
@@ -431,7 +431,7 @@ const LandingPage = () => {
               <h3 className="font-semibold mb-4">Claire</h3>
               <p className="text-sm text-muted-foreground">Transform your audio and video content into actionable intelligence.</p>
             </div>
-            <div>
+            {/* <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2">
                 <li><a href="#features" className="text-sm text-muted-foreground hover:text-primary">Features</a></li>
@@ -446,13 +446,13 @@ const LandingPage = () => {
                 <li><a href="#blog" className="text-sm text-muted-foreground hover:text-primary">Blog</a></li>
                 <li><a href="#support" className="text-sm text-muted-foreground hover:text-primary">Support</a></li>
               </ul>
-            </div>
+            </div> */}
             <div>
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2">
-                <li><a href="#about" className="text-sm text-muted-foreground hover:text-primary">About</a></li>
-                <li><a href="#privacy" className="text-sm text-muted-foreground hover:text-primary">Privacy</a></li>
-                <li><a href="#terms" className="text-sm text-muted-foreground hover:text-primary">Terms</a></li>
+                <li><a href="https://giacomocap.github.io/blog/" className="text-sm text-muted-foreground hover:text-primary">About</a></li>
+                {/* <li><a href="#privacy" className="text-sm text-muted-foreground hover:text-primary">Privacy</a></li>
+                <li><a href="#terms" className="text-sm text-muted-foreground hover:text-primary">Terms</a></li> */}
               </ul>
             </div>
           </div>
