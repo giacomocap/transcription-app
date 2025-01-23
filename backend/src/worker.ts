@@ -1,5 +1,6 @@
 import { Worker, Queue } from 'bullmq';
-import prisma from './db';
+// import prisma from './db';
+import { supabaseAdmin } from './utils/supabase';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import { createReadStream } from 'fs';
@@ -49,10 +50,10 @@ async function pollDiarizationStatus(jobId: string, maxAttempts = 360): Promise<
             throw new Error(`Diarization failed: ${status.error}`);
         }
 
-        await prisma.jobs.update({
-            where: { id: jobId },
-            data: { diarization_progress: +status.progress }
-        });
+        await supabaseAdmin
+            .from('jobs')
+            .update({ diarization_progress: +status.progress })
+            .eq('id', jobId);
 
         // Wait for 10 seconds before next attempt
         await new Promise(resolve => setTimeout(resolve, 10000));
@@ -114,10 +115,10 @@ const transcriptionWorker = new Worker(
             timeout: 600000,
         });
 
-        await prisma.jobs.update({
-            where: { id: jobId },
-            data: { status: 'running' }
-        });
+        await supabaseAdmin
+            .from('jobs')
+            .update({ status: 'running' })
+            .eq('id', jobId);
 
         try {
 
@@ -149,14 +150,14 @@ const transcriptionWorker = new Worker(
             }
             // Save initial transcription result
             const srtContent = segmentsToSRT(transcription.segments!);
-            await prisma.jobs.update({
-                where: { id: jobId },
-                data: {
+            await supabaseAdmin
+                .from('jobs')
+                .update({
                     status: 'transcribed',
                     transcript: transcription.text,
                     subtitle_content: srtContent
-                }
-            });
+                })
+                .eq('id', jobId);
 
             // Start refinement immediately if diarization is disabled
             if (!diarizationEnabled) {
@@ -172,10 +173,10 @@ const transcriptionWorker = new Worker(
                 }
             } else {
                 // Set needs_user_confirmation flag and wait for user confirmation
-                await prisma.jobs.update({
-                    where: { id: jobId },
-                    data: { refinement_pending: true }
-                });
+                await supabaseAdmin
+                    .from('jobs')
+                    .update({ refinement_pending: true })
+                    .eq('id', jobId);
 
                 try {
                     const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
@@ -200,10 +201,10 @@ const transcriptionWorker = new Worker(
 
                 } catch (error: any) {
                     console.error('Diarization error:', error);
-                    await prisma.jobs.update({
-                        where: { id: jobId },
-                        data: { diarization_status: 'failed' }
-                    });
+                    await supabaseAdmin
+                        .from('jobs')
+                        .update({ diarization_status: 'failed' })
+                        .eq('id', jobId);
                 }
             }
 
@@ -211,13 +212,13 @@ const transcriptionWorker = new Worker(
 
         } catch (error: any) {
             console.error('Error processing job:', error);
-            await prisma.jobs.update({
-                where: { id: jobId },
-                data: {
+            await supabaseAdmin
+                .from('jobs')
+                .update({
                     status: 'failed',
                     transcript: error.message
-                }
-            });
+                })
+                .eq('id', jobId);
             try {
                 await unlink(audioFilePath);
             } catch (err) {
@@ -237,34 +238,31 @@ const diarizationWorker = new Worker(
         const { jobId } = job.data;
 
         try {
-            await prisma.jobs.update({
-                where: { id: jobId },
-                data: { diarization_status: 'running' }
-            });
+            await supabaseAdmin
+                .from('jobs')
+                .update({ diarization_status: 'running' })
+                .eq('id', jobId);
 
             const diarizationResult = await pollDiarizationStatus(jobId);
 
-            await prisma.jobs.update({
-                where: { id: jobId },
-                data: {
+            await supabaseAdmin
+                .from('jobs')
+                .update({
                     diarization_status: 'completed',
                     speaker_profiles: diarizationResult.speaker_profiles,
                     speaker_segments: diarizationResult.segments,
                     diarization_progress: 100,
                     refinement_pending: true
-                }
-            });
+                })
+                .eq('id', jobId);
 
             return { jobId, status: 'completed' };
         } catch (error: any) {
             console.error('Diarization polling error:', error);
-            await prisma.jobs.update({
-                where: { id: jobId },
-                data: {
-                    diarization_status: 'failed',
-                    // diarization_error: error.message
-                }
-            });
+            await supabaseAdmin
+                .from('jobs')
+                .update({ diarization_status: 'failed' })
+                .eq('id', jobId);
             throw error;
         }
     },
@@ -325,14 +323,14 @@ const refinementWorker = new Worker(
             const refinedText = await refineTranscription(segments, openaiConfig);
             const executiveSummary = await generateExecutiveSummary(refinedText, openaiConfig);
 
-            await prisma.jobs.update({
-                where: { id: jobId },
-                data: {
+            await supabaseAdmin
+                .from('jobs')
+                .update({
                     status: 'transcribed',
                     refined_transcript: refinedText,
                     summary: executiveSummary
-                }
-            });
+                })
+                .eq('id', jobId);
             console.log(`Refinement update completed for job ${jobId}`);
 
         } catch (error) {

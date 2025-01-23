@@ -1,24 +1,21 @@
 import { Router, Response } from 'express';
 import multer from 'multer';
 import { Queue } from 'bullmq';
-import prisma from './db';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import { refineTranscription } from './refinement';
-import { isAuthenticated, isResourceOwner, configureAuthRoutes, checkAdmin, hasJobAccess } from './auth';
+import { isAuthenticated, isResourceOwner, isAdmin, hasJobAccess } from './auth';
 import { AuthenticatedRequest } from './types/auth';
 import { generateURLSafeToken } from './helper/helper';
 import { storageService } from './services/storage-service';
 import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 import { access, mkdir, readFile, unlink, writeFile } from 'fs/promises';
+import { supabaseAdmin } from './utils/supabase';
 
 dotenv.config();
 
 const router = Router();
-
-// Configure auth routes
-configureAuthRoutes(router);
 
 const ACCEPTED_MIME_TYPES = {
     audio: [
@@ -154,16 +151,26 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
         // Upload file to B2
         const fileKey = await storageService.uploadFile(finalBuffer, file.originalname, userId);
 
-        await prisma.jobs.create({
-            data: {
-                id: jobId,
-                user_id: userId,
-                file_name: file.originalname,
-                file_url: fileKey,
-                status: 'queued',
-                diarization_enabled: diarizationEnabled,
-                diarization_status: diarizationEnabled ? 'pending' : null
-            }
+        // await prisma.jobs.create({
+        //     data: {
+        //         id: jobId,
+        //         user_id: userId,
+        //         file_name: file.originalname,
+        //         file_url: fileKey,
+        //         status: 'queued',
+        //         diarization_enabled: diarizationEnabled,
+        //         diarization_status: diarizationEnabled ? 'pending' : null
+        //     }
+        // });
+
+        await supabaseAdmin.from('jobs').insert({
+            id: jobId,
+            user_id: userId,
+            file_name: file.originalname,
+            file_url: fileKey,
+            status: 'queued',
+            diarization_enabled: diarizationEnabled,
+            diarization_status: diarizationEnabled ? 'pending' : null
         });
 
         await transcriptionQueue.add('transcribe', {
@@ -188,19 +195,14 @@ router.delete('/jobs/:id', isAuthenticated, isResourceOwner, async (req, res) =>
     const jobId = req.params.id;
 
     try {
-        const job = await prisma.jobs.findUnique({
-            select: { file_url: true },
-            where: { id: jobId }
-        });
+        const { data: job } = await supabaseAdmin.from('jobs').select('file_url').eq('id', jobId).single();
 
         if (!job) {
             res.status(404).json({ error: 'Job not found' });
             return;
         }
 
-        await prisma.jobs.delete({
-            where: { id: jobId }
-        });
+        await supabaseAdmin.from('jobs').delete().eq('id', jobId);
 
         if (job.file_url) {
             try {
@@ -234,10 +236,7 @@ router.delete('/jobs/:id', isAuthenticated, isResourceOwner, async (req, res) =>
 router.get('/jobs', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     console.log(`Fetching jobs for user ${req.user?.id}`);
     try {
-        const jobs = await prisma.jobs.findMany({
-            where: { user_id: req.user?.id },
-            orderBy: { created_at: 'desc' }
-        });
+        const { data: jobs } = await supabaseAdmin.from('jobs').select('*').eq('user_id', req.user?.id).order('created_at', { ascending: false });
         res.json(jobs);
     } catch (error) {
         console.error('Error fetching jobs:', error);
@@ -270,20 +269,16 @@ router.post('/jobs/:id/refine', isAuthenticated, isResourceOwner, async (req: Au
     const jobId = req.params.id;
 
     try {
-        const job = await prisma.jobs.findUnique({
-            select: { transcript: true },
-            where: {
-                id: jobId,
-                user_id: req.user?.id
-            }
-        });
+
+        const { data: job } = await supabaseAdmin.from('jobs').select('transcript').eq('id', jobId).eq('user_id', req.user?.id).single();
 
         if (!job?.transcript) {
             res.status(404).json({ error: 'Original transcription not found' });
             return;
         }
 
-        const config = await prisma.refinement_config.findFirst();
+        const { data: config } = await supabaseAdmin.from('refinement_config').select('*').single();
+
         if (!config) {
             res.status(500).json({ error: 'Refinement config not found' });
             return;
@@ -291,10 +286,7 @@ router.post('/jobs/:id/refine', isAuthenticated, isResourceOwner, async (req: Au
 
         const refinedText = await refineTranscription(job.transcript, config);
 
-        await prisma.jobs.update({
-            where: { id: jobId },
-            data: { refined_transcript: refinedText }
-        });
+        await supabaseAdmin.from('jobs').update({ refined_transcript: refinedText }).eq('id', jobId).single();
 
         console.log(`Refinement completed for job ${req.params.id}`);
         res.json({ success: true, refinedText });
@@ -353,13 +345,8 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
     }
 
     try {
-        const job = await prisma.jobs.findUnique({
-            select: { refinement_pending: true, subtitle_content: true, transcript: true, speaker_segments: true },
-            where: {
-                id: jobId,
-                user_id: req.user?.id
-            }
-        });
+
+        const { data: job } = await supabaseAdmin.from('jobs').select('refinement_pending, subtitle_content, transcript, speaker_segments').eq('id', jobId).eq('user_id', req.user?.id).single();
 
         if (!job) {
             res.status(404).json({ error: 'Job not found' });
@@ -371,10 +358,7 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
         if (speaker_profiles) updateData.speaker_profiles = speaker_profiles;
         if (speaker_segments) updateData.speaker_segments = speaker_segments;
 
-        await prisma.jobs.update({
-            where: { id: jobId },
-            data: updateData
-        });
+        await supabaseAdmin.from('jobs').update(updateData).eq('id', jobId).single();
 
         if (job.refinement_pending) {
             const refinementQueue = new Queue('refinementQueue', { connection: redisOptions });
@@ -450,10 +434,7 @@ router.get('/jobs/:id/presignedaudio', hasJobAccess, async (req: AuthenticatedRe
             return;
         }
 
-        const job = await prisma.jobs.findUnique({
-            select: { file_url: true },
-            where: { id: jobId },
-        });
+        const { data: job } = await supabaseAdmin.from('jobs').select('file_url').eq('id', jobId).single();
         if (!job) {
             res.status(404).json({ error: 'Job not found' });
             return;
@@ -497,10 +478,14 @@ router.get('/jobs/:id/validate-token', async (req: AuthenticatedRequest, res: Re
     }
 
     try {
-        const job = await prisma.jobs.findUnique({
-            where: { id: jobId },
-            include: { shares: true }
-        });
+        const { data: job } = await supabaseAdmin
+            .from('jobs')
+            .select(`id,
+            user_id,
+            shares(*)`)
+            .eq('id', jobId)
+            .single();
+
 
         if (!job) {
             res.status(404).json({ error: 'Job not found' });
@@ -528,10 +513,14 @@ router.get('/jobs/:id', hasJobAccess, async (req: AuthenticatedRequest, res: Res
     const jobId = req.params.id;
 
     try {
-        const job = await prisma.jobs.findUnique({
-            where: { id: jobId },
-            include: { shares: true }
-        });
+        const { data: job } = await supabaseAdmin
+            .from('jobs')
+            .select(`
+                *,
+                shares (*)
+            `)
+            .eq('id', jobId)
+            .single();
 
         if (!job) {
             res.status(404).json({ error: 'Job not found' });
@@ -545,12 +534,15 @@ router.get('/jobs/:id', hasJobAccess, async (req: AuthenticatedRequest, res: Res
     }
 });
 
-router.get('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
+router.get('/config/transcription', isAuthenticated, isAdmin, async (req, res) => {
     console.log('Fetching transcription config');
     try {
-        const config = await prisma.transcription_config.findFirst({
-            orderBy: { created_at: 'desc' }
-        });
+        const { data: config } = await supabaseAdmin
+            .from('transcription_config')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
         res.json(config);
     } catch (error) {
         console.error('Error fetching transcription config:', error);
@@ -558,11 +550,14 @@ router.get('/config/transcription', isAuthenticated, checkAdmin, async (req, res
     }
 });
 
-router.get('/config/refinement', isAuthenticated, checkAdmin, async (req, res) => {
+router.get('/config/refinement', isAuthenticated, isAdmin, async (req, res) => {
     try {
-        const config = await prisma.refinement_config.findFirst({
-            orderBy: { created_at: 'desc' }
-        });
+        const { data: config } = await supabaseAdmin
+            .from('refinement_config')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
         res.json(config);
     } catch (error) {
         console.error('Error fetching refinement config:', error);
@@ -570,19 +565,21 @@ router.get('/config/refinement', isAuthenticated, checkAdmin, async (req, res) =
     }
 });
 
-router.post('/config/transcription', isAuthenticated, checkAdmin, async (req, res) => {
+router.post('/config/transcription', isAuthenticated, isAdmin, async (req, res) => {
     console.log('Updating transcription config');
     const { openai_api_url, openai_api_key, model_name, max_concurrent_jobs } = req.body;
 
     try {
-        const config = await prisma.transcription_config.updateMany({
-            data: {
+        const { data: config } = await supabaseAdmin
+            .from('transcription_config')
+            .update({
                 openai_api_url,
                 openai_api_key,
                 model_name,
                 max_concurrent_jobs
-            }
-        });
+            })
+            .neq('id', 0) // Update all records
+            .select();
         res.json(config);
     } catch (error) {
         console.error('Error updating transcription config:', error);
@@ -614,18 +611,20 @@ router.post('/config/transcription', isAuthenticated, checkAdmin, async (req, re
  *       200:
  *         description: Successfully added refinement configuration
  */
-router.post('/config/refinement', isAuthenticated, checkAdmin, async (req, res) => {
+router.post('/config/refinement', isAuthenticated, isAdmin, async (req, res) => {
     const { openai_api_url, openai_api_key, model_name, system_prompt } = req.body;
 
     try {
-        const config = await prisma.refinement_config.updateMany({
-            data: {
+        const { data: config } = await supabaseAdmin
+            .from('refinement_config')
+            .update({
                 openai_api_url,
                 openai_api_key,
                 model_name,
                 system_prompt
-            }
-        });
+            })
+            .neq('id', 0) // Update all records
+            .select();
         res.json(config);
     } catch (error) {
         console.error('Error updating refinement config:', error);
@@ -635,42 +634,41 @@ router.post('/config/refinement', isAuthenticated, checkAdmin, async (req, res) 
 
 
 
-router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/admin/stats', isAuthenticated, isAdmin, async (req: AuthenticatedRequest, res: Response) => {
     console.log('Fetching admin statistics');
     try {
-        const stats = await prisma.$transaction([
-            prisma.jobs.count(),
-            prisma.jobs.count({ where: { status: 'transcribed' } }),
-            prisma.jobs.count({ where: { status: 'failed' } }),
-            prisma.jobs.aggregate({
-                _avg: {
-                    transcription_progress: true
-                },
-                _min: {
-                    transcription_progress: true
-                },
-                _max: {
-                    transcription_progress: true
-                }
-            }),
-            prisma.users.count(),
-            prisma.users.count({
-                where: {
-                    created_at: {
-                        gte: new Date(new Date().setDate(new Date().getDate() - 7))
-                    }
-                }
-            }),
-            prisma.users.count({
-                where: {
-                    created_at: {
-                        gte: new Date(new Date().setDate(new Date().getDate() - 30))
-                    }
-                }
-            })
-        ]);
+        const { data: jobStats } = await supabaseAdmin
+            .from('jobs')
+            .select('status, transcription_progress');
 
-        const [totalJobs, successfulJobs, failedJobs, timings, totalUsers, newUsersLast7Days, newUsersLast30Days] = stats;
+        const { data: userStats } = await supabaseAdmin
+            .from('users')
+            .select('created_at');
+
+        // Calculate job statistics
+        const totalJobs = jobStats?.length || 0;
+        const successfulJobs = jobStats?.filter(job => job.status === 'transcribed').length || 0;
+        const failedJobs = jobStats?.filter(job => job.status === 'failed').length || 0;
+
+        // Calculate timing statistics
+        const progressValues = jobStats?.map(job => job.transcription_progress).filter(Boolean) || [];
+        const avgDuration = progressValues.length ? 
+            (progressValues.reduce((a, b) => (a || 0) + (b || 0), 0) / progressValues.length).toFixed(2) : '0';
+        const minDuration = Math.min(...progressValues, 0).toFixed(2);
+        const maxDuration = Math.max(...progressValues, 0).toFixed(2);
+
+        // Calculate user statistics
+        const totalUsers = userStats?.length || 0;
+        const sevenDaysAgo = new Date(new Date().setDate(new Date().getDate() - 7));
+        const thirtyDaysAgo = new Date(new Date().setDate(new Date().getDate() - 30));
+        
+        const newUsersLast7Days = userStats?.filter(user => 
+            new Date(user.created_at) >= sevenDaysAgo
+        ).length || 0;
+        
+        const newUsersLast30Days = userStats?.filter(user => 
+            new Date(user.created_at) >= thirtyDaysAgo
+        ).length || 0;
 
         const successRate = totalJobs > 0 ? (successfulJobs / totalJobs) * 100 : 0;
         const errorRate = totalJobs > 0 ? (failedJobs / totalJobs) * 100 : 0;
@@ -682,9 +680,9 @@ router.get('/admin/stats', isAuthenticated, checkAdmin, async (req: Authenticate
             successRate: successRate.toFixed(2) + '%',
             errorRate: errorRate.toFixed(2) + '%',
             timings: {
-                avgDuration: timings._avg.transcription_progress?.toFixed(2) || '0',
-                minDuration: timings._min.transcription_progress?.toFixed(2) || '0',
-                maxDuration: timings._max.transcription_progress?.toFixed(2) || '0'
+                avgDuration,
+                minDuration,
+                maxDuration
             },
             usersStats: {
                 totalUsers,
@@ -707,9 +705,9 @@ router.post('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: Au
     const token = generateURLSafeToken();
 
     try {
-        // Create share record
-        const share = await prisma.job_shares.create({
-            data: {
+        const { data: share } = await supabaseAdmin
+            .from('job_shares')
+            .insert({
                 id: uuidv4(),
                 job_id: jobId,
                 type,
@@ -717,8 +715,9 @@ router.post('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: Au
                 token,
                 created_by: userId!,
                 status: 'pending'
-            }
-        });
+            })
+            .select()
+            .single();
 
         res.json(share);
     } catch (error) {
@@ -730,14 +729,12 @@ router.post('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: Au
 router.get('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
     console.log(`Fetching shares for job ${req.params.id}`);
     const jobId = req.params.id;
-    const userId = req.user?.id;
 
     try {
-
-        // Get all shares for this job
-        const shares = await prisma.job_shares.findMany({
-            where: { job_id: jobId }
-        });
+        const { data: shares } = await supabaseAdmin
+            .from('job_shares')
+            .select('*')
+            .eq('job_id', jobId);
 
         res.json(shares);
     } catch (error) {
@@ -749,13 +746,13 @@ router.get('/jobs/:id/shares', isAuthenticated, isResourceOwner, async (req: Aut
 router.delete('/jobs/:id/shares/:shareId', isAuthenticated, isResourceOwner, async (req: AuthenticatedRequest, res) => {
     console.log(`Deleting share ${req.params.shareId} for job ${req.params.id}`);
     const { id: jobId, shareId } = req.params;
-    const userId = req.user?.id;
 
     try {
-        // Delete the share
-        await prisma.job_shares.delete({
-            where: { id: shareId, job_id: jobId }
-        });
+        await supabaseAdmin
+            .from('job_shares')
+            .delete()
+            .eq('id', shareId)
+            .eq('job_id', jobId);
 
         res.json({ success: true });
     } catch (error) {

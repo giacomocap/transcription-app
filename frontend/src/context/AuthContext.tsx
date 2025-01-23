@@ -1,69 +1,51 @@
+// frontend/src/context/AuthContext.tsx
+import { createClient, Provider } from '@supabase/supabase-js';
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserData } from '../types/auth';
+
+export const supabase = createClient(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 interface AuthContextType {
-    user: UserData | null;
+    user: any;
+    token: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: () => void;
+    login: (provider: Provider) => void;
     logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<UserData | null>(null);
+    const [user, setUser] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [token, setToken] = useState<string | null>(null);
 
     useEffect(() => {
-        checkAuthStatus();
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+            setUser(session?.user ?? null);
+            setToken(session?.access_token ?? null); // Track token here
+            setIsLoading(false);
+        });
+
+        return () => authListener?.subscription.unsubscribe();
     }, []);
 
-    const checkAuthStatus = async () => {
-        try {
-            const response = await fetch('/api/auth/user', {
-                credentials: 'include'
-            });
-            if (response.ok) {
-                const userData = await response.json();
-                setUser(userData);
-            } else {
-                setUser(null);
-            }
-        } catch (error) {
-            console.error('Error checking auth status:', error);
-            setUser(null);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const login = () => {
-        window.location.href = '/api/auth/google';
+    const login = async (provider: Provider = 'google') => {
+        await supabase.auth.signInWithOAuth({
+            provider
+        });
     };
 
     const logout = async () => {
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
-            setUser(null);
-        } catch (error) {
-            console.error('Error logging out:', error);
-        }
+        await supabase.auth.signOut();
+        setUser(null);
     };
 
     return (
-        <AuthContext.Provider
-            value={{
-                user,
-                isAuthenticated: !!user,
-                isLoading,
-                login,
-                logout
-            }}
-        >
+        <AuthContext.Provider value={{ user, token, isAuthenticated: !!user, isLoading, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
@@ -71,8 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
+    if (!context) throw new Error('useAuth must be used within AuthProvider');
     return context;
 };

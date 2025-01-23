@@ -48,7 +48,7 @@ export const LoginPage = () => {
                 </ul>
               </div>
               <Button
-                onClick={login}
+                onClick={() => login('google')}
                 variant="outline"
                 className="w-full flex items-center justify-center"
               >

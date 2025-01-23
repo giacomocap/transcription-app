@@ -1,21 +1,20 @@
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Request } from 'express';
 
 export interface UserData {
     id: string;
-    google_id: string;
-    email: string;
-    display_name: string;
+    email?: string;
     profile_picture?: string;
-    created_at: Date;
-    updated_at: Date;
+    created_at: string;
+    updated_at: string;
 }
 
 declare global {
     namespace Express {
-        interface User extends UserData {}
+        interface User extends SupabaseUser { }
     }
 }
 
 export interface AuthenticatedRequest extends Request {
-    user?: UserData;
+    user?: SupabaseUser;
 }

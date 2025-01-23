@@ -12,6 +12,7 @@ import { Badge } from "../components/ui/badge";
 import { Trash } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import DeleteJobAlert from "@/components/DeleteJobAlert";
+import { authFetch } from "@/utils/authFetch";
 
 export const JobsDashboard = () => {
     useEffect(() => {
@@ -23,7 +24,7 @@ export const JobsDashboard = () => {
 
     const fetchJobs = async () => {
         try {
-            const response = await fetch("/api/jobs");
+            const response = await authFetch("/api/jobs");
             const data = await response.json();
             setJobs(data);
         } catch (error) {
