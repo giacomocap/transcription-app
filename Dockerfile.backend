@@ -1,5 +1,12 @@
-# Use a prebuilt image with FFmpeg
-FROM jrottenberg/ffmpeg:5.1.2-node-20
+# Stage 1: Install FFmpeg
+FROM jrottenberg/ffmpeg:5.1.2 as ffmpeg
+
+# Stage 2: Build the application
+FROM node:22
+
+# Copy FFmpeg from the first stage
+COPY --from=ffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
+COPY --from=ffmpeg /usr/local/bin/ffprobe /usr/local/bin/ffprobe
 
 # Set the working directory
 WORKDIR /app
