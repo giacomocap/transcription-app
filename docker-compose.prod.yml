@@ -44,6 +44,7 @@ services:
     build:
       context: ./diarization-service
       dockerfile: Dockerfile
+      network: host
     restart: unless-stopped
     ports:
       - '8001:8000'
