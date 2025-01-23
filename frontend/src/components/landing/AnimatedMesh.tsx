@@ -10,15 +10,14 @@ const clock = new Clock();
 
 type AnimatedMeshProps = {
     ready: boolean;
-    active: boolean;
     frequency: number;
 };
 
-function AnimatedMesh({ ready, active, frequency }: AnimatedMeshProps) {
+function AnimatedMesh({ ready,frequency }: AnimatedMeshProps) {
     const colors = {
-        red: ready ? (active ? 1 : 0) : 0.1,
-        green: ready ? (active ? 0 : 1) : 0.1,
-        blue: ready ? (active ? 1 : 0) : 0.1,
+        red: ready ? 0.949 : 0.1,
+        green: ready ? 0.820 : 0.1,
+        blue: ready ? 0.000 : 0.1,
     };
     const meshRef = useRef();
     const geometry = useMemo(() => new IcosahedronGeometry(1.5, 20), []); // reduced size from 3 to 1.5

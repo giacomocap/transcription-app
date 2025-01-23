@@ -1,6 +1,8 @@
 services:
   backend:
-    dns: 8.8.8.8 # Add this line
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     env_file:
       - .env # Load the .env file from the root directory
     build:
@@ -41,7 +43,9 @@ services:
       - backend
 
   diarization:
-    dns: 8.8.8.8 # Add this line
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     build:
       context: ./diarization-service
       dockerfile: Dockerfile
@@ -58,7 +62,9 @@ services:
       - redis
 
   worker:
-    dns: 8.8.8.8 # Add this line
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     build:
       context: .
       dockerfile: Dockerfile.backend
