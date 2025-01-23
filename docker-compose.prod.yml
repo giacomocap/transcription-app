@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      network: host
     restart: unless-stopped
     ports:
       - '5001:5001'
@@ -59,6 +60,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
+      network: host
     restart: unless-stopped
     command: node dist/worker.js # Changed to use compiled version
     environment:
