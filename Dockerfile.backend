@@ -1,12 +1,8 @@
-# Stage 1: Install FFmpeg
-FROM jrottenberg/ffmpeg:5.1.2 as ffmpeg
-
-# Stage 2: Build the application
+# Use an official Node.js runtime as a parent image
 FROM node:22
 
-# Copy FFmpeg from the first stage
-COPY --from=ffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
-COPY --from=ffmpeg /usr/local/bin/ffprobe /usr/local/bin/ffprobe
+# Install ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg
 
 # Set the working directory
 WORKDIR /app
