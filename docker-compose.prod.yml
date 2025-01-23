@@ -1,11 +1,11 @@
 services:
   backend:
+    dns: 8.8.8.8 # Add this line
     env_file:
       - .env # Load the .env file from the root directory
     build:
       context: .
       dockerfile: Dockerfile.backend
-      network: host
     restart: unless-stopped
     ports:
       - '5001:5001'
@@ -41,10 +41,10 @@ services:
       - backend
 
   diarization:
+    dns: 8.8.8.8 # Add this line
     build:
       context: ./diarization-service
       dockerfile: Dockerfile
-      network: host
     restart: unless-stopped
     ports:
       - '8001:8000'
@@ -58,10 +58,10 @@ services:
       - redis
 
   worker:
+    dns: 8.8.8.8 # Add this line
     build:
       context: .
       dockerfile: Dockerfile.backend
-      network: host
     restart: unless-stopped
     command: node dist/worker.js # Changed to use compiled version
     environment:
