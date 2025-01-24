@@ -208,10 +208,44 @@ const transcriptionWorker = new Worker(
                 }
             }
 
+            // On successful transcription, complete the credit transaction
+            await supabaseAdmin.from('credit_transactions')
+                .update({ status: 'completed' })
+                .eq('job_id', jobId);
+
+            // Mark credits as charged
+            await supabaseAdmin.from('jobs')
+                .update({ credits_charged: true })
+                .eq('id', jobId);
+
             return { jobId, status: 'transcribed' };
 
         } catch (error: any) {
             console.error('Error processing job:', error);
+
+            // Refund credits on failure
+            const { data: transaction } = await supabaseAdmin
+                .from('credit_transactions')
+                .select('amount')
+                .eq('job_id', jobId)
+                .single();
+
+            if (transaction) {
+                await supabaseAdmin.from('credit_transactions')
+                    .update({ status: 'refunded' })
+                    .eq('job_id', jobId);
+
+                // Add refund transaction
+                await supabaseAdmin.from('credit_transactions').insert({
+                    user_id: job.data.userId,
+                    job_id: jobId,
+                    amount: Math.abs(transaction.amount), // Make positive for refund
+                    type: 'refund',
+                    status: 'completed',
+                    description: `Refund for failed job ${jobId}`
+                });
+            }
+
             await supabaseAdmin
                 .from('jobs')
                 .update({

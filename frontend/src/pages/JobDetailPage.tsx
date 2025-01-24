@@ -52,7 +52,7 @@ export const JobDetailPage = () => {
     if (!isEditDialogOpen) {
       const interval = setInterval(() => {
         fetchJob(false);
-      }, 5000000);
+      }, 10000);
       fetchJob(true);
       return () => clearInterval(interval);
     }

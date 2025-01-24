@@ -50,7 +50,7 @@ export const Navigation = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                    <Link to="/settings" onClick={onClick}>Settings</Link>
+                    <Link to="/settings" onClick={onClick}>Settings and Credits</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>

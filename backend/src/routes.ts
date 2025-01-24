@@ -61,6 +61,7 @@ const upload = multer({
         cb(null, true);
     }
 });
+
 // Helper function to extract audio from video
 const extractAudioFromVideo = async (inputPath: string): Promise<string> => {
     const outputPath = inputPath.replace(path.extname(inputPath), '.mp3');
@@ -147,6 +148,46 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
                 throw new Error('Failed to extract audio from video');
             }
         }
+
+        // Get audio duration using ffmpeg
+        const getDuration = (): Promise<number> => {
+            return new Promise((resolve, reject) => {
+                ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
+                    if (err) reject(err);
+                    resolve(metadata.format.duration || 0);
+                });
+            });
+        };
+
+        const durationInSeconds = await getDuration();
+        const durationInMinutes = Math.ceil(durationInSeconds / 60);
+        const requiredCredits = await calculateRequiredCredits(durationInMinutes, diarizationEnabled);
+
+        // Check if user has enough credits
+        const hasEnoughCredits = await checkAndReserveCredits(userId, requiredCredits);
+        if (!hasEnoughCredits) {
+            res.status(402).json({ error: 'Insufficient credits' });
+            return;
+        }
+
+        // Create credit transaction
+        const { data: transaction } = await supabaseAdmin
+            .from('credit_transactions')
+            .insert({
+                user_id: userId,
+                job_id: jobId,
+                amount: -requiredCredits,
+                type: diarizationEnabled ? 'transcription_with_diarization' : 'transcription',
+                status: 'pending',
+                description: `Transcription of ${file.originalname} (${durationInMinutes} minutes)`
+            })
+            .select()
+            .single();
+
+        // Update job with required credits
+        await supabaseAdmin.from('jobs').update({
+            credits_required: requiredCredits
+        }).eq('id', jobId);
 
         // Upload file to B2
         const fileKey = await storageService.uploadFile(finalBuffer, file.originalname, userId);
@@ -633,7 +674,6 @@ router.post('/config/refinement', isAuthenticated, isAdmin, async (req, res) => 
 });
 
 
-
 router.get('/admin/stats', isAuthenticated, isAdmin, async (req: AuthenticatedRequest, res: Response) => {
     console.log('Fetching admin statistics');
     try {
@@ -846,6 +886,161 @@ router.delete('/user/delete', isAuthenticated, async (req: AuthenticatedRequest,
     } catch (error) {
         console.error('Error deleting user account:', error);
         res.status(500).json({ error: 'Failed to delete account' });
+    }
+});
+
+async function calculateRequiredCredits(durationInMinutes: number, diarizationEnabled: boolean): Promise<number> {
+    const baseCredits = Math.ceil(durationInMinutes);
+    return diarizationEnabled ? baseCredits * 1.5 : baseCredits;
+}
+
+async function checkAndReserveCredits(userId: string, credits: number): Promise<boolean> {
+    const { data: userCredits } = await supabaseAdmin
+        .from('user_credits')
+        .select('credits_balance')
+        .eq('user_id', userId)
+        .single();
+
+    if (!userCredits || userCredits.credits_balance < credits) {
+        return false;
+    }
+
+    return true;
+}
+
+// Add credit management endpoints
+router.get('/credits/balance', isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    try {
+        const { data: credits } = await supabaseAdmin
+            .from('user_credits')
+            .select('credits_balance')
+            .eq('user_id', req.user?.id)
+            .single();
+
+        res.json({ balance: credits?.credits_balance || 0 });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch credit balance' });
+    }
+});
+
+router.get('/credits/history', isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    try {
+        const { data: transactions } = await supabaseAdmin
+            .from('credit_transactions')
+            .select('*')
+            .eq('user_id', req.user?.id)
+            .order('created_at', { ascending: false });
+
+        res.json(transactions);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch credit history' });
+    }
+});
+
+// Add these new endpoints
+router.get('/admin/credits/usage', isAuthenticated, isAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+        const { start_date, end_date } = req.query;
+        let query = supabaseAdmin
+            .from('credit_transactions')
+            .select(`
+                *,
+                jobs(file_name)
+            `)
+            .order('created_at', { ascending: false });
+
+        if (start_date && end_date) {
+            query = query.gte('created_at', start_date).lte('created_at', end_date);
+        }
+
+        const { data: transactions } = await query;
+
+        const usageStats = {
+            total_credits_used: 0,
+            transcription_credits: 0,
+            diarization_credits: 0,
+            transactions_by_day: {} as Record<string, number>,
+            users_by_usage: {}
+        };
+
+        transactions?.forEach(transaction => {
+            if (transaction.status === 'completed' && transaction.amount < 0) {
+                usageStats.total_credits_used += Math.abs(transaction.amount);
+
+                if (transaction.type === 'transcription') {
+                    usageStats.transcription_credits += Math.abs(transaction.amount);
+                } else if (transaction.type === 'transcription_with_diarization') {
+                    usageStats.diarization_credits += Math.abs(transaction.amount);
+                }
+
+                // Group by day
+                const date = new Date(transaction.created_at).toISOString().split('T')[0];
+                usageStats.transactions_by_day[date] = (usageStats.transactions_by_day[date] || 0) + Math.abs(transaction.amount);
+
+                // Group by useì
+                //                 usageStats.users_by_usage[transaction.user_id] = (usageStats.users_by_usage[transaction.user_id] || 0) + Math.abs(transaction.amount);
+            }
+        });
+
+        res.json(usageStats);
+    } catch (error) {
+        console.error('Error fetching credit usage:', error);
+        res.status(500).json({ error: 'Failed to fetch credit usage' });
+    }
+});
+
+router.post('/admin/credits/adjust', isAuthenticated, isAdmin, async (req: AuthenticatedRequest, res) => {
+    const { user_id, amount, description } = req.body;
+
+    try {
+        const { data: currentBalance } = await supabaseAdmin
+            .from('user_credits')
+            .select('credits_balance')
+            .eq('user_id', user_id)
+            .single();
+
+        // Create transaction first
+        const { data: transaction } = await supabaseAdmin
+            .from('credit_transactions')
+            .insert({
+                user_id,
+                amount,
+                type: amount > 0 ? 'admin_credit' : 'admin_debit',
+                status: 'completed',
+                description: description || `Admin ${amount > 0 ? 'credit' : 'debit'} adjustment`
+            })
+            .select()
+            .single();
+
+        // Update user's credit balance
+        await supabaseAdmin
+            .from('user_credits')
+            .update({
+                credits_balance: (currentBalance?.credits_balance || 0) + amount
+            })
+            .eq('user_id', user_id);
+
+        res.json({ success: true, transaction });
+    } catch (error) {
+        console.error('Error adjusting credits:', error);
+        res.status(500).json({ error: 'Failed to adjust credits' });
+    }
+});
+
+// Get all users with their credit balances
+router.get('/admin/users/credits', isAuthenticated, isAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+        const { data: users, error } = await supabaseAdmin
+            .from('user_credits')
+            .select(`
+                *,
+                users(email)
+            `);
+
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching user credits:', error);
+        res.status(500).json({ error: 'Failed to fetch user credits' });
     }
 });
 

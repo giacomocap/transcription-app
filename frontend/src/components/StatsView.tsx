@@ -4,6 +4,14 @@ import { Stats } from '../types/stats';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { authFetch } from '@/utils/authFetch';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './ui/table';
 
 const StatsView: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -27,9 +35,7 @@ const StatsView: React.FC = () => {
   ];
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Admin Stats Dashboard</h1>
-
+    <div>
       {/* General Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Total Jobs Card */}
@@ -90,30 +96,22 @@ const StatsView: React.FC = () => {
             <CardTitle>Error Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Transcript
-                  </th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Refined Transcript
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {stats.errors.map((error, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {error.transcript}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {error.refined_transcript}
-                    </td>
-                  </tr>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Transcript</TableHead>
+                  <TableHead>Refined Transcript</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats.errors?.map((error, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{error.transcript}</TableCell>
+                    <TableCell>{error.refined_transcript}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
@@ -125,48 +123,28 @@ const StatsView: React.FC = () => {
             <CardTitle>Stats Per User</CardTitle>
           </CardHeader>
           <CardContent>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Jobs
-                  </th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Successful Jobs
-                  </th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Failed Jobs
-                  </th>
-                  <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Avg Duration (s)
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {stats.statsPerUser.map((user, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.display_name} ({user.email})
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.total_jobs}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.successful_jobs}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.failed_jobs}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {parseFloat(user.avg_duration_per_user).toFixed(2)}
-                    </td>
-                  </tr>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Total Jobs</TableHead>
+                  <TableHead>Successful Jobs</TableHead>
+                  <TableHead>Failed Jobs</TableHead>
+                  <TableHead>Avg Duration (s)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {stats.statsPerUser?.map((user, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{user.display_name} ({user.email})</TableCell>
+                    <TableCell>{user.total_jobs}</TableCell>
+                    <TableCell>{user.successful_jobs}</TableCell>
+                    <TableCell>{user.failed_jobs}</TableCell>
+                    <TableCell>{parseFloat(user.avg_duration_per_user).toFixed(2)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>

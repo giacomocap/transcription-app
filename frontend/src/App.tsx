@@ -93,8 +93,6 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
-          {/* Remove or comment out the last route that redirects "/" to "/upload" */}
-          {/* <Route path="/" element={<Navigate to="/upload" />} /> */}
         </Routes>
         {isAuthenticated && needsOnboarding && <OnboardingModal />}
         <Toaster />

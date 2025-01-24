@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +16,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CreditHistory } from '../components/credits/CreditHistory';
 
 export const SettingsPage = () => {
     const { toast } = useToast();
@@ -68,60 +70,73 @@ export const SettingsPage = () => {
 
     return (
         <div className="container mx-auto py-8 px-4 space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Account Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Preferred Transcription Language
-                        </label>
-                        <Select value={language} onValueChange={setLanguage}>
-                            <SelectTrigger className="w-full sm:w-[300px]">
-                                <SelectValue placeholder="Select language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {LANGUAGES.map((lang) => (
-                                    <SelectItem key={lang.value} value={lang.value}>
-                                        {lang.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <Button 
-                        onClick={handleSave} 
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <>
-                                <span className="mr-2">Saving...</span>
-                                <span className="animate-spin">⚪</span>
-                            </>
-                        ) : 'Save Changes'}
-                    </Button>
-                </CardContent>
-            </Card>
+            <Tabs defaultValue="account" className="space-y-6">
+                <TabsList>
+                    <TabsTrigger value="account">Account Settings</TabsTrigger>
+                    <TabsTrigger value="credits">Credits</TabsTrigger>
+                </TabsList>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        <p className="text-sm text-gray-600">
-                            Once you delete your account, there is no going back. Please be certain.
-                        </p>
-                        <Button
-                            variant="destructive"
-                            onClick={() => setShowDeleteDialog(true)}
-                        >
-                            Delete Account
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+                <TabsContent value="account" className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Account Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Preferred Transcription Language
+                                </label>
+                                <Select value={language} onValueChange={setLanguage}>
+                                    <SelectTrigger className="w-full sm:w-[300px]">
+                                        <SelectValue placeholder="Select language" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {LANGUAGES.map((lang) => (
+                                            <SelectItem key={lang.value} value={lang.value}>
+                                                {lang.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button 
+                                onClick={handleSave} 
+                                disabled={isSaving}
+                            >
+                                {isSaving ? (
+                                    <>
+                                        <span className="mr-2">Saving...</span>
+                                        <span className="animate-spin">⚪</span>
+                                    </>
+                                ) : 'Save Changes'}
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-red-600">Danger Zone</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <p className="text-sm text-gray-600">
+                                    Once you delete your account, there is no going back. Please be certain.
+                                </p>
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => setShowDeleteDialog(true)}
+                                >
+                                    Delete Account
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="credits">
+                    <CreditHistory />
+                </TabsContent>
+            </Tabs>
 
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogContent>

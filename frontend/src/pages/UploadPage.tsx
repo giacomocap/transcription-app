@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { createAuthXHR } from '@/utils/authFetch';
+import { authFetch, createAuthXHR } from '@/utils/authFetch';
 import { LANGUAGES } from '../constants/languages';
 
 export const UploadPage = () => {
@@ -27,6 +27,37 @@ export const UploadPage = () => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [diarizationEnabled, setDiarizationEnabled] = useState(false);
     const [language, setLanguage] = useState<string | undefined>(undefined);
+    const [creditsBalance, setCreditsBalance] = useState<number>(0);
+    const [estimatedCredits, setEstimatedCredits] = useState<number>(0);
+    const [duration, setDuration] = useState<number>(0);
+
+    useEffect(() => {
+        // Fetch user's credit balance
+        const fetchCredits = async () => {
+            try {
+                const response = await authFetch('/api/credits/balance');
+                const data = await response.json();
+                setCreditsBalance(data.balance);
+            } catch (error) {
+                console.error('Failed to fetch credits:', error);
+            }
+        };
+        fetchCredits();
+    }, []);
+
+    // Calculate estimated credits when file or diarization changes
+    useEffect(() => {
+        if (file) {
+            // Create audio element to get duration
+            const audio = document.createElement('audio');
+            audio.src = URL.createObjectURL(file);
+            audio.onloadedmetadata = () => {
+                const durationMinutes = Math.ceil(audio.duration / 60);
+                setDuration(durationMinutes);
+                setEstimatedCredits(diarizationEnabled ? durationMinutes * 1.5 : durationMinutes);
+            };
+        }
+    }, [file, diarizationEnabled]);
 
     const handleUpload = async () => {
         if (!file) return;
@@ -88,6 +119,25 @@ export const UploadPage = () => {
     return (
         <div className="p-6 max-w-2xl mx-auto flex flex-col gap-4 md:gap-6">
             <h1 className="text-2xl md:text-3xl font-bold">Upload Media File</h1>
+
+            <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-800">Available Credits: {creditsBalance}</p>
+                {file && (
+                    <div className="mt-2">
+                        <p className="text-sm text-blue-800">
+                            Estimated duration: {duration} minutes
+                        </p>
+                        <p className="text-sm text-blue-800">
+                            Required credits: {estimatedCredits}
+                        </p>
+                        {creditsBalance < estimatedCredits && (
+                            <p className="text-sm text-red-600 mt-2">
+                                Insufficient credits. Please purchase more credits to continue.
+                            </p>
+                        )}
+                    </div>
+                )}
+            </div>
 
             <Card className="relative">
                 {processing && <ProcessingOverlay />}
@@ -193,7 +243,7 @@ export const UploadPage = () => {
                         {uploading && <Progress value={uploadProgress} className="w-full" />}
                         <Button
                             onClick={handleUpload}
-                            disabled={uploading || processing}
+                            disabled={uploading || processing || creditsBalance < estimatedCredits}
                             className="w-full"
                         >
                             {uploading
