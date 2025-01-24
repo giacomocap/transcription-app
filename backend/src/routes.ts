@@ -482,7 +482,7 @@ router.get('/jobs/:id/validate-token', async (req: AuthenticatedRequest, res: Re
             .from('jobs')
             .select(`id,
             user_id,
-            shares(*)`)
+            job_shares(*)`)
             .eq('id', jobId)
             .single();
 
@@ -492,7 +492,7 @@ router.get('/jobs/:id/validate-token', async (req: AuthenticatedRequest, res: Re
             return
         }
 
-        const publicShare = job.shares.find(share =>
+        const publicShare = job.job_shares.find(share =>
             share.type === 'public' &&
             share.token === token
         );

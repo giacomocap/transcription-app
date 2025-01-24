@@ -37,8 +37,6 @@ const DialogFormContent = ({
   setEditedJob,
   uniqueSpeakers,
   handleRenameSpeaker,
-  onClose,
-  handleSave,
   className = ""
 }: {
   job: Job;
@@ -52,56 +50,52 @@ const DialogFormContent = ({
   className?: string;
 }) => (
   <div className={`space-y-4 ${className}`}>
-    <div className="space-y-2">
-      <Label htmlFor="file-name">File Name</Label>
-      <Input
-        id="file-name"
-        value={editedJob.file_name}
-        onChange={(e) => setEditedJob(prev => ({ ...prev, file_name: e.target.value }))}
-      />
-    </div>
-    {editedJob.speaker_segments && editedJob.speaker_segments.length > 0 && (
+    <div className="space-y-4">
       <div className="space-y-2">
-        <Label>Speaker Labels</Label>
-        <p className="text-sm text-muted-foreground">
-          Edit the speaker label to rename this speaker across all segments.
-          Click Save to apply your changes.
-        </p>
-        {uniqueSpeakers.map((speakerLabel) => (
-          <SpeakerLabelEditor
-            key={speakerLabel}
-            speakerLabel={speakerLabel}
-            segments={editedJob.speaker_segments!.filter(
-              (segment) => segment.speaker === speakerLabel
-            )}
-            audioUrl={audioUrl}
-            onRename={(newLabel) =>
-              handleRenameSpeaker(speakerLabel, newLabel)
-            }
-          />
-        ))}
+        <Label htmlFor="file-name">File Name</Label>
+        <Input
+          id="file-name"
+          value={editedJob.file_name}
+          onChange={(e) => setEditedJob(prev => ({ ...prev, file_name: e.target.value }))}
+        />
       </div>
-    )}
-    {job.diarization_enabled &&
-      job.diarization_status === 'completed' &&
-      job.refinement_pending && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-          <p className="text-sm text-blue-700">
-            After saving, Claire AI will begin enhancing your transcription with:
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Improved punctuation and formatting</li>
-              <li>Enhanced readability</li>
-              <li>Smart paragraph breaks</li>
-              <li>Context-aware speaker attribution</li>
-            </ul>
+      {editedJob.speaker_segments && editedJob.speaker_segments.length > 0 && (
+        <div className="space-y-2">
+          <Label>Speaker Labels</Label>
+          <p className="text-sm text-muted-foreground">
+            Edit the speaker label to rename this speaker across all segments.
+            Click Save to apply your changes.
           </p>
+          {uniqueSpeakers.map((speakerLabel) => (
+            <SpeakerLabelEditor
+              key={speakerLabel}
+              speakerLabel={speakerLabel}
+              segments={editedJob.speaker_segments!.filter(
+                (segment) => segment.speaker === speakerLabel
+              )}
+              audioUrl={audioUrl}
+              onRename={(newLabel) =>
+                handleRenameSpeaker(speakerLabel, newLabel)
+              }
+            />
+          ))}
         </div>
       )}
-    <div className="flex justify-end gap-4 pt-4">
-      <Button variant="outline" onClick={onClose}>
-        Cancel
-      </Button>
-      <Button onClick={handleSave}>Save</Button>
+      {job.diarization_enabled &&
+        job.diarization_status === 'completed' &&
+        job.refinement_pending && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <p className="text-sm text-blue-700">
+              After saving, Claire AI will begin enhancing your transcription with:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Improved punctuation and formatting</li>
+                <li>Enhanced readability</li>
+                <li>Smart paragraph breaks</li>
+                <li>Context-aware speaker attribution</li>
+              </ul>
+            </p>
+          </div>
+        )}
     </div>
   </div>
 );
@@ -202,11 +196,42 @@ export const EditJobDialog = ({
   if (isDesktop) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
+          <div className="flex-1 overflow-y-auto pr-6 -mr-6">
+            <DialogFormContent
+              job={job}
+              editedJob={editedJob}
+              audioUrl={audioUrl}
+              setEditedJob={setEditedJob}
+              uniqueSpeakers={uniqueSpeakers}
+              handleRenameSpeaker={handleRenameSpeaker}
+              onClose={onClose}
+              handleSave={handleSave}
+            />
+          </div>
+          <div className="flex justify-end gap-4 pt-4 mt-4 border-t">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer open={isOpen} onOpenChange={onClose}>
+      <DrawerContent className="flex flex-col h-[90vh]">
+        <DrawerHeader className="text-left">
+          <DrawerTitle>{title}</DrawerTitle>
+          <DrawerDescription>{description}</DrawerDescription>
+        </DrawerHeader>
+        <div className="flex-1 overflow-y-auto px-4">
           <DialogFormContent
             job={job}
             editedJob={editedJob}
@@ -217,33 +242,12 @@ export const EditJobDialog = ({
             onClose={onClose}
             handleSave={handleSave}
           />
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  return (
-    <Drawer open={isOpen} onOpenChange={onClose}>
-      <DrawerContent>
-        <DrawerHeader className="text-left">
-          <DrawerTitle>{title}</DrawerTitle>
-          <DrawerDescription>{description}</DrawerDescription>
-        </DrawerHeader>
-        <DialogFormContent
-          job={job}
-          editedJob={editedJob}
-          audioUrl={audioUrl}
-          setEditedJob={setEditedJob}
-          uniqueSpeakers={uniqueSpeakers}
-          handleRenameSpeaker={handleRenameSpeaker}
-          onClose={onClose}
-          handleSave={handleSave}
-          className="px-4"
-        />
-        <DrawerFooter className="pt-2">
+        </div>
+        <DrawerFooter className="border-t">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>
+          <Button onClick={handleSave}>Save</Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

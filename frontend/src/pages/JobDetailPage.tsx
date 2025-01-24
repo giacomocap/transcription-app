@@ -52,7 +52,7 @@ export const JobDetailPage = () => {
     if (!isEditDialogOpen) {
       const interval = setInterval(() => {
         fetchJob(false);
-      }, 10000);
+      }, 5000000);
       fetchJob(true);
       return () => clearInterval(interval);
     }
@@ -80,7 +80,7 @@ export const JobDetailPage = () => {
     if (isFirstFetch) {
       await new Promise(resolve => setTimeout(resolve, 1000)); // 1.5s delay on first load
     }
-    const response = isPublicAccess 
+    const response = isPublicAccess
       ? await fetch(`/api/jobs/${id}?token=${searchParams.get('token')}`)
       : await authFetch(`/api/jobs/${id}`);
     const data = await response.json();
@@ -259,7 +259,7 @@ export const JobDetailPage = () => {
 
           {job.file_url && (
             <div className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
-              <AudioPlayer audioRef={audioRef} jobid={job.id} handleLoadedMetadata={handleLoadedMetadata} handleTimeUpdate={handleTimeUpdate} setIsPlaying={() => setIsPlaying(false)} />
+              <AudioPlayer audioRef={audioRef} jobid={job.id} publicToken={searchParams.get('token')!} handleLoadedMetadata={handleLoadedMetadata} handleTimeUpdate={handleTimeUpdate} setIsPlaying={() => setIsPlaying(false)} />
               <div className="flex flex-col space-y-2 md:space-y-4 w-full">
                 <div className="flex items-center space-x-2 md:space-x-4">
                   <Button
