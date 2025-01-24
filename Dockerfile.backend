@@ -14,11 +14,11 @@ COPY backend/package*.json ./
 RUN npm install
 RUN npm install -g typescript ts-node nodemon
 
-# Copy prisma schema files
-COPY backend/prisma ./prisma/
+# # Copy prisma schema files
+# COPY backend/prisma ./prisma/
 
-# Generate Prisma Client
-RUN npx prisma generate
+# # Generate Prisma Client
+# RUN npx prisma generate
 
 # Copy the rest of the backend code
 COPY backend/ ./
