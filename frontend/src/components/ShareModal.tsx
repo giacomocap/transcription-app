@@ -13,6 +13,7 @@ import {
 } from './ui/dialog';
 import { Badge } from './ui/badge';
 import { toast } from '../hooks/use-toast';
+import { authFetch } from '@/utils/authFetch';
 
 interface Share {
   id: string;
@@ -43,7 +44,7 @@ export const ShareModal = ({ jobId, isOpen, onClose }: ShareModalProps) => {
 
   const fetchShares = async () => {
     try {
-      const response = await fetch(`/api/jobs/${jobId}/shares`);
+      const response = await authFetch(`/api/jobs/${jobId}/shares`);
       const data = await response.json();
       setShares(data);
     } catch (error) {
@@ -68,7 +69,7 @@ export const ShareModal = ({ jobId, isOpen, onClose }: ShareModalProps) => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/jobs/${jobId}/shares`, {
+      const response = await authFetch(`/api/jobs/${jobId}/shares`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,7 +107,7 @@ export const ShareModal = ({ jobId, isOpen, onClose }: ShareModalProps) => {
 
   const revokeShare = async (shareId: string) => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `/api/jobs/${jobId}/shares/${shareId}`,
         {
           method: 'DELETE',
@@ -134,7 +135,7 @@ export const ShareModal = ({ jobId, isOpen, onClose }: ShareModalProps) => {
 
   const resendInvitation = async (shareId: string) => {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `/api/jobs/${jobId}/shares/${shareId}/resend`,
         {
           method: 'POST',

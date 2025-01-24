@@ -18,3 +18,10 @@ declare global {
 export interface AuthenticatedRequest extends Request {
     user?: SupabaseUser;
 }
+
+export interface UserSettings {
+    user_id: string;
+    preferred_transcription_language: string;
+    created_at?: string;
+    updated_at?: string;
+}

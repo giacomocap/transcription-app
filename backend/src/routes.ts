@@ -511,13 +511,13 @@ router.get('/jobs/:id/validate-token', async (req: AuthenticatedRequest, res: Re
 
 router.get('/jobs/:id', hasJobAccess, async (req: AuthenticatedRequest, res: Response) => {
     const jobId = req.params.id;
-
+    console.log(`Fetching job ${jobId} for user ${req.user?.id}`);
     try {
         const { data: job } = await supabaseAdmin
             .from('jobs')
             .select(`
                 *,
-                shares (*)
+                job_shares!left(*)
             `)
             .eq('id', jobId)
             .single();
@@ -652,7 +652,7 @@ router.get('/admin/stats', isAuthenticated, isAdmin, async (req: AuthenticatedRe
 
         // Calculate timing statistics
         const progressValues = jobStats?.map(job => job.transcription_progress).filter(Boolean) || [];
-        const avgDuration = progressValues.length ? 
+        const avgDuration = progressValues.length ?
             (progressValues.reduce((a, b) => (a || 0) + (b || 0), 0) / progressValues.length).toFixed(2) : '0';
         const minDuration = Math.min(...progressValues, 0).toFixed(2);
         const maxDuration = Math.max(...progressValues, 0).toFixed(2);
@@ -661,12 +661,12 @@ router.get('/admin/stats', isAuthenticated, isAdmin, async (req: AuthenticatedRe
         const totalUsers = userStats?.length || 0;
         const sevenDaysAgo = new Date(new Date().setDate(new Date().getDate() - 7));
         const thirtyDaysAgo = new Date(new Date().setDate(new Date().getDate() - 30));
-        
-        const newUsersLast7Days = userStats?.filter(user => 
+
+        const newUsersLast7Days = userStats?.filter(user =>
             new Date(user.created_at) >= sevenDaysAgo
         ).length || 0;
-        
-        const newUsersLast30Days = userStats?.filter(user => 
+
+        const newUsersLast30Days = userStats?.filter(user =>
             new Date(user.created_at) >= thirtyDaysAgo
         ).length || 0;
 
@@ -761,5 +761,92 @@ router.delete('/jobs/:id/shares/:shareId', isAuthenticated, isResourceOwner, asy
     }
 });
 
+// User Settings Routes
+router.get('/user/settings', isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    console.log(`Fetching settings for user ${req.user?.id}`);
+    try {
+        const { data: settings } = await supabaseAdmin
+            .from('user_settings')
+            .select('*')
+            .eq('user_id', req.user?.id)
+            .single();
+
+        // if (!settings) {
+        //     res.status(404).json({ error: 'Settings not found' });
+        //     return;
+        // }
+
+        res.json(settings);
+    } catch (error) {
+        console.error('Error fetching user settings:', error);
+        res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+});
+
+router.put('/user/settings', isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    console.log(`Updating settings for user ${req.user?.id}`);
+    const userId = req.user?.id;
+    const settings = req.body;
+
+    try {
+        const { data: updatedSettings, error } = await supabaseAdmin
+            .from('user_settings')
+            .upsert({
+                user_id: userId,
+                ...settings
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.json(updatedSettings);
+    } catch (error) {
+        console.error('Error updating user settings:', error);
+        res.status(500).json({ error: 'Failed to update settings' });
+    }
+});
+
+// Delete user account
+router.delete('/user/delete', isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id;
+    if (!userId) {
+        res.status(400).json({ error: 'User not found' });
+        return;
+    }
+
+    try {
+        // 1. Delete user's files from storage
+        const { data: jobs } = await supabaseAdmin
+            .from('jobs')
+            .select('id, file_url')
+            .eq('user_id', userId);
+
+        if (jobs) {
+            await Promise.all(jobs.map(async (job) => {
+                if (job.file_url) {
+                    try {
+                        await storageService.deleteFile(job.file_url);
+                    } catch (err) {
+                        console.error(`Error deleting file for job ${job.id}:`, err);
+                    }
+                }
+            }));
+        }
+
+        // 2. Delete all user data in a transaction (via stored procedure)
+        const { error: deleteDataError } = await supabaseAdmin.rpc('delete_user_data', { p_user_id: userId });
+        if (deleteDataError) throw deleteDataError;
+
+        // 3. Delete auth user
+        const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+        if (deleteUserError) throw deleteUserError;
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting user account:', error);
+        res.status(500).json({ error: 'Failed to delete account' });
+    }
+});
 
 export { router };

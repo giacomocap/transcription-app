@@ -15,12 +15,15 @@ import { Button } from './components/ui/button';
 import LandingPage from './pages/LandingPage';
 import { useAuth } from './context/AuthContext';  // Add this import at the top
 import { useEffect, useMemo } from 'react';
+import { OnboardingModal } from './components/OnboardingModal'; // Add this import
+import { Toaster } from './components/ui/toaster';
+import { SettingsPage } from './pages/SettingsPage';
 
 // Create a new component to handle the conditional rendering of the Navigation
 const AppContent = () => {
   const location = useLocation();
   const { isPublicAccess } = usePublicAccess();
-  const { isAuthenticated } = useAuth();  // Add this line
+  const { isAuthenticated, needsOnboarding } = useAuth();  // Add this line
   useEffect(() => {
     document.title = 'Claire - Audio & Video Intelligence Platform';
   }, []);
@@ -82,15 +85,26 @@ const AppContent = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
           {/* Remove or comment out the last route that redirects "/" to "/upload" */}
           {/* <Route path="/" element={<Navigate to="/upload" />} /> */}
         </Routes>
+        {isAuthenticated && needsOnboarding && <OnboardingModal />}
+        <Toaster />
       </main>
     </div>
   );
 };
 
 const App = () => {
+
   return (
     <AuthProvider>
       <BrowserRouter>

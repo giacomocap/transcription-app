@@ -6,15 +6,59 @@ import { MenuIcon } from 'lucide-react';
 import {
     Drawer,
     DrawerContent,
-    DrawerDescription,
     DrawerHeader,
     DrawerTitle,
     DrawerTrigger,
 } from './ui/drawer';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 export const Navigation = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+    const UserAvatar = ({ size = 'h-8 w-8' }) => (
+        user?.user_metadata?.avatar_url ? (
+            <img
+                src={user.user_metadata?.avatar_url}
+                alt={user.user_metadata?.full_name}
+                className={`${size} rounded-full`}
+            />
+        ) : (
+            <div className={`${size} rounded-full bg-primary text-primary-foreground flex items-center justify-center`}>
+                {user?.user_metadata?.full_name?.[0]?.toUpperCase() || 'U'}
+            </div>
+        )
+    );
+
+    const ProfileMenu = ({ className = '', onClick = () => { } }: { className?: string, onClick?: () => void }) => (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={`p-0 h-auto justify-start ${className}`}>
+                    <div className="flex items-center space-x-2">
+                        <UserAvatar />
+                        <span className="text-sm text-gray-700">
+                            {user?.user_metadata?.full_name}
+                        </span>
+                    </div>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                    <Link to="/settings" onClick={onClick}>Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout}>
+                    Logout
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
 
     return (
         <nav className="bg-white shadow">
@@ -41,12 +85,6 @@ export const Navigation = () => {
                                     >
                                         Transcriptions
                                     </Link>
-                                    {/* <Link
-                                        to="/admin"
-                                        className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                                    >
-                                        Admin
-                                    </Link> */}
                                 </>
                             )}
                         </div>
@@ -54,27 +92,15 @@ export const Navigation = () => {
                     <div className="flex items-center">
                         <div className="hidden sm:flex items-center space-x-4">
                             {isAuthenticated ? (
-                                <div className="flex items-center space-x-2">
-                                    {user?.profile_picture && (
-                                        <img
-                                            src={user.profile_picture}
-                                            alt={user.display_name}
-                                            className="h-8 w-8 rounded-full"
-                                        />
-                                    )}
-                                    <span className="text-sm text-gray-700">{user?.display_name}</span>
-                                    <Button onClick={logout} variant="outline" size="sm">
-                                        Logout
-                                    </Button>
-                                </div>
+                                <ProfileMenu />
                             ) : (
-                                <Button asChild >
+                                <Button asChild>
                                     <Link to="/login">Login</Link>
                                 </Button>
                             )}
                         </div>
                         {isAuthenticated && (
-                            <div className="sm:hidden">
+                            <div className="sm:hidden flex items-center space-x-4">
                                 <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
                                     <DrawerTrigger asChild>
                                         <Button variant="outline" size="icon">
@@ -83,10 +109,7 @@ export const Navigation = () => {
                                     </DrawerTrigger>
                                     <DrawerContent>
                                         <DrawerHeader>
-                                            <DrawerTitle>Menu</DrawerTitle>
-                                            <DrawerDescription>
-                                                Access the main features
-                                            </DrawerDescription>
+                                            <DrawerTitle>Claire</DrawerTitle>
                                         </DrawerHeader>
                                         <div className="flex flex-col space-y-4 p-4">
                                             <Link
@@ -103,12 +126,7 @@ export const Navigation = () => {
                                             >
                                                 Transcriptions
                                             </Link>
-                                            <Button onClick={() => {
-                                                logout();
-                                                setIsDrawerOpen(false);
-                                            }} variant="outline" size="sm">
-                                                Logout
-                                            </Button>
+                                            <ProfileMenu className="w-full" onClick={() => setIsDrawerOpen(false)} />
                                         </div>
                                     </DrawerContent>
                                 </Drawer>

@@ -13,6 +13,7 @@ import { Trash } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import DeleteJobAlert from "@/components/DeleteJobAlert";
 import { authFetch } from "@/utils/authFetch";
+import { Loading } from "@/components/Loading";
 
 export const JobsDashboard = () => {
     useEffect(() => {
@@ -21,26 +22,32 @@ export const JobsDashboard = () => {
 
     const [jobs, setJobs] = useState<Job[]>([]);
     const [jobToDelete, setJobToDelete] = useState<string | null>(null);
+    const [isFirstLoading, setIsFirstLoading] = useState(true);
 
-    const fetchJobs = async () => {
+    const fetchJobs = async (isFirstFetch = false) => {
         try {
+            if (isFirstFetch) {
+                await new Promise(resolve => setTimeout(resolve, 1000)); // 1.5s delay on first load
+            }
             const response = await authFetch("/api/jobs");
             const data = await response.json();
             setJobs(data);
         } catch (error) {
             console.error("Failed to fetch jobs:", error);
+        } finally {
+            setIsFirstLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchJobs();
-        const interval = setInterval(fetchJobs, 5000);
+        fetchJobs(true);
+        const interval = setInterval(() => fetchJobs(false), 10000);
         return () => clearInterval(interval);
     }, []);
 
     const onDelete = async (id: string) => {
         try {
-            const response = await fetch(`/api/jobs/${id}`, {
+            const response = await authFetch(`/api/jobs/${id}`, {
                 method: "DELETE",
             });
             if (response.ok) {
@@ -60,7 +67,9 @@ export const JobsDashboard = () => {
             <h1 className="text-2xl md:text-3xl font-bold">Transcriptions</h1>
 
             <div className="grid gap-4">
-                {jobs.length === 0 ? (
+                {isFirstLoading ? (
+                    <Loading />
+                ) : jobs.length === 0 ? (
                     <div className="text-center py-8 md:py-12">
                         <p className="text-muted-foreground mb-2 md:mb-4">
                             No transcriptions found...

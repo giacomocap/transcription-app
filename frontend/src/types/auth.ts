@@ -7,3 +7,7 @@ export interface UserData {
     created_at: Date;
     updated_at: Date;
 }
+
+export interface UserSettings {
+    preferred_transcription_language: string;
+}

@@ -3,13 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { Stats } from '../types/stats';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { authFetch } from '@/utils/authFetch';
 
 const StatsView: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
     const loadStats = async () => {
-      const data = await fetch('/api/admin/stats').then((res) => res.json());
+      const data = await authFetch('/api/admin/stats').then((res) => res.json());
       setStats(data);
     };
     loadStats();

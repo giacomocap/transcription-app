@@ -69,7 +69,6 @@ const LandingPage = () => {
             <BloomScene frequency={frequency} />
             <AnimatedMesh
               ready={true}
-              active={false}
               frequency={frequency}
             />
           </Canvas>

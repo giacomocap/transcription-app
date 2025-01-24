@@ -13,6 +13,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { createAuthXHR } from '@/utils/authFetch';
+import { LANGUAGES } from '../constants/languages';
 
 export const UploadPage = () => {
     useEffect(() => {
@@ -38,8 +40,7 @@ export const UploadPage = () => {
             formData.append('language', language);
         }
 
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/upload', true);
+        const xhr = await createAuthXHR('POST', '/api/upload');
 
         xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
@@ -168,16 +169,11 @@ export const UploadPage = () => {
                                             <SelectValue placeholder="Auto-detect" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="en">English</SelectItem>
-                                            <SelectItem value="es">Spanish</SelectItem>
-                                            <SelectItem value="fr">French</SelectItem>
-                                            <SelectItem value="de">German</SelectItem>
-                                            <SelectItem value="it">Italian</SelectItem>
-                                            <SelectItem value="pt">Portuguese</SelectItem>
-                                            <SelectItem value="zh">Chinese</SelectItem>
-                                            <SelectItem value="ja">Japanese</SelectItem>
-                                            <SelectItem value="ru">Russian</SelectItem>
-                                            <SelectItem value="ar">Arabic</SelectItem>
+                                            {LANGUAGES.map((lang) => (
+                                                <SelectItem key={lang.value} value={lang.value}>
+                                                    {lang.label}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                     <TooltipProvider>

@@ -18,9 +18,12 @@ import { EditJobDialog } from '@/components/EditJobDialog';
 import { ShareModal } from '../components/ShareModal';
 import { Badge } from '../components/ui/badge';
 import { AudioPlayer } from '@/components/AudioPlayer';
+import { authFetch } from '@/utils/authFetch';
+import { Loading } from '@/components/Loading';
 
 export const JobDetailPage = () => {
   const [job, setJob] = useState<Job | null>(null);
+  const [isFirstLoading, setIsFirstLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -48,9 +51,9 @@ export const JobDetailPage = () => {
     // Don't poll while edit dialog is open
     if (!isEditDialogOpen) {
       const interval = setInterval(() => {
-        fetchJob();
-      }, 5000);
-      fetchJob();
+        fetchJob(false);
+      }, 10000);
+      fetchJob(true);
       return () => clearInterval(interval);
     }
   }, [isEditDialogOpen]);
@@ -72,11 +75,17 @@ export const JobDetailPage = () => {
     document.title = job ? `${job.file_name} - Claire.AI` : 'Transcription Details - Claire.AI';
   }, [job]);
 
-  const fetchJob = async () => {
+  const fetchJob = async (isFirstFetch = false) => {
     if (!id) return;
-    const response = await fetch(`/api/jobs/${id}${isPublicAccess ? '?token=' + searchParams.get('token') : ''}`);
+    if (isFirstFetch) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1.5s delay on first load
+    }
+    const response = isPublicAccess 
+      ? await fetch(`/api/jobs/${id}?token=${searchParams.get('token')}`)
+      : await authFetch(`/api/jobs/${id}`);
     const data = await response.json();
     setJob(data);
+    setIsFirstLoading(false);
   };
 
   const handlePlayPause = () => {
@@ -128,7 +137,7 @@ export const JobDetailPage = () => {
     if (!job) return;
 
     try {
-      const response = await fetch(`/api/jobs/${job.id}`, {
+      const response = await authFetch(`/api/jobs/${job.id}`, {
         method: 'DELETE',
       });
 
@@ -152,7 +161,9 @@ export const JobDetailPage = () => {
 
   return (
     <div className="px-6 max-w-4xl mx-auto space-y-4 md:space-y-6">
-      {job && (
+      {isFirstLoading ? (
+        <Loading />
+      ) : job && (
         <div className="space-y-4">
           {isPublicAccess ? (
             <div className="flex items-center justify-between border-b pb-4 mb-4">
@@ -213,7 +224,7 @@ export const JobDetailPage = () => {
                       };
 
                       if (Object.keys(updatedFields).length > 0) {
-                        const response = await fetch(`/api/jobs/${job.id}/update`, {
+                        const response = await authFetch(`/api/jobs/${job.id}/update`, {
                           method: 'PATCH',
                           headers: {
                             'Content-Type': 'application/json',

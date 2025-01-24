@@ -47,9 +47,22 @@ export const isResourceOwner = (
     next: NextFunction
 ) => {
     const checkOwnership = async () => {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (token && !req.user) {
+            try {
+                const { data: user, error } = await supabaseAdmin.auth.getUser(token);
+                if (error) throw error;
+
+                req.user = user.user;
+                next();
+            } catch (error) {
+                res.status(401).json({ error: 'Invalid token' });
+            }
+        }
+
+        const jobId = req.params.id;
+        const userId = req.user?.id;
         try {
-            const jobId = req.params.id;
-            const userId = req.user?.id;
 
             const { data: job } = await supabaseAdmin
                 .from('jobs')
@@ -79,6 +92,17 @@ export const isResourceOwner = (
 // Middleware to check if user has access to job (owner or shared)
 export const hasJobAccess = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const checkJobAccess = async () => {
+        const authToken = req.headers.authorization?.split(' ')[1];
+        if (authToken && !req.user) {
+            try {
+                const { data: user, error } = await supabaseAdmin.auth.getUser(authToken);
+                if (error) throw error;
+
+                req.user = user.user;
+            } catch (error) {
+                res.status(401).json({ error: 'Invalid token' });
+            }
+        }
         const jobId = req.params.id;
         const userId = req.user?.id;
         const token = req.query.token as string | undefined;
@@ -89,7 +113,7 @@ export const hasJobAccess = (req: AuthenticatedRequest, res: Response, next: Nex
                 .from('jobs')
                 .select(`id,
                     user_id,
-                    shares(*)`)
+                    job_shares!left(*)`) // Use !left for left outer join
                 .eq('id', jobId)
                 .single();
 
@@ -104,7 +128,7 @@ export const hasJobAccess = (req: AuthenticatedRequest, res: Response, next: Nex
 
             // Check for valid public share token
             if (token) {
-                const publicShare = job.shares.find(share =>
+                const publicShare = job.job_shares.find(share =>
                     share.type === 'public' &&
                     share.token === token
                 );
@@ -115,7 +139,7 @@ export const hasJobAccess = (req: AuthenticatedRequest, res: Response, next: Nex
 
             // Check for email-based sharing
             if (userId) {
-                const emailShare = job.shares.find(share =>
+                const emailShare = job.job_shares.find(share =>
                     share.type === 'email' &&
                     share.email === req.user?.email &&
                     share.status === 'accepted'
