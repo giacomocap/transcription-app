@@ -3,7 +3,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { router } from './routes';
-// import initializeDatabase from './init_db';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpecs from './swaggerConfig';
 import path from 'path';
