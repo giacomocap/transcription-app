@@ -114,7 +114,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
     const file = req.file;
     const jobId = uuidv4();
     const diarizationEnabled = req.body.diarization === 'true';
-    const language = req.body.language;
+    const language = req.body.language !== 'auto' ? req.body.language : undefined;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -127,6 +127,7 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
         return;
     }
 
+
     try {
         const tempDir = await ensureTempDir();
         const tempFilePath = path.join(tempDir, `${jobId}${path.extname(file.originalname)}`);
@@ -136,18 +137,6 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
 
         let audioFilePath = tempFilePath;
         let finalBuffer = file.buffer;
-
-        // If it's a video file, extract the audio
-        if (ACCEPTED_MIME_TYPES.video.includes(file.mimetype)) {
-            try {
-                audioFilePath = await extractAudioFromVideo(tempFilePath);
-                finalBuffer = await readFile(audioFilePath);
-                await unlink(tempFilePath);
-            } catch (error) {
-                console.error('Error extracting audio:', error);
-                throw new Error('Failed to extract audio from video');
-            }
-        }
 
         // Get audio duration using ffmpeg
         const getDuration = (): Promise<number> => {
@@ -166,28 +155,27 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
         // Check if user has enough credits
         const hasEnoughCredits = await checkAndReserveCredits(userId, requiredCredits);
         if (!hasEnoughCredits) {
+            await unlink(tempFilePath);
             res.status(402).json({ error: 'Insufficient credits' });
             return;
         }
 
-        // Create credit transaction
-        const { data: transaction } = await supabaseAdmin
-            .from('credit_transactions')
-            .insert({
-                user_id: userId,
-                job_id: jobId,
-                amount: -requiredCredits,
-                type: diarizationEnabled ? 'transcription_with_diarization' : 'transcription',
-                status: 'pending',
-                description: `Transcription of ${file.originalname} (${durationInMinutes} minutes)`
-            })
-            .select()
-            .single();
+        // If it's a video file, extract the audio
+        if (ACCEPTED_MIME_TYPES.video.includes(file.mimetype)) {
+            try {
+                audioFilePath = await extractAudioFromVideo(tempFilePath);
+                finalBuffer = await readFile(audioFilePath);
+                await unlink(tempFilePath);
+            } catch (error) {
+                console.error('Error extracting audio:', error);
+                await unlink(tempFilePath);
+                throw new Error('Failed to extract audio from video');
+            }
+        }
 
-        // Update job with required credits
-        await supabaseAdmin.from('jobs').update({
-            credits_required: requiredCredits
-        }).eq('id', jobId);
+
+
+
 
         // Upload file to B2
         const fileKey = await storageService.uploadFile(finalBuffer, file.originalname, userId);
@@ -211,8 +199,24 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
             file_url: fileKey,
             status: 'queued',
             diarization_enabled: diarizationEnabled,
-            diarization_status: diarizationEnabled ? 'pending' : null
+            diarization_status: diarizationEnabled ? 'pending' : null,
+            credits_required: requiredCredits,
+            language: language
         });
+
+        // Create credit transaction
+        const { data: transaction } = await supabaseAdmin
+            .from('credit_transactions')
+            .insert({
+                user_id: userId,
+                job_id: jobId,
+                amount: -requiredCredits,
+                type: diarizationEnabled ? 'transcription_with_diarization' : 'transcription',
+                status: 'pending',
+                description: `Transcription of ${file.originalname} (${durationInMinutes} minutes)`
+            })
+            .select()
+            .single();
 
         await transcriptionQueue.add('transcribe', {
             jobId,
@@ -387,7 +391,7 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
 
     try {
 
-        const { data: job } = await supabaseAdmin.from('jobs').select('refinement_pending, subtitle_content, transcript, speaker_segments').eq('id', jobId).eq('user_id', req.user?.id).single();
+        const { data: job } = await supabaseAdmin.from('jobs').select('refinement_pending, subtitle_content, transcript, speaker_segments, language').eq('id', jobId).eq('user_id', req.user?.id).single();
 
         if (!job) {
             res.status(404).json({ error: 'Job not found' });
@@ -451,7 +455,8 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
             await refinementQueue.add('refine', {
                 jobId,
                 segments: combinedSegments,
-                fullText: job.transcript
+                fullText: job.transcript,
+                language: job.language
             });
         }
 
@@ -890,8 +895,8 @@ router.delete('/user/delete', isAuthenticated, async (req: AuthenticatedRequest,
 });
 
 async function calculateRequiredCredits(durationInMinutes: number, diarizationEnabled: boolean): Promise<number> {
-    const baseCredits = Math.ceil(durationInMinutes);
-    return diarizationEnabled ? baseCredits * 1.5 : baseCredits;
+    const baseCredits = Math.floor(durationInMinutes);
+    return diarizationEnabled ? Math.floor(durationInMinutes * 1.5) : baseCredits;
 }
 
 async function checkAndReserveCredits(userId: string, credits: number): Promise<boolean> {

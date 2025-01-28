@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Info, Upload, Loader2 } from 'lucide-react';
+import { getUserSettings } from '@/services/userSettingsService';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +46,21 @@ export const UploadPage = () => {
         fetchCredits();
     }, []);
 
+    useEffect(() => {
+        // Fetch user settings for default language
+        const fetchUserSettings = async () => {
+            try {
+                const settings = await getUserSettings();
+                if (settings.preferred_transcription_language) {
+                    setLanguage(settings.preferred_transcription_language);
+                }
+            } catch (error) {
+                console.error('Failed to fetch user settings:', error);
+            }
+        };
+        fetchUserSettings();
+    }, []);
+
     // Calculate estimated credits when file or diarization changes
     useEffect(() => {
         if (file) {
@@ -54,7 +70,7 @@ export const UploadPage = () => {
             audio.onloadedmetadata = () => {
                 const durationMinutes = Math.ceil(audio.duration / 60);
                 setDuration(durationMinutes);
-                setEstimatedCredits(diarizationEnabled ? durationMinutes * 1.5 : durationMinutes);
+                setEstimatedCredits(diarizationEnabled ? Math.floor(durationMinutes * 1.5) : Math.floor(durationMinutes));
             };
         }
     }, [file, diarizationEnabled]);

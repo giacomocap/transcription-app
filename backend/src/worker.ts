@@ -107,8 +107,8 @@ async function processAudioEnhancement(audioPath: string): Promise<string> {
 const transcriptionWorker = new Worker(
     'transcriptionQueue',
     async job => {
-        const { jobId, audioFilePath, diarizationEnabled, language } = job.data;
-
+        const { jobId, audioFilePath, diarizationEnabled } = job.data;
+        let language = job.data.language;
         const openai = new OpenAI({
             apiKey: process.env.AUDIO_OPENAI_API_KEY || '',
             baseURL: process.env.AUDIO_OPENAI_API_URL || 'https://api.openai.com/v1',
@@ -155,16 +155,20 @@ const transcriptionWorker = new Worker(
                 .update({
                     status: 'transcribed',
                     transcript: transcription.text,
-                    subtitle_content: srtContent
+                    subtitle_content: srtContent,
+                    language: transcription.language
                 })
                 .eq('id', jobId);
+
+            language = transcription.language;
 
             // Start refinement immediately if diarization is disabled
             if (!diarizationEnabled) {
                 await refinementQueue.add('refine', {
                     jobId,
                     segments: transcription.segments,
-                    fullText: transcription.text
+                    fullText: transcription.text,
+                    language
                 });
                 try {
                     await unlink(audioFilePath);
@@ -305,7 +309,7 @@ const diarizationWorker = new Worker(
 
 const refinementQueue = new Queue('refinementQueue', { connection: redisOptions });
 
-async function refineTranscription(segments: TranscriptionSegment[], config: RefinementConfig): Promise<string> {
+async function refineTranscription(segments: TranscriptionSegment[], config: RefinementConfig, language: string): Promise<string> {
     const MAX_TOKENS_PER_CHUNK = 4000;
     const openai = new OpenAI({
         apiKey: config.openai_api_key,
@@ -323,7 +327,7 @@ async function refineTranscription(segments: TranscriptionSegment[], config: Ref
         const response = await openai.chat.completions.create({
             model: config.model_name,
             messages: [
-                { role: 'system', content: systemPrompt },
+                { role: 'system', content: systemPrompt(language) },
                 { role: 'user', content: prompt },
             ],
             temperature: 0.4,
@@ -332,7 +336,7 @@ async function refineTranscription(segments: TranscriptionSegment[], config: Ref
         const refinedChunk = response.choices[0].message.content || '';
 
         if (i < chunks.length - 1) {
-            previousChunkSummary = await summarizeText(refinedChunk, config);
+            previousChunkSummary = await summarizeText(refinedChunk, config, language);
         }
 
         refinedText += refinedChunk;
@@ -344,7 +348,7 @@ async function refineTranscription(segments: TranscriptionSegment[], config: Ref
 const refinementWorker = new Worker(
     'refinementQueue',
     async job => {
-        const { jobId, segments } = job.data;
+        const { jobId, segments, language } = job.data;
 
         try {
             const openaiConfig = {
@@ -354,8 +358,8 @@ const refinementWorker = new Worker(
                 fast_model_name: process.env.FAST_REFINEMENT_MODEL,
             } as RefinementConfig;
 
-            const refinedText = await refineTranscription(segments, openaiConfig);
-            const executiveSummary = await generateExecutiveSummary(refinedText, openaiConfig);
+            const refinedText = await refineTranscription(segments, openaiConfig, language);
+            const executiveSummary = await generateExecutiveSummary(refinedText, openaiConfig, language);
 
             await supabaseAdmin
                 .from('jobs')
@@ -419,11 +423,11 @@ function chunkTranscription(segments: TranscriptionSegment[], maxTokens: number)
     return chunks;
 }
 
-async function summarizeText(text: string, config: RefinementConfig): Promise<string> {
+async function summarizeText(text: string, config: RefinementConfig, language: string): Promise<string> {
     const summaryPrompt = `
     <prompt>
       <task>
-        Provide a concise summary of the following text, focusing on the main points and key information. The summary should be no more than 100 words. Directly respond with the summary. Mantain the original language, Do not translate the text ever!!
+        Provide a concise summary of the following text, focusing on the main points and key information. The summary should be no more than 100 words. Directly respond with the summary. Mantain the original language, Do not translate the text ever!! The language is ${language}.
       </task>
       <text>
         ${text}
@@ -460,7 +464,7 @@ function buildPrompt(chunk: string, previousChunkSummary: string): string {
     `;
 }
 
-const systemPrompt = `
+const systemPrompt = (language: string) => `
 <prompt>
   <role>
     You are a specialized text refinement assistant. Your primary objective is to meticulously refine and structure raw text transcriptions, enhancing their clarity, coherence, and readability. Your output should be a polished, professional document ready for review and publication. It is imperative that you strictly preserve the original meaning and intent of the text throughout the refinement process.
@@ -492,7 +496,7 @@ const systemPrompt = `
   <rules>
     <rule id="1">
       <most-important>
-        Do not, under any circumstances, translate the text. Your work must be conducted strictly in the original language of the transcription.
+        Do not, under any circumstances, translate the text. Your work must be conducted strictly in the original language of the transcription. The language is ${language}.
       </most-important>
     </rule>
     <rule id="2">
@@ -514,7 +518,7 @@ const systemPrompt = `
 </prompt>
 `
 
-async function generateExecutiveSummary(text: string, config: RefinementConfig): Promise<string> {
+async function generateExecutiveSummary(text: string, config: RefinementConfig, language: string): Promise<string> {
     const MAX_TOKENS_PER_SUMMARY_CHUNK = 6000;
     const openai = new OpenAI({
         apiKey: config.openai_api_key,
@@ -522,19 +526,19 @@ async function generateExecutiveSummary(text: string, config: RefinementConfig):
     });
 
     if (text.length < MAX_TOKENS_PER_SUMMARY_CHUNK * 4) {
-        return await generateSingleSummary(text, config);
+        return await generateSingleSummary(text, config, language);
     }
 
     const textChunks = chunkText(text, MAX_TOKENS_PER_SUMMARY_CHUNK);
     const intermediateSummaries = await Promise.all(
-        textChunks.map(chunk => generateIntermediateSummary(chunk, config))
+        textChunks.map(chunk => generateIntermediateSummary(chunk, config, language))
     );
 
     const combinedSummary = intermediateSummaries.join('\n\n');
-    return await generateSingleSummary(combinedSummary, config);
+    return await generateSingleSummary(combinedSummary, config, language);
 }
 
-async function generateSingleSummary(text: string, config: RefinementConfig): Promise<string> {
+async function generateSingleSummary(text: string, config: RefinementConfig, language: string): Promise<string> {
     const openai = new OpenAI({
         apiKey: config.openai_api_key,
         baseURL: config.openai_api_url,
@@ -550,7 +554,7 @@ async function generateSingleSummary(text: string, config: RefinementConfig): Pr
         - Include any critical action items or next steps if present
         - If speaker profiles are available, include attributions where appropriate
         - Maintain the original context and intent of the discussion
-        - mantain the original language of the transcription, do not translate the text ever!!
+        - mantain the original language of the transcription, do not translate the text ever!! The language is ${language}.
       </task>
       <text>
         ${text}
@@ -569,7 +573,7 @@ async function generateSingleSummary(text: string, config: RefinementConfig): Pr
     return response.choices[0].message.content || '';
 }
 
-async function generateIntermediateSummary(text: string, config: RefinementConfig): Promise<string> {
+async function generateIntermediateSummary(text: string, config: RefinementConfig, language: string): Promise<string> {
     const openai = new OpenAI({
         apiKey: config.openai_api_key,
         baseURL: config.openai_api_url,
@@ -583,7 +587,7 @@ async function generateIntermediateSummary(text: string, config: RefinementConfi
         - Important details and context
         - Any decisions or action items
         - If speaker profiles are available, include attributions where appropriate
-        - mantain the original language of the transcription, do not translate the text ever!!
+        - mantain the original language of the transcription, do not translate the text ever!! The language is ${language}.
         Keep the summary to around 150 words while maintaining all crucial information.
       </task>
       <text>
