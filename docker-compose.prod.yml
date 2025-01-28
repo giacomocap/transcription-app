@@ -66,6 +66,8 @@ services:
     dns: 
       - 8.8.8.8
       - 1.1.1.1
+    env_file:
+      - .env # Load the .env file from the root directory
     build:
       context: .
       dockerfile: Dockerfile.backend
