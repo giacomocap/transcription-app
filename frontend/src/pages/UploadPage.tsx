@@ -16,11 +16,9 @@ import {
 } from '@/components/ui/select';
 import { authFetch, createAuthXHR } from '@/utils/authFetch';
 import { LANGUAGES } from '../constants/languages';
+import { useToast } from '@/hooks/use-toast';
 
 export const UploadPage = () => {
-    useEffect(() => {
-        document.title = 'Upload - Claire.AI';
-    }, []);
 
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
@@ -31,6 +29,13 @@ export const UploadPage = () => {
     const [creditsBalance, setCreditsBalance] = useState<number>(0);
     const [estimatedCredits, setEstimatedCredits] = useState<number>(0);
     const [duration, setDuration] = useState<number>(0);
+    const { toast } = useToast();
+    const CHUNK_SIZE = 10 * 1024 * 1024; // 5MB chunks
+    const MIN_PARTS_FOR_MULTIPART = 2;
+
+    useEffect(() => {
+        document.title = 'Upload - Claire.AI';
+    }, []);
 
     useEffect(() => {
         // Fetch user's credit balance
@@ -75,48 +80,166 @@ export const UploadPage = () => {
         }
     }, [file, diarizationEnabled]);
 
+    // Helper function to calculate SHA1 hash of a chunk
+    const calculateSHA1 = async (chunk: { arrayBuffer: () => any; }) => {
+        const buffer = await chunk.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest('SHA-1', buffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+
     const handleUpload = async () => {
         if (!file) return;
 
         setUploading(true);
         setUploadProgress(0);
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('diarization', diarizationEnabled.toString());
-        if (language) {
-            formData.append('language', language);
-        }
 
-        const xhr = await createAuthXHR('POST', '/api/upload');
+        try {
+            // First verify credits
+            const verifyResponse = await authFetch('/api/upload/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    durationInMinutes: Math.ceil(duration),
+                    diarizationEnabled,
+                    fileName: file.name,
+                    mimeType: file.type
+                })
+            });
 
-        xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-                const progress = Math.round((event.loaded / event.total) * 100);
-                setUploadProgress(progress);
-                if (progress === 100) {
-                    setProcessing(true);
+            if (!verifyResponse.ok) {
+                const error = await verifyResponse.json();
+                throw new Error(error.error || 'Credit verification failed');
+            }
+
+
+            const useMultipart = file.size > CHUNK_SIZE * MIN_PARTS_FOR_MULTIPART;
+            let job_id;
+            if (useMultipart) {
+                // Get upload session
+                const sessionResponse = await authFetch('/api/upload/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: file.name,
+                        fileSize: file.size,
+                        diarization: diarizationEnabled,
+                        language: language
+                    })
+                });
+
+                const { jobId, uploadUrl, authorizationToken, fileId } = await sessionResponse.json();
+                job_id = jobId;
+                // Split file into chunks and upload
+                const chunks = Math.ceil(file.size / CHUNK_SIZE);
+                let uploadedChunks = 0;
+                const partSha1s = [];
+
+                for (let i = 0; i < chunks; i++) {
+                    const start = i * CHUNK_SIZE;
+                    const end = Math.min(start + CHUNK_SIZE, file.size);
+                    const chunk = file.slice(start, end);
+
+                    // Calculate SHA1 for the chunk
+                    const sha1 = await calculateSHA1(chunk);
+
+                    const response = await fetch(uploadUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': authorizationToken,
+                            'X-Bz-Part-Number': (i + 1).toString(),
+                            'Content-Length': chunk.size.toString(),
+                            'X-Bz-Content-Sha1': sha1
+                        },
+                        body: chunk
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`Chunk upload failed: ${errorText}`);
+                    }
+
+                    const { contentSha1 } = await response.json();
+                    partSha1s.push({ partNumber: i + 1, contentSha1: contentSha1 });
+
+                    uploadedChunks++;
+                    setUploadProgress(Math.round((uploadedChunks / chunks) * 100));
+                }
+                setProcessing(true);
+                // Complete the upload
+                const completeResponse = await authFetch(`/api/upload/complete/${jobId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileId: fileId,          // Add fileId received from start endpoint
+                        partSha1s: partSha1s,
+                        mimeType: file.type        // Add the accumulated part SHA1s
+                    })
+                });
+
+                if (!completeResponse.ok) {
+                    throw new Error('Failed to complete upload');
+                }
+            } else {
+                // Single-part upload flow
+                const sessionResponse = await authFetch('/api/upload/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: file.name,
+                        fileSize: file.size,
+                        diarization: diarizationEnabled,
+                        language: language,
+                        singlePart: true // Add flag for single-part
+                    })
+                });
+
+                const { uploadUrl, authorizationToken, jobId, fileUrl } = await sessionResponse.json();
+                job_id = jobId;
+
+                // Upload entire file in one request
+                const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authorizationToken,
+                        'X-Bz-Content-Sha1': await calculateSHA1(file),
+                        'Content-Type': file.type,
+                        'X-Bz-File-Name': encodeURIComponent(fileUrl),
+                    },
+                    body: file
+                });
+
+                setProcessing(true);
+
+                if (!response.ok) throw new Error('Upload failed' + await response.text());
+
+                // Handle completion
+                const completeResponse = await authFetch(`/api/upload/complete/${jobId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        singlePart: true,
+                        mimeType: file.type
+                    })
+                });
+
+                if (!completeResponse.ok) {
+                    throw new Error('Failed to complete upload');
                 }
             }
-        };
+            setProcessing(false);
+            window.location.href = `/jobs/${job_id}`;
 
-        xhr.onload = () => {
-            if (xhr.status === 200) {
-                const data = JSON.parse(xhr.responseText);
-                window.location.href = `/jobs/${data.jobId}`;
-            } else {
-                console.error('Upload failed');
-                setUploading(false);
-                setProcessing(false);
-            }
-        };
-
-        xhr.onerror = () => {
-            console.error('Upload failed');
+        } catch (error) {
+            console.error('Upload failed:', error);
+            toast({
+                variant: "destructive",
+                title: "Upload Failed",
+                description: "There was a problem uploading your file. Please try again.",
+            });
             setUploading(false);
             setProcessing(false);
-        };
-
-        xhr.send(formData);
+        }
     };
 
     // Processing overlay component

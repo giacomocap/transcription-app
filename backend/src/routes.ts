@@ -12,6 +12,9 @@ import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 import { access, mkdir, readFile, unlink, writeFile } from 'fs/promises';
 import { supabaseAdmin } from './utils/supabase';
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
+import { creditTransactionService } from './services/credit-transaction-service';
 
 dotenv.config();
 
@@ -109,12 +112,172 @@ const transcriptionQueue = new Queue('transcriptionQueue', { connection: redisOp
  *       200:
  *         description: Successfully uploaded
  */
-router.post('/upload', isAuthenticated, upload.single('file'), async (req: AuthenticatedRequest, res) => {
-    console.log(`File upload request received from user ${req.user?.id}`);
-    const file = req.file;
-    const jobId = uuidv4();
-    const diarizationEnabled = req.body.diarization === 'true';
-    const language = req.body.language !== 'auto' ? req.body.language : undefined;
+// router.post('/upload', isAuthenticated, upload.single('file'), async (req: AuthenticatedRequest, res) => {
+//     console.log(`File upload request received from user ${req.user?.id}`);
+//     const file = req.file;
+//     const jobId = uuidv4();
+//     const diarizationEnabled = req.body.diarization === 'true';
+//     const language = req.body.language !== 'auto' ? req.body.language : undefined;
+//     const userId = req.user?.id;
+
+//     if (!userId) {
+//         res.status(400).json({ error: 'User not found' });
+//         return;
+//     }
+
+//     if (!file) {
+//         res.status(400).json({ error: 'No file uploaded' });
+//         return;
+//     }
+
+
+//     try {
+//         const tempDir = await ensureTempDir();
+//         const tempFilePath = path.join(tempDir, `${jobId}${path.extname(file.originalname)}`);
+
+//         // Save the uploaded file locally
+//         await writeFile(tempFilePath, file.buffer);
+
+//         let audioFilePath = tempFilePath;
+//         let finalBuffer = file.buffer;
+
+//         // Get audio duration using ffmpeg
+//         const getDuration = (): Promise<number> => {
+//             return new Promise((resolve, reject) => {
+//                 ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
+//                     if (err) reject(err);
+//                     resolve(metadata.format.duration || 0);
+//                 });
+//             });
+//         };
+
+//         const durationInSeconds = await getDuration();
+//         const durationInMinutes = Math.ceil(durationInSeconds / 60);
+//         const requiredCredits = await calculateRequiredCredits(durationInMinutes, diarizationEnabled);
+
+//         // Check if user has enough credits
+//         const hasEnoughCredits = await checkAndReserveCredits(userId, requiredCredits);
+//         if (!hasEnoughCredits) {
+//             await unlink(tempFilePath);
+//             res.status(402).json({ error: 'Insufficient credits' });
+//             return;
+//         }
+
+//         // If it's a video file, extract the audio
+//         if (ACCEPTED_MIME_TYPES.video.includes(file.mimetype)) {
+//             try {
+//                 audioFilePath = await extractAudioFromVideo(tempFilePath);
+//                 finalBuffer = await readFile(audioFilePath);
+//                 await unlink(tempFilePath);
+//             } catch (error) {
+//                 console.error('Error extracting audio:', error);
+//                 await unlink(tempFilePath);
+//                 throw new Error('Failed to extract audio from video');
+//             }
+//         }
+
+
+
+
+
+//         // Upload file to B2
+//         const fileKey = await storageService.uploadFile(finalBuffer, file.originalname, userId);
+
+//         // await prisma.jobs.create({
+//         //     data: {
+//         //         id: jobId,
+//         //         user_id: userId,
+//         //         file_name: file.originalname,
+//         //         file_url: fileKey,
+//         //         status: 'queued',
+//         //         diarization_enabled: diarizationEnabled,
+//         //         diarization_status: diarizationEnabled ? 'pending' : null
+//         //     }
+//         // });
+
+//         await supabaseAdmin.from('jobs').insert({
+//             id: jobId,
+//             user_id: userId,
+//             file_name: file.originalname,
+//             file_url: fileKey,
+//             status: 'queued',
+//             diarization_enabled: diarizationEnabled,
+//             diarization_status: diarizationEnabled ? 'pending' : null,
+//             credits_required: requiredCredits,
+//             language: language
+//         });
+
+//         // Create credit transaction
+//         const { data: transaction } = await supabaseAdmin
+//             .from('credit_transactions')
+//             .insert({
+//                 user_id: userId,
+//                 job_id: jobId,
+//                 amount: -requiredCredits,
+//                 type: diarizationEnabled ? 'transcription_with_diarization' : 'transcription',
+//                 status: 'pending',
+//                 description: `Transcription of ${file.originalname} (${durationInMinutes} minutes)`
+//             })
+//             .select()
+//             .single();
+
+//         await transcriptionQueue.add('transcribe', {
+//             jobId,
+//             audioFilePath,
+//             fileName: file?.originalname,
+//             diarizationEnabled,
+//             userId: userId,
+//             language
+//         });
+
+//         console.log(`Job ${jobId} created successfully for file ${file?.originalname}`);
+//         res.json({ jobId });
+//     } catch (error) {
+//         console.error('Error creating job:', error);
+//         res.status(500).json({ error: 'Failed to create job' });
+//     }
+// });
+
+router.post('/upload/verify', isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    const { durationInMinutes, diarizationEnabled, fileName, mimeType } = req.body;
+    const userId = req.user?.id;
+    console.log('upload verify', durationInMinutes, diarizationEnabled, fileName, mimeType, userId);
+
+    if (!userId) {
+        res.status(400).json({ error: 'User not found' });
+        return;
+    }
+
+    try {
+        // Validate file type
+        const isAcceptedType = [...ACCEPTED_MIME_TYPES.audio, ...ACCEPTED_MIME_TYPES.video].includes(mimeType);
+        if (!isAcceptedType) {
+            res.status(400).json({
+                error: 'Invalid file type. Only the following formats are accepted: ' +
+                    'FLAC, MP3, MP4, MPEG, MPGA, M4A, OGG, WAV, WEBM for audio; and ' +
+                    'MP4, WEBM, OGG, QuickTime, AVI, MKV, FLV, 3GP, 3G2, WMV, M4V, MPEG, DV, ASF for video.'
+            });
+            return;
+        }
+
+        const requiredCredits = await calculateRequiredCredits(durationInMinutes, diarizationEnabled);
+        const hasEnoughCredits = await checkAndReserveCredits(userId, requiredCredits);
+
+        if (!hasEnoughCredits) {
+            console.log('Insufficient credits');
+            res.status(402).json({ error: 'Insufficient credits' });
+            return;
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Credit verification failed:', error);
+        res.status(500).json({ error: 'Credit verification failed' });
+    }
+});
+
+router.post('/upload/start', isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    const { fileName, diarization, language, singlePart } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -122,26 +285,117 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
         return;
     }
 
-    if (!file) {
-        res.status(400).json({ error: 'No file uploaded' });
+    try {
+        const jobId = uuidv4();
+        const key = `uploads/${userId}-${Date.now()}-${fileName}`;
+        let responseData;
+        if (singlePart) {
+            // Get direct upload URL for single-part
+            const { uploadUrl, authorizationToken } = await storageService.getDirectUploadUrl(key);
+            responseData = { jobId, uploadUrl, authorizationToken, fileUrl: key };
+        } else {
+
+            // Get single upload URL and file ID for the entire multipart upload
+            const { fileId, uploadUrl, authorizationToken } = await storageService.startMultipartUpload(key);
+            responseData = { jobId, fileId, uploadUrl, authorizationToken };
+        }
+
+        // Create pending job record
+        await supabaseAdmin.from('jobs').insert({
+            id: jobId,
+            user_id: userId,
+            file_name: fileName,
+            file_url: key,
+            status: 'uploading',
+            diarization_enabled: diarization || diarization === 'true',
+            language: language !== 'auto' ? language : null
+        });
+
+        res.json(responseData);
+    } catch (error) {
+        console.error('Failed to start upload:', error);
+        res.status(500).json({ error: 'Failed to start upload' });
+    }
+});
+
+router.post('/upload/complete/:id', isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    const jobId = req.params.id;
+    const userId = req.user?.id;
+    const { fileId, partSha1s, singlePart, mimeType } = req.body;
+    console.log(`Completing upload for job ${jobId} by user ${userId}`);
+    if (!jobId) {
+        res.status(400).json({ error: 'Job not found' });
         return;
     }
-
+    if (!userId) {
+        res.status(400).json({ error: 'User not found' });
+        return
+    }
 
     try {
-        const tempDir = await ensureTempDir();
-        const tempFilePath = path.join(tempDir, `${jobId}${path.extname(file.originalname)}`);
+        if (!singlePart) {
+            await storageService.completeMultipartUpload(fileId, partSha1s);
+        }
 
-        // Save the uploaded file locally
-        await writeFile(tempFilePath, file.buffer);
+        // Update job status
+        await supabaseAdmin.from('jobs')
+            .update({ status: 'queued' })
+            .eq('id', jobId)
+
+        // Get job details
+        const { data: job } = await supabaseAdmin
+            .from('jobs')
+            .select('*')
+            .eq('id', jobId)
+            .single();
+
+        if (!job) {
+            throw new Error('Job not found');
+        }
+
+        // Download file locally for processing
+        const tempDir = await ensureTempDir();
+        const tempFilePath = path.join(tempDir, `${jobId}${path.extname(job.file_name)}`);
+
+        const fileStream = await storageService.getFileStream(job.file_url);
+        const writeStream = createWriteStream(tempFilePath);
+        await pipeline(fileStream, writeStream);
 
         let audioFilePath = tempFilePath;
-        let finalBuffer = file.buffer;
+        let finalFileUrl = job.file_url;
 
-        // Get audio duration using ffmpeg
+        // Check if it's a video file and convert to audio if needed
+        const isVideo = ACCEPTED_MIME_TYPES.video.includes(mimeType);
+
+        if (isVideo) {
+            try {
+                audioFilePath = await extractAudioFromVideo(tempFilePath);
+                // Upload the converted audio file
+                const audioBuffer = await readFile(audioFilePath);
+                const audioFileName = path.basename(audioFilePath);
+                finalFileUrl = await storageService.uploadFile(audioBuffer, audioFileName, userId);
+
+                // Update the job with the new audio file URL
+                await supabaseAdmin.from('jobs')
+                    .update({ file_url: finalFileUrl })
+                    .eq('id', jobId);
+
+                // Clean up original video file from storage
+                await storageService.deleteFile(job.file_url);
+
+                // Clean up temporary files
+                await unlink(tempFilePath);
+            } catch (error) {
+                console.error('Error processing video:', error);
+                await unlink(tempFilePath);
+                throw new Error('Failed to process video file');
+            }
+        }
+
+        // Get duration using ffmpeg
         const getDuration = (): Promise<number> => {
             return new Promise((resolve, reject) => {
-                ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
+                ffmpeg.ffprobe(audioFilePath, (err, metadata) => {
                     if (err) reject(err);
                     resolve(metadata.format.duration || 0);
                 });
@@ -150,88 +404,40 @@ router.post('/upload', isAuthenticated, upload.single('file'), async (req: Authe
 
         const durationInSeconds = await getDuration();
         const durationInMinutes = Math.ceil(durationInSeconds / 60);
-        const requiredCredits = await calculateRequiredCredits(durationInMinutes, diarizationEnabled);
 
-        // Check if user has enough credits
+        const requiredCredits = await calculateRequiredCredits(durationInMinutes, job.diarization_enabled);
         const hasEnoughCredits = await checkAndReserveCredits(userId, requiredCredits);
+
         if (!hasEnoughCredits) {
             await unlink(tempFilePath);
             res.status(402).json({ error: 'Insufficient credits' });
             return;
         }
 
-        // If it's a video file, extract the audio
-        if (ACCEPTED_MIME_TYPES.video.includes(file.mimetype)) {
-            try {
-                audioFilePath = await extractAudioFromVideo(tempFilePath);
-                finalBuffer = await readFile(audioFilePath);
-                await unlink(tempFilePath);
-            } catch (error) {
-                console.error('Error extracting audio:', error);
-                await unlink(tempFilePath);
-                throw new Error('Failed to extract audio from video');
-            }
-        }
+        // Create credit transaction using the service
+        await creditTransactionService.createTranscriptionTransaction(
+            userId,
+            jobId,
+            requiredCredits,
+            job.file_name,
+            durationInMinutes,
+            job.diarization_enabled
+        );
 
-
-
-
-
-        // Upload file to B2
-        const fileKey = await storageService.uploadFile(finalBuffer, file.originalname, userId);
-
-        // await prisma.jobs.create({
-        //     data: {
-        //         id: jobId,
-        //         user_id: userId,
-        //         file_name: file.originalname,
-        //         file_url: fileKey,
-        //         status: 'queued',
-        //         diarization_enabled: diarizationEnabled,
-        //         diarization_status: diarizationEnabled ? 'pending' : null
-        //     }
-        // });
-
-        await supabaseAdmin.from('jobs').insert({
-            id: jobId,
-            user_id: userId,
-            file_name: file.originalname,
-            file_url: fileKey,
-            status: 'queued',
-            diarization_enabled: diarizationEnabled,
-            diarization_status: diarizationEnabled ? 'pending' : null,
-            credits_required: requiredCredits,
-            language: language
-        });
-
-        // Create credit transaction
-        const { data: transaction } = await supabaseAdmin
-            .from('credit_transactions')
-            .insert({
-                user_id: userId,
-                job_id: jobId,
-                amount: -requiredCredits,
-                type: diarizationEnabled ? 'transcription_with_diarization' : 'transcription',
-                status: 'pending',
-                description: `Transcription of ${file.originalname} (${durationInMinutes} minutes)`
-            })
-            .select()
-            .single();
-
+        // Add to transcription queue
         await transcriptionQueue.add('transcribe', {
             jobId,
-            audioFilePath,
-            fileName: file?.originalname,
-            diarizationEnabled,
-            userId: userId,
-            language
+            audioFilePath: tempFilePath,
+            fileName: job.file_name,
+            diarizationEnabled: job.diarization_enabled,
+            userId,
+            language: job.language
         });
 
-        console.log(`Job ${jobId} created successfully for file ${file?.originalname}`);
-        res.json({ jobId });
+        res.json({ success: true });
     } catch (error) {
-        console.error('Error creating job:', error);
-        res.status(500).json({ error: 'Failed to create job' });
+        console.error('Failed to complete upload:', error);
+        res.status(500).json({ error: 'Failed to complete upload' });
     }
 });
 
@@ -1017,13 +1223,13 @@ router.post('/admin/credits/adjust', isAuthenticated, isAdmin, async (req: Authe
             .select()
             .single();
 
-        // Update user's credit balance
-        await supabaseAdmin
-            .from('user_credits')
-            .update({
-                credits_balance: (currentBalance?.credits_balance || 0) + amount
-            })
-            .eq('user_id', user_id);
+        // // Update user's credit balance
+        // await supabaseAdmin
+        //     .from('user_credits')
+        //     .update({
+        //         credits_balance: (currentBalance?.credits_balance || 0) + amount
+        //     })
+        //     .eq('user_id', user_id);
 
         res.json({ success: true, transaction });
     } catch (error) {

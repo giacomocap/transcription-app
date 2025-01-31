@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getUserSettings, updateUserSettings as apiUpdateUserSettings } from '../services/userSettingsService';
 import { UserSettings } from '@/types/auth';
 import { authFetch } from '@/utils/authFetch';
+import { useToast } from '@/hooks/use-toast';
 
 export const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -32,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [token, setToken] = useState<string | null>(null);
     const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
     const [needsOnboarding, setNeedsOnboarding] = useState(false);
+    const { toast } = useToast();
 
     const fetchUserSettings = async () => {
         try {
@@ -73,14 +75,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         initializeAuth();
 
-        const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user ?? null);
             setToken(session?.access_token ?? null);
-            // setIsLoading(false);
+            
+            if (event === 'SIGNED_IN') {
+                toast({
+                    title: "Welcome!",
+                    description: "You have successfully signed in.",
+                });
+            } else if (event === 'SIGNED_OUT') {
+                toast({
+                    title: "Goodbye!",
+                    description: "You have been signed out successfully.",
+                });
+            }
         });
 
         return () => authListener?.subscription.unsubscribe();
-    }, []);
+    }, [toast]);
 
     const updateUserSettings = async (settings: Partial<UserSettings>) => {
         if (!user || !token) return;

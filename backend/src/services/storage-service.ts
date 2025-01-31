@@ -29,24 +29,29 @@ export class StorageService {
         const authUrl = 'https://api.backblazeb2.com/b2api/v2/b2_authorize_account';
         const credentials = Buffer.from(`${this.credentials.accessKeyId}:${this.credentials.secretAccessKey}`).toString('base64');
 
-        const response = await fetch(authUrl, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Basic ${credentials}`
+        try {
+            const response = await fetch(authUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Basic ${credentials}`
+                }
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(`Failed to obtain authorization token: ${JSON.stringify(error)}`);
             }
-        });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(`Failed to obtain authorization token: ${JSON.stringify(error)}`);
+            const data = await response.json();
+            return {
+                authorizationToken: data.authorizationToken,
+                apiUrl: data.apiUrl,
+                downloadUrl: data.downloadUrl
+            };
+        } catch (error) {
+            console.error('Error getting authorization token:', error);
+            throw new Error('Failed to get authorization token');
         }
-
-        const data = await response.json();
-        return {
-            authorizationToken: data.authorizationToken,
-            apiUrl: data.apiUrl,
-            downloadUrl: data.downloadUrl
-        };
     }
 
     private async getUploadUrl(authToken: string, apiUrl: string): Promise<{
@@ -106,6 +111,15 @@ export class StorageService {
             console.error('Error uploading file:', error);
             throw error;
         }
+    }
+
+    async getDirectUploadUrl(key: string): Promise<{ uploadUrl: string; authorizationToken: string }> {
+        const { authorizationToken, apiUrl } = await this.getAuthToken();
+        const { uploadUrl, uploadAuthToken } = await this.getUploadUrl(authorizationToken, apiUrl);
+        return {
+            uploadUrl,
+            authorizationToken: uploadAuthToken
+        };
     }
 
     async deleteFile(key: string): Promise<void> {
@@ -235,6 +249,81 @@ export class StorageService {
             '.mkv': 'video/x-matroska'
         };
         return contentTypes[ext] || 'application/octet-stream';
+    }
+
+    async startMultipartUpload(key: string): Promise<{ fileId: string; uploadUrl: string; authorizationToken: string }> {
+        const { authorizationToken, apiUrl } = await this.getAuthToken();
+
+        // Start large file upload
+        const fileId = await this.startLargeFile(key, authorizationToken, apiUrl);
+
+        // Get single upload URL for all parts
+        const response = await fetch(`${apiUrl}/b2api/v2/b2_get_upload_part_url`, {
+            method: 'POST',
+            headers: {
+                'Authorization': authorizationToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fileId })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get upload URL');
+        }
+
+        const data = await response.json();
+        return {
+            fileId,
+            uploadUrl: data.uploadUrl,
+            authorizationToken: data.authorizationToken
+        };
+    }
+
+    async completeMultipartUpload(fileId: string, partSha1s: Array<{ partNumber: number; contentSha1: string }>, authToken?: string): Promise<void> {
+        const { authorizationToken, apiUrl } = await this.getAuthToken();
+        try {
+            const response = await fetch(`${apiUrl}/b2api/v2/b2_finish_large_file`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': authorizationToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    fileId,
+                    partSha1Array: partSha1s.map(p => p.contentSha1)
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to complete multipart upload: ' + await response.text());
+            }
+        } catch (error) {
+            console.error('Error completing multipart upload:', error);
+            throw new Error('Failed to complete multipart upload');
+        }
+    }
+
+    async startLargeFile(key: string, authToken: string, apiUrl: string): Promise<string> {
+        const response = await fetch(`${apiUrl}/b2api/v2/b2_start_large_file`, {
+            method: 'POST',
+            headers: {
+                'Authorization': authToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                bucketId: this.bucketId,
+                fileName: key,
+                contentType: 'application/octet-stream'
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(`Failed to start large file: ${JSON.stringify(error)}`);
+        }
+
+        const data = await response.json();
+        return data.fileId;
     }
 }
 

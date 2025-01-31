@@ -5,9 +5,10 @@ import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import { createReadStream } from 'fs';
 import { RefinementConfig } from './types';
-import { TranscriptionSegment } from 'openai/resources/audio/transcriptions';
+import { TranscriptionSegment, TranscriptionVerbose } from 'openai/resources/audio/transcriptions';
 import crypto from 'crypto';
 import { unlink } from 'fs/promises';
+import { creditTransactionService } from './services/credit-transaction-service';
 
 dotenv.config();
 
@@ -107,7 +108,7 @@ async function processAudioEnhancement(audioPath: string): Promise<string> {
 const transcriptionWorker = new Worker(
     'transcriptionQueue',
     async job => {
-        const { jobId, audioFilePath, diarizationEnabled } = job.data;
+        const { jobId, audioFilePath, diarizationEnabled, userId } = job.data;
         let language = job.data.language;
         const openai = new OpenAI({
             apiKey: process.env.AUDIO_OPENAI_API_KEY || '',
@@ -123,14 +124,18 @@ const transcriptionWorker = new Worker(
         try {
 
             // Start transcription with Whisper and measure time
-            let transcription;
+            let transcription: TranscriptionVerbose;
+            let transcriptionOptions: any;
             try {
-                transcription = await openai.audio.transcriptions.create({
+                transcriptionOptions = {
                     file: createReadStream(audioFilePath),
                     model: process.env.AUDIO_MODEL || '',
-                    response_format: 'verbose_json',
-                    language: language
-                });
+                    response_format: 'verbose_json'
+                };
+                if (language) {
+                    transcriptionOptions.language = language;
+                }
+                transcription = await openai.audio.transcriptions.create(transcriptionOptions) as any;
             } catch (error) {
                 console.log('Primary transcription failed, attempting with fallback credentials...', error);
 
@@ -140,13 +145,15 @@ const transcriptionWorker = new Worker(
                     baseURL: process.env.AUDIO_OPENAI_API_URL1 || 'https://api.openai.com/v1',
                     timeout: 600000,
                 });
-
-                transcription = await fallbackOpenai.audio.transcriptions.create({
+                transcriptionOptions = {
                     file: createReadStream(audioFilePath),
                     model: process.env.AUDIO_MODEL1 || '',
-                    response_format: 'verbose_json',
-                    language: language
-                });
+                    response_format: 'verbose_json'
+                };
+                if (language) {
+                    transcriptionOptions.language = language;
+                }
+                transcription = await fallbackOpenai.audio.transcriptions.create(transcriptionOptions) as any;
             }
             // Save initial transcription result
             const srtContent = segmentsToSRT(transcription.segments!);
@@ -212,43 +219,14 @@ const transcriptionWorker = new Worker(
                 }
             }
 
-            // On successful transcription, complete the credit transaction
-            await supabaseAdmin.from('credit_transactions')
-                .update({ status: 'completed' })
-                .eq('job_id', jobId);
-
-            // Mark credits as charged
-            await supabaseAdmin.from('jobs')
-                .update({ credits_charged: true })
-                .eq('id', jobId);
+            await creditTransactionService.completeTransaction(jobId);
 
             return { jobId, status: 'transcribed' };
 
         } catch (error: any) {
             console.error('Error processing job:', error);
 
-            // Refund credits on failure
-            const { data: transaction } = await supabaseAdmin
-                .from('credit_transactions')
-                .select('amount')
-                .eq('job_id', jobId)
-                .single();
-
-            if (transaction) {
-                await supabaseAdmin.from('credit_transactions')
-                    .update({ status: 'refunded' })
-                    .eq('job_id', jobId);
-
-                // Add refund transaction
-                await supabaseAdmin.from('credit_transactions').insert({
-                    user_id: job.data.userId,
-                    job_id: jobId,
-                    amount: Math.abs(transaction.amount), // Make positive for refund
-                    type: 'refund',
-                    status: 'completed',
-                    description: `Refund for failed job ${jobId}`
-                });
-            }
+            await creditTransactionService.refundTransaction(jobId, userId);
 
             await supabaseAdmin
                 .from('jobs')
