@@ -14,7 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { authFetch, createAuthXHR } from '@/utils/authFetch';
+import { authFetch } from '@/utils/authFetch';
 import { LANGUAGES } from '../constants/languages';
 import { useToast } from '@/hooks/use-toast';
 
@@ -30,7 +30,7 @@ export const UploadPage = () => {
     const [estimatedCredits, setEstimatedCredits] = useState<number>(0);
     const [duration, setDuration] = useState<number>(0);
     const { toast } = useToast();
-    const CHUNK_SIZE = 10 * 1024 * 1024; // 5MB chunks
+    const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB chunks
     const MIN_PARTS_FOR_MULTIPART = 2;
 
     useEffect(() => {
@@ -143,27 +143,42 @@ export const UploadPage = () => {
                     // Calculate SHA1 for the chunk
                     const sha1 = await calculateSHA1(chunk);
 
-                    const response = await fetch(uploadUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': authorizationToken,
-                            'X-Bz-Part-Number': (i + 1).toString(),
-                            'Content-Length': chunk.size.toString(),
-                            'X-Bz-Content-Sha1': sha1
-                        },
-                        body: chunk
+                    // Use XHR for better progress tracking
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', uploadUrl, true);
+                    xhr.setRequestHeader('Authorization', authorizationToken);
+                    xhr.setRequestHeader('X-Bz-Part-Number', (i + 1).toString());
+                    xhr.setRequestHeader('Content-Length', chunk.size.toString());
+                    xhr.setRequestHeader('X-Bz-Content-Sha1', sha1);
+
+                    // Track upload progress
+                    xhr.upload.onprogress = (event) => {
+                        if (event.lengthComputable) {
+                            const chunkProgress = (uploadedChunks / chunks) * 100;
+                            const currentChunkProgress = (event.loaded / event.total) * (100 / chunks);
+                            setUploadProgress(Math.round(chunkProgress + currentChunkProgress));
+                        }
+                    };
+
+                    // Handle response
+                    const responsePromise = new Promise((resolve, reject) => {
+                        xhr.onload = () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                resolve(JSON.parse(xhr.responseText));
+                            } else {
+                                reject(new Error(`Chunk upload failed: ${xhr.statusText}`));
+                            }
+                        };
+                        xhr.onerror = () => reject(new Error('Network error during chunk upload'));
                     });
 
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`Chunk upload failed: ${errorText}`);
-                    }
+                    // Send the chunk
+                    xhr.send(chunk);
 
-                    const { contentSha1 } = await response.json();
+                    // Wait for the response
+                    const { contentSha1 } = await responsePromise as any;
                     partSha1s.push({ partNumber: i + 1, contentSha1: contentSha1 });
-
                     uploadedChunks++;
-                    setUploadProgress(Math.round((uploadedChunks / chunks) * 100));
                 }
                 setProcessing(true);
                 // Complete the upload
@@ -198,20 +213,39 @@ export const UploadPage = () => {
                 job_id = jobId;
 
                 // Upload entire file in one request
-                const response = await fetch(uploadUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': authorizationToken,
-                        'X-Bz-Content-Sha1': await calculateSHA1(file),
-                        'Content-Type': file.type,
-                        'X-Bz-File-Name': encodeURIComponent(fileUrl),
-                    },
-                    body: file
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', uploadUrl, true);
+                xhr.setRequestHeader('Authorization', authorizationToken);
+                xhr.setRequestHeader('X-Bz-Content-Sha1', await calculateSHA1(file));
+                xhr.setRequestHeader('Content-Type', file.type);
+                xhr.setRequestHeader('X-Bz-File-Name', encodeURIComponent(fileUrl));
+
+                // Track upload progress
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        setUploadProgress(Math.round((event.loaded / event.total) * 100));
+                    }
+                };
+
+                // Handle response
+                const responsePromise = new Promise((resolve, reject) => {
+                    xhr.onload = () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(xhr.status);
+                        } else {
+                            reject(new Error(`Single-part upload failed: ${xhr.statusText}`));
+                        }
+                    };
+                    xhr.onerror = (error) => reject(new Error('Network error during single-part upload ' + error));
                 });
 
-                setProcessing(true);
+                // Send the file
+                xhr.send(file);
 
-                if (!response.ok) throw new Error('Upload failed' + await response.text());
+                // Wait for the response
+                await responsePromise;
+
+                setProcessing(true);
 
                 // Handle completion
                 const completeResponse = await authFetch(`/api/upload/complete/${jobId}`, {

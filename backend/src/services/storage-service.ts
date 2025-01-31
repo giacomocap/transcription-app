@@ -10,6 +10,12 @@ export class StorageService {
         accessKeyId: string;
         secretAccessKey: string;
     };
+    private cachedAuth: {
+        authorizationToken: string;
+        apiUrl: string;
+        downloadUrl: string;
+    } | null = null;
+    private cacheExpiration: number = 0;
 
     constructor() {
         this.bucketId = process.env.S3_BUCKET_ID || '';
@@ -21,11 +27,19 @@ export class StorageService {
         };
     }
 
+    private isCachedAuthValid(): boolean {
+        return this.cachedAuth !== null && Date.now() < this.cacheExpiration;
+    }
+
     private async getAuthToken(): Promise<{
         authorizationToken: string;
         apiUrl: string;
         downloadUrl: string;
     }> {
+        if (this.isCachedAuthValid()) {
+            return this.cachedAuth!;
+        }
+
         const authUrl = 'https://api.backblazeb2.com/b2api/v2/b2_authorize_account';
         const credentials = Buffer.from(`${this.credentials.accessKeyId}:${this.credentials.secretAccessKey}`).toString('base64');
 
@@ -43,11 +57,15 @@ export class StorageService {
             }
 
             const data = await response.json();
-            return {
+            this.cachedAuth = {
                 authorizationToken: data.authorizationToken,
                 apiUrl: data.apiUrl,
                 downloadUrl: data.downloadUrl
             };
+            // Set cache expiration to 1 hour from now
+            this.cacheExpiration = Date.now() + 3600000; // 1 hour in milliseconds
+            
+            return this.cachedAuth;
         } catch (error) {
             console.error('Error getting authorization token:', error);
             throw new Error('Failed to get authorization token');
@@ -125,7 +143,13 @@ export class StorageService {
     async deleteFile(key: string): Promise<void> {
         try {
             const { authorizationToken, apiUrl } = await this.getAuthToken();
-
+            const fileId = await this.getFileId(key, authorizationToken, apiUrl);
+    
+            if (!fileId) {
+                console.warn(`File not found for deletion: ${key}`);
+                return; // Or throw an error if you prefer to fail explicitly
+            }
+    
             const response = await fetch(`${apiUrl}/b2api/v2/b2_delete_file_version`, {
                 method: 'POST',
                 headers: {
@@ -134,10 +158,10 @@ export class StorageService {
                 },
                 body: JSON.stringify({
                     fileName: key,
-                    fileId: await this.getFileId(key, authorizationToken, apiUrl)
+                    fileId: fileId
                 })
             });
-
+    
             if (!response.ok) {
                 const error = await response.json();
                 throw new Error(`Delete failed: ${JSON.stringify(error)}`);
@@ -147,9 +171,9 @@ export class StorageService {
             throw new Error('Failed to delete file from storage');
         }
     }
-
-    private async getFileId(fileName: string, authToken: string, apiUrl: string): Promise<string> {
-        const response = await fetch(`${apiUrl}/b2api/v2/b2_list_file_versions`, {
+    
+    private async getFileId(fileName: string, authToken: string, apiUrl: string): Promise<string | null> {
+        const response = await fetch(`${apiUrl}/b2api/v2/b2_list_file_names`, {
             method: 'POST',
             headers: {
                 'Authorization': authToken,
@@ -157,23 +181,27 @@ export class StorageService {
             },
             body: JSON.stringify({
                 bucketId: this.bucketId,
-                startFileName: fileName,
-                maxFileCount: 1
+                prefix: fileName, // Use prefix for more accurate filtering
+                maxFileCount: 100 // Adjust as needed, but keep it reasonable
             })
         });
-
+    
         if (!response.ok) {
             const error = await response.json();
             throw new Error(`Failed to get file ID: ${JSON.stringify(error)}`);
         }
-
+    
         const data = await response.json();
-        const file = data.files[0];
-        if (!file || file.fileName !== fileName) {
-            throw new Error('File not found');
+        const files = data.files;
+    
+        // Filter for exact match
+        const matchingFile = files.find((file: any) => file.fileName === fileName);
+    
+        if (!matchingFile) {
+            return null; // File not found
         }
-
-        return file.fileId;
+    
+        return matchingFile.fileId;
     }
 
     async getFileStream(key: string): Promise<Readable> {

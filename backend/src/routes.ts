@@ -12,7 +12,7 @@ import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 import { access, mkdir, readFile, unlink, writeFile } from 'fs/promises';
 import { supabaseAdmin } from './utils/supabase';
-import { createWriteStream } from 'fs';
+import { createWriteStream, existsSync } from 'fs';
 import { pipeline } from 'stream/promises';
 import { creditTransactionService } from './services/credit-transaction-service';
 
@@ -383,8 +383,10 @@ router.post('/upload/complete/:id', isAuthenticated, async (req: AuthenticatedRe
                 // Clean up original video file from storage
                 await storageService.deleteFile(job.file_url);
 
-                // Clean up temporary files
-                await unlink(tempFilePath);
+                // Clean up temporary files if file exists in fs
+                if (existsSync(tempFilePath)) {
+                    await unlink(tempFilePath);
+                }
             } catch (error) {
                 console.error('Error processing video:', error);
                 await unlink(tempFilePath);
@@ -427,7 +429,7 @@ router.post('/upload/complete/:id', isAuthenticated, async (req: AuthenticatedRe
         // Add to transcription queue
         await transcriptionQueue.add('transcribe', {
             jobId,
-            audioFilePath: tempFilePath,
+            audioFilePath: audioFilePath,
             fileName: job.file_name,
             diarizationEnabled: job.diarization_enabled,
             userId,
@@ -453,7 +455,7 @@ router.delete('/jobs/:id', isAuthenticated, isResourceOwner, async (req, res) =>
             return;
         }
 
-        await supabaseAdmin.from('jobs').delete().eq('id', jobId);
+        const { error } = await supabaseAdmin.from('jobs').delete().eq('id', jobId);
 
         if (job.file_url) {
             try {
