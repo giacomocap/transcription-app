@@ -34,6 +34,28 @@ const slideIn = {
     transition: { duration: 0.6, ease: "easeOut" }
   }
 };
+const scenarios=[
+  {
+    value: "meetings",
+    title: "Team Meetings & Collaboration",
+    description: "Never miss a detail in your meetings. Claire automatically identifies speakers, tracks action items, and makes your meetings searchable."
+  },
+  {
+    value: "lectures",
+    title: "Academic Lectures & Research",
+    description: "Transform lengthy lectures into organized study materials. Extract key concepts, create summaries, and interact with your notes."
+  },
+  {
+    value: "content",
+    title: "Content Creation & Podcasting",
+    description: "Streamline your content production workflow. Get transcripts, summaries, and key points from your recordings instantly."
+  },
+  {
+    value: "personal",
+    title: "Personal Voice Notes",
+    description: "Turn your thoughts into organized, actionable information. Claire helps you capture and structure your ideas effectively."
+  }
+]
 
 const LandingPage = () => {
   const { scrollY } = useScroll();
@@ -51,7 +73,8 @@ const LandingPage = () => {
     document.title = 'Claire - Audio & Video Intelligence Platform';
   }, []);
 
-  // Enhanced parallax effect
+
+  
   const heroY = useTransform(scrollY, [0, 500], [0, 200]);
   // const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
 
@@ -296,28 +319,7 @@ const LandingPage = () => {
                 <TabsTrigger value="content">Content Creation</TabsTrigger>
                 <TabsTrigger value="personal">Personal Notes</TabsTrigger>
               </TabsList>
-              {[
-                {
-                  value: "meetings",
-                  title: "Team Meetings & Collaboration",
-                  description: "Never miss a detail in your meetings. Claire automatically identifies speakers, tracks action items, and makes your meetings searchable."
-                },
-                {
-                  value: "lectures",
-                  title: "Academic Lectures & Research",
-                  description: "Transform lengthy lectures into organized study materials. Extract key concepts, create summaries, and interact with your notes."
-                },
-                {
-                  value: "content",
-                  title: "Content Creation & Podcasting",
-                  description: "Streamline your content production workflow. Get transcripts, summaries, and key points from your recordings instantly."
-                },
-                {
-                  value: "personal",
-                  title: "Personal Voice Notes",
-                  description: "Turn your thoughts into organized, actionable information. Claire helps you capture and structure your ideas effectively."
-                }
-              ].map((scenario) => (
+              {scenarios.map((scenario) => (
                 <TabsContent key={scenario.value} value={scenario.value}>
                   <Card>
                     <CardContent className="pt-6">
@@ -333,28 +335,7 @@ const LandingPage = () => {
           {/* Accordion - Visible on mobile */}
           <div className="sm:hidden space-y-4">
             <Accordion type="single" defaultValue="scenario-0" collapsible className="w-full">
-              {[
-                {
-                  value: "meetings",
-                  title: "Team Meetings & Collaboration",
-                  description: "Never miss a detail in your meetings. Claire automatically identifies speakers, tracks action items, and makes your meetings searchable."
-                },
-                {
-                  value: "lectures",
-                  title: "Academic Lectures & Research",
-                  description: "Transform lengthy lectures into organized study materials. Extract key concepts, create summaries, and interact with your notes."
-                },
-                {
-                  value: "content",
-                  title: "Content Creation & Podcasting",
-                  description: "Streamline your content production workflow. Get transcripts, summaries, and key points from your recordings instantly."
-                },
-                {
-                  value: "personal",
-                  title: "Personal Voice Notes",
-                  description: "Turn your thoughts into organized, actionable information. Claire helps you capture and structure your ideas effectively."
-                }
-              ].map((scenario, index) => (
+              {scenarios.map((scenario, index) => (
                 <AccordionItem key={index} value={`scenario-${index}`}>
                   <AccordionTrigger className="text-foreground">{scenario.title}</AccordionTrigger>
                   <AccordionContent>
@@ -370,7 +351,7 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
-
+ 
       {/* FAQ Section */}
       <section className="py-24 bg-primary/5">
         <div className="container mx-auto px-4 max-w-3xl">

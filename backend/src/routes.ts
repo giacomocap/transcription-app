@@ -1,5 +1,4 @@
 import { Router, Response } from 'express';
-import multer from 'multer';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
@@ -10,7 +9,7 @@ import { generateURLSafeToken } from './helper/helper';
 import { storageService } from './services/storage-service';
 import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
-import { access, mkdir, readFile, unlink, writeFile } from 'fs/promises';
+import { access, mkdir, readFile, unlink } from 'fs/promises';
 import { supabaseAdmin } from './utils/supabase';
 import { createWriteStream, existsSync } from 'fs';
 import { pipeline } from 'stream/promises';
@@ -52,19 +51,6 @@ const ACCEPTED_MIME_TYPES = {
     ]
 };
 
-const upload = multer({
-    storage: multer.memoryStorage(),
-    fileFilter: (req, file, cb) => {
-        const isAcceptedType = [...ACCEPTED_MIME_TYPES.audio, ...ACCEPTED_MIME_TYPES.video].includes(file.mimetype);
-        if (!isAcceptedType) {
-            cb(new Error('Invalid file type. Only the following audio and video formats are accepted: ' +
-                'FLAC, MP3, MP4, MPEG, MPGA, M4A, OGG, WAV, WEBM for audio; and MP4, WEBM, OGG, QuickTime, AVI, MKV, FLV, 3GP, 3G2, WMV, M4V, MPEG, DV, ASF for video.'));
-            return;
-        }
-        cb(null, true);
-    }
-});
-
 // Helper function to extract audio from video
 const extractAudioFromVideo = async (inputPath: string): Promise<string> => {
     const outputPath = inputPath.replace(path.extname(inputPath), '.mp3');
@@ -95,148 +81,6 @@ const redisOptions = {
 };
 
 const transcriptionQueue = new Queue('transcriptionQueue', { connection: redisOptions });
-
-/**
- * @swagger
- * /upload:
- *   post:
- *     summary: Upload a file
- *     consumes:
- *       - multipart/form-data
- *     parameters:
- *       - in: formData
- *         name: file
- *         type: file
- *         description: The file to upload
- *     responses:
- *       200:
- *         description: Successfully uploaded
- */
-// router.post('/upload', isAuthenticated, upload.single('file'), async (req: AuthenticatedRequest, res) => {
-//     console.log(`File upload request received from user ${req.user?.id}`);
-//     const file = req.file;
-//     const jobId = uuidv4();
-//     const diarizationEnabled = req.body.diarization === 'true';
-//     const language = req.body.language !== 'auto' ? req.body.language : undefined;
-//     const userId = req.user?.id;
-
-//     if (!userId) {
-//         res.status(400).json({ error: 'User not found' });
-//         return;
-//     }
-
-//     if (!file) {
-//         res.status(400).json({ error: 'No file uploaded' });
-//         return;
-//     }
-
-
-//     try {
-//         const tempDir = await ensureTempDir();
-//         const tempFilePath = path.join(tempDir, `${jobId}${path.extname(file.originalname)}`);
-
-//         // Save the uploaded file locally
-//         await writeFile(tempFilePath, file.buffer);
-
-//         let audioFilePath = tempFilePath;
-//         let finalBuffer = file.buffer;
-
-//         // Get audio duration using ffmpeg
-//         const getDuration = (): Promise<number> => {
-//             return new Promise((resolve, reject) => {
-//                 ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
-//                     if (err) reject(err);
-//                     resolve(metadata.format.duration || 0);
-//                 });
-//             });
-//         };
-
-//         const durationInSeconds = await getDuration();
-//         const durationInMinutes = Math.ceil(durationInSeconds / 60);
-//         const requiredCredits = await calculateRequiredCredits(durationInMinutes, diarizationEnabled);
-
-//         // Check if user has enough credits
-//         const hasEnoughCredits = await checkAndReserveCredits(userId, requiredCredits);
-//         if (!hasEnoughCredits) {
-//             await unlink(tempFilePath);
-//             res.status(402).json({ error: 'Insufficient credits' });
-//             return;
-//         }
-
-//         // If it's a video file, extract the audio
-//         if (ACCEPTED_MIME_TYPES.video.includes(file.mimetype)) {
-//             try {
-//                 audioFilePath = await extractAudioFromVideo(tempFilePath);
-//                 finalBuffer = await readFile(audioFilePath);
-//                 await unlink(tempFilePath);
-//             } catch (error) {
-//                 console.error('Error extracting audio:', error);
-//                 await unlink(tempFilePath);
-//                 throw new Error('Failed to extract audio from video');
-//             }
-//         }
-
-
-
-
-
-//         // Upload file to B2
-//         const fileKey = await storageService.uploadFile(finalBuffer, file.originalname, userId);
-
-//         // await prisma.jobs.create({
-//         //     data: {
-//         //         id: jobId,
-//         //         user_id: userId,
-//         //         file_name: file.originalname,
-//         //         file_url: fileKey,
-//         //         status: 'queued',
-//         //         diarization_enabled: diarizationEnabled,
-//         //         diarization_status: diarizationEnabled ? 'pending' : null
-//         //     }
-//         // });
-
-//         await supabaseAdmin.from('jobs').insert({
-//             id: jobId,
-//             user_id: userId,
-//             file_name: file.originalname,
-//             file_url: fileKey,
-//             status: 'queued',
-//             diarization_enabled: diarizationEnabled,
-//             diarization_status: diarizationEnabled ? 'pending' : null,
-//             credits_required: requiredCredits,
-//             language: language
-//         });
-
-//         // Create credit transaction
-//         const { data: transaction } = await supabaseAdmin
-//             .from('credit_transactions')
-//             .insert({
-//                 user_id: userId,
-//                 job_id: jobId,
-//                 amount: -requiredCredits,
-//                 type: diarizationEnabled ? 'transcription_with_diarization' : 'transcription',
-//                 status: 'pending',
-//                 description: `Transcription of ${file.originalname} (${durationInMinutes} minutes)`
-//             })
-//             .select()
-//             .single();
-
-//         await transcriptionQueue.add('transcribe', {
-//             jobId,
-//             audioFilePath,
-//             fileName: file?.originalname,
-//             diarizationEnabled,
-//             userId: userId,
-//             language
-//         });
-
-//         console.log(`Job ${jobId} created successfully for file ${file?.originalname}`);
-//         res.json({ jobId });
-//     } catch (error) {
-//         console.error('Error creating job:', error);
-//         res.status(500).json({ error: 'Failed to create job' });
-//     }
-// });
 
 router.post('/upload/verify', isAuthenticated, async (req: AuthenticatedRequest, res) => {
     const { durationInMinutes, diarizationEnabled, fileName, mimeType } = req.body;

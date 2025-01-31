@@ -36,17 +36,6 @@ app.use('/api/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 if (swaggerSpecs && Object.keys(swaggerSpecs).length > 0)
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
-// initializeDatabase().then(() => {
-//     console.log('Database initialized');
-//     // Start your server here
-
-    
-
-// }).catch(error => {
-//     console.error('Failed to initialize database:', error);
-//     process.exit(1);
-// });
-
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);
