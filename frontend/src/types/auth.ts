@@ -10,4 +10,5 @@ export interface UserData {
 
 export interface UserSettings {
     preferred_transcription_language: string;
+    language: string;
 }

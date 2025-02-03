@@ -5,6 +5,7 @@ import { getUserSettings, updateUserSettings as apiUpdateUserSettings } from '..
 import { UserSettings } from '@/types/auth';
 import { authFetch } from '@/utils/authFetch';
 import { useToast } from '@/hooks/use-toast';
+import i18n from '@/i18n';
 
 export const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
@@ -43,6 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return;
             }
             setUserSettings(data);
+            if (data.language) {
+                i18n.changeLanguage(data.language);
+            }
             setNeedsOnboarding(false);
         } catch (error) {
             console.error('Error fetching user settings:', error);
@@ -78,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user ?? null);
             setToken(session?.access_token ?? null);
-            
+
             if (event === 'SIGNED_IN') {
                 toast({
                     title: "Welcome!",
@@ -101,6 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const updatedSettings = await apiUpdateUserSettings(settings);
             setUserSettings(updatedSettings);
+            if (settings.language) {
+                i18n.changeLanguage(settings.language);
+            }
         } catch (error) {
             console.error('Error updating user settings:', error);
             throw error;

@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from "@/hooks/use-toast";
-import { LANGUAGES } from '../constants/languages';
+import { LANGUAGES, UI_LANGUAGES } from '../constants/languages';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -17,6 +17,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CreditHistory } from '../components/credits/CreditHistory';
+import { useTranslation } from 'react-i18next';
 
 export const SettingsPage = () => {
     const { toast } = useToast();
@@ -25,6 +26,8 @@ export const SettingsPage = () => {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [uiLanguage, setUiLanguage] = useState(userSettings?.language || 'en');
+    const { t } = useTranslation();
 
     useEffect(() => {
         document.title = 'Settings - Claire.AI';
@@ -33,7 +36,7 @@ export const SettingsPage = () => {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await updateUserSettings({ preferred_transcription_language: language });
+            await updateUserSettings({ preferred_transcription_language: language, language: uiLanguage });
             toast({
                 title: 'Settings saved',
                 description: 'Your preferences have been updated successfully.'
@@ -88,7 +91,7 @@ export const SettingsPage = () => {
                                 </label>
                                 <Select value={language} onValueChange={setLanguage}>
                                     <SelectTrigger className="w-full sm:w-[300px]">
-                                        <SelectValue placeholder="Select language" />
+                                        <SelectValue placeholder={t('settings.selectLanguage')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {LANGUAGES.map((lang) => (
@@ -99,8 +102,25 @@ export const SettingsPage = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button 
-                                onClick={handleSave} 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    {t('settings.languageDescription')}
+                                </label>
+                                <Select value={uiLanguage} onValueChange={setUiLanguage}>
+                                    <SelectTrigger className="w-full sm:w-[300px]">
+                                        <SelectValue placeholder={t('settings.selectLanguage')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {UI_LANGUAGES.map((lang) => (
+                                            <SelectItem key={lang.value} value={lang.value}>
+                                                {lang.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button
+                                onClick={handleSave}
                                 disabled={isSaving}
                             >
                                 {isSaving ? (
