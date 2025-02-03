@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, lazy, Suspense } from 'react';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,12 +9,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { FileAudio, Share2, Brain, ArrowRight } from 'lucide-react';
+import { FileAudio, Share2, Brain, ArrowRight, Check, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import AnimatedMesh from '@/components/landing/AnimatedMesh';
 import BloomScene from '@/components/landing/BloomScene';
 import useAudioAnalyzer from '@/hooks/useAudioAnalyzer';
+import { Badge } from '@/components/ui/badge';
+const LazyDemoSection = lazy(() => import('@/components/landing/DemoSection'));
+const LazyVideoSection = lazy(() => import('@/components/landing/VideoSection'));
 
 // Enhanced animation variants
 const fadeIn = {
@@ -34,7 +37,7 @@ const slideIn = {
     transition: { duration: 0.6, ease: "easeOut" }
   }
 };
-const scenarios=[
+const scenarios = [
   {
     value: "meetings",
     title: "Team Meetings & Collaboration",
@@ -57,6 +60,47 @@ const scenarios=[
   }
 ]
 
+const phrases = [
+  "Actionable Intelligence",
+  "Searchable Knowledge",
+  "Organized Insights",
+  "Smart Transcripts"
+];
+
+// New: Dynamic typing effect for the hero title’s last part
+const TypingText = () => {
+  const [displayedText, setDisplayedText] = useState("");
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const typingSpeed = 150; // milliseconds per character
+  const pauseTime = 2000;  // milliseconds to pause at end of phrase
+
+  useEffect(() => {
+    if (charIndex < phrases[phraseIndex].length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText((prev) => prev + phrases[phraseIndex][charIndex]);
+        setCharIndex(charIndex + 1);
+      }, typingSpeed);
+      return () => clearTimeout(timeout);
+    } else {
+      const timeout = setTimeout(() => {
+        setDisplayedText("");
+        setCharIndex(0);
+        setPhraseIndex((phraseIndex + 1) % phrases.length);
+      }, pauseTime);
+      return () => clearTimeout(timeout);
+    }
+  }, [charIndex, phraseIndex, phrases]);
+
+  return (
+    <span className="inline-block text-primary ">
+      {displayedText}
+      <span className="border-r-2 border-primary animate-pulse ml-1"></span>
+    </span>
+  );
+};
+
+
 const LandingPage = () => {
   const { scrollY } = useScroll();
   const heroRef = useRef(null);
@@ -74,7 +118,7 @@ const LandingPage = () => {
   }, []);
 
 
-  
+
   const heroY = useTransform(scrollY, [0, 500], [0, 200]);
   // const heroOpacity = useTransform(scrollY, [0, 300], [1, 0.3]);
 
@@ -89,10 +133,10 @@ const LandingPage = () => {
         <div className="absolute inset-0 z-0">
           <Canvas>
             <ambientLight intensity={0.5} />
-            <BloomScene frequency={frequency} />
+            <BloomScene frequencyRef={frequency} />
             <AnimatedMesh
               ready={true}
-              frequency={frequency}
+              frequencyRef={frequency}
             />
           </Canvas>
         </div>
@@ -112,12 +156,15 @@ const LandingPage = () => {
               Claire
             </motion.h1>
             <motion.h2
-              className="text-6xl font-bold text-black"
+              className="text-4xl md:text-6xl font-bold text-black min-h-[80px] md:min-h-[120px] flex flex-col items-center justify-center"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.8 }}
             >
-              Transform Your Audio & Video Content into Actionable Intelligence
+              Transform Your Audio & Video Content into{' '}
+              <span className="min-h-[40px] md:min-h-[60px] flex items-center">
+                <TypingText />
+              </span>
             </motion.h2>
           </motion.div>
           <motion.p
@@ -146,8 +193,28 @@ const LandingPage = () => {
         </div>
       </motion.section>
 
+      <Suspense fallback={
+        <div className="py-24 relative z-10 bg-background">
+          <div className="container mx-auto px-4 flex items-center justify-center">
+            <div className="animate-pulse w-full max-w-4xl h-[600px] bg-gray-200 rounded-xl" />
+          </div>
+        </div>
+      }>
+        <LazyVideoSection />
+      </Suspense>
+
+      <Suspense fallback={
+        <div className="py-24 bg-gray-50 hidden md:block">
+          <div className="container mx-auto px-4 flex items-center justify-center">
+            <div className="animate-pulse w-full max-w-3xl h-[600px] bg-gray-200 rounded-xl" />
+          </div>
+        </div>
+      }>
+        <LazyDemoSection />
+      </Suspense>
+
       {/* How It Works Video Section */}
-      <motion.section
+      {/* <motion.section
         ref={videoRef}
         initial="hidden"
         animate={videoInView ? "visible" : "hidden"}
@@ -177,7 +244,7 @@ const LandingPage = () => {
             />
           </motion.div>
         </div>
-      </motion.section>
+      </motion.section> */}
 
       {/* Enhanced Social Proof Bar */}
       {/* <motion.section
@@ -350,8 +417,92 @@ const LandingPage = () => {
             </Accordion>
           </div>
         </div>
+      </section><section className="py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center mb-12">Simple, Transparent Pricing</h2>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="relative border-primary/20">
+              <CardContent className="pt-6">
+                <div className="mb-6">
+                  <Badge variant="outline" className="mb-4">Free Demo</Badge>
+                  <h3 className="text-3xl font-bold">$0<span className="text-lg text-muted-foreground">/month</span></h3>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center">
+                    <Check className="w-5 h-5 mr-2 text-green-500" />300 credits/month
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="w-5 h-5 mr-2 text-green-500" />Max 30 minute files
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="w-5 h-5 mr-2 text-green-500" />AI Summaries
+                  </li>
+                  <li className="flex items-center">
+                    <X className="w-5 h-5 mr-2 text-red-500" />Chat with recordings
+                  </li>
+                </ul>
+                <Button className="w-full" asChild>
+                  <Link to="/login">Get Started Free</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="relative border-primary/40 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="mb-6">
+                  <Badge className="mb-4 bg-purple-600">Pro Tier</Badge>
+                  <h3 className="text-3xl font-bold">Coming Soon<span className="text-lg text-muted-foreground"></span></h3>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center">
+                    <Check className="w-5 h-5 mr-2 text-green-500" />5000 credits/month
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="w-5 h-5 mr-2 text-green-500" />Up to 2 hour files
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="w-5 h-5 mr-2 text-green-500" />AI Summaries
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="w-5 h-5 mr-2 text-green-500" />Chat with recordings
+                  </li>
+                </ul>
+                <Button disabled className="w-full bg-purple-600 hover:bg-purple-700" asChild>
+                  <Link to="/">Upgrade to Pro</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </section>
- 
+
+      <section className="py-24 bg-primary/5">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <h3 className="text-2xl font-bold text-center mb-8">Feature Comparison</h3>
+          <div className="border rounded-lg bg-background">
+            <div className="grid grid-cols-3 items-center border-b p-4">
+              <span className="font-medium">Feature</span>
+              <span className="text-center">Free</span>
+              <span className="text-center">Pro</span>
+            </div>
+            {[
+              ['Monthly Credits', '300', '5000'],
+              ['Max File Duration', '30 mins', '2 hours'],
+              ['AI Summaries', '✓', '✓'],
+              ['Multi-speaker Detection', '✓', '✓'],
+              ['Custom Vocabularies', '✕', '✓'],
+              ['Priority Support', '✕', '✓'],
+            ].map(([feature, free, pro]) => (
+              <div key={feature} className="grid grid-cols-3 items-center border-b p-4">
+                <span className="text-muted-foreground">{feature}</span>
+                <span className="text-center">{free}</span>
+                <span className="text-center">{pro}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="py-24 bg-primary/5">
         <div className="container mx-auto px-4 max-w-3xl">

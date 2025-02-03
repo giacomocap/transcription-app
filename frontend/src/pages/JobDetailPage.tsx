@@ -84,6 +84,7 @@ export const JobDetailPage = () => {
       ? await fetch(`/api/jobs/${id}?token=${searchParams.get('token')}`)
       : await authFetch(`/api/jobs/${id}`);
     const data = await response.json();
+    debugger;
     setJob(data);
     setIsFirstLoading(false);
   };

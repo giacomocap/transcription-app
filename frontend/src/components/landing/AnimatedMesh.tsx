@@ -10,10 +10,10 @@ const clock = new Clock();
 
 type AnimatedMeshProps = {
     ready: boolean;
-    frequency: number;
+    frequencyRef: React.RefObject<number>
 };
 
-function AnimatedMesh({ ready,frequency }: AnimatedMeshProps) {
+function AnimatedMesh({ ready, frequencyRef }: AnimatedMeshProps) {
     const colors = {
         red: ready ? 0.949 : 0.1,
         green: ready ? 0.820 : 0.1,
@@ -43,7 +43,7 @@ function AnimatedMesh({ ready,frequency }: AnimatedMeshProps) {
 
         uniforms.u_time.value = time;
         uniforms.u_frequency.value = Math.min(
-            MIN_WAVE_SIZE + AUDIO_SCALE * frequency,
+            MIN_WAVE_SIZE + AUDIO_SCALE * frequencyRef.current!,
             MAX_WAVE_SIZE,
         );
         uniforms.u_red.value = colors.red;

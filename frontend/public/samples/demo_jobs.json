@@ -1,0 +1,1277 @@
+[
+    {
+        "id": "ed4be2e5-585c-4a7f-b970-e16a2fc8aa7f",
+        "user_id": "6a06b447-ef52-451d-9098-b0293cf85657",
+        "file_name": "marketing meeting (weekly)",
+        "file_url": "samples/sample-meeting.mp4",
+        "status": "transcribed",
+        "transcript": "That's in my opinion. So we need to track if the content is valuable, for example, from an SAO perspective. If people are searching and landing on that page. And if a page is valuable in a customer journey, we need to be incentivized as a team to collaborate with the rest of marketing to get it into that flow. Yeah. So what metric would you propose to incentivize those things? So if it's about collaboration and working on the journey, then page views is a good metric, right? Because then we need to think about it from a customer's point of view. Customer lands on the front page, then wants to say, let's say, wants to know more about CICD or GitOps, right? How do they land on that page? Today, for example, GitOps, they cannot land on directly unless they land directly on that page through an SEO search, right? Because it's not part of the top header, solution header that we have on our homepage. And we don't expose the solution tab anymore on our homepage other than at the footer of the page. And there are many, many such pages like that. We don't have one specifically for continuous delivery as an example. So if we have to work with the extended team to get that in place, then we need an overall information architecture like we spoke about, right? Like, how do we, how, what's the journey that the customer needs to take and what use cases that we want to showcase to the customer? And only those are things that we should as a team pick up and work on rather than putting together 10 different pages. Like we spoke about this theme pages for, for pricing themes. There's no way that a customer can land on those pages except through SEO, right? We wouldn't link to that from the pricing page. We wouldn't link to it from the main page either We wouldn't link to it from the main page either. So that's mostly going to be just an SEO effort. Right. So the, the, essentially we want to have a decision matrix. Like I'm going to have page A or page B, which one should I invest time in? Should I generate a new page or should I refresh an existing page? Like overall views is something that like page views on PMM page content is something that we want to track. The other end of this too, and Craig was like really open to this, was ideally these are long-term and then we're tracking trends over time. But given that our KPIs have been so goofy and ridiculous for a year plus, we just need to try something, right? So we need to measure and get some baselines and maybe there is a better metric or we iterate next quarter. But this is kind of like a quantity and a quality metric. So we want to look at both of those. We both want to get like. And then again, it's like the idea here is like if we generate more top of funnel volume, in this case, we're measuring that by page views. But that the assumption there is that it's a leading metric to feed things like inquiries and self-service. Right, so that's what we also want to track, not just, so we want to track that like this is a page and this page individually performs well, like when people land on it, they don't bounce. But we also need some type of measure that we are contributing to the downstream thing, which is the inquiries and the self-service signups, which page views would also get to that. So, so similarly here for demand gen content, I don't know. Again, I don't know how we're going to instrument for this. It is, I'll tell you what it will not be. Is it, this will not be us architecting our own separate machine. Like for all of these, like whatever we measure, like this measure, like these measures need to come through google analytics like through the whatever the web normal measurement thing is like our measurement for our kpi can't be like well we need some other tool to do that we have to like work within the the confines of what we're measuring so it's the same thing for demand gen, right? Like demand gen has this dashboard, which I wonder if I can like pull it quickly. Actually, I probably can't show in a public video, but you know, they're already tracking things. They're tracking things like inquiries and SAOs and MQLs and they track linear attribution. So that's already a metric that's being tracked. We just need to segment out the PMM content. So in theory here, and this should be like everything that drives the pipeline. Like if it's in a path factory and it's PMM contributed, like we should be able to pull a number out of that i don't know how we're gonna instrument for that i'm open to ideas think about that one uh this one should be a lot easier um essentially like a while back do you all remember we had this thing and there was like five levels of like you know did you write the content did you review the content did you all like we had this thing and there was like five levels of like, you know, did you write the content? Did you review the content? Did you all like, it was really, really goofy. And then we like had this extra job of going and like coding all of that. We really need to avoid that. Like as much as possible when we measure stuff, it should be like a normal part of the process. Like we went and did this work. And then like, there's not some meaningful, significant extra task to go and measure it. So for field events, they already track the linear attribution. It's already part of the Salesforce object. So this should be as simple as like at this list of events and saying, like, these are the events for the quarter. We know what the list is. Let's go pull the linear attribution. These ones are like PMM contributed events. So that's kind of the thought there. Any kind of other thoughts on KPIs? Measurement? Yeah, this might be a little down in the weeds, but eventually are we going to get to the point where we are, like how we attach ourselves to that is going to be interesting to figure out. Are we 10% of that? Are we 20% of that? Are we competing with other groups for that? Because we could contribute to something that's hugely valuable for the company, but how much time is it still worth putting into that if we're going to budge the needle, 5% versus 60% in something that's ultimately less value for the company, but we might actually be generating more value. Is there a part of that smaller hole? Is there, for instance, that kind of comes to mind? Yeah, so field, a re-Invent. Maybe we put in 50 hours for reInvent and reInvent's hugely successful, but there are a zillion other people working on that as well. And like, how do we determine how much impact our participation had in that versus the other folks and then judge? Yeah, so that is not a KPI that's on here now. Corporate events is not on there. That's a great call. I don't like, this is not comprehensive, right? This is like a stab at incentivizing meaningful things that will move the needle, right? So we know that this team is team of subject matter experts. This team knows the customer, knows the product, knows the market. Like no one else can generate the quality and type of content that we can for the web, for demand generation, or for field. And so, and we know that when we do that, we know when we put stuff up on the web, like it drives outcomes for the business. We know that when we do field events, it drives outcomes for the business. We know that when we do field events, it drives outcomes for the business. And that's why those are on the OKRs as well. So this is like kind of picking the low hanging fruit of like, we know this does drive business outcomes. That's why we want to track it. Yeah. For something like a, you know, commit. Like, you know, we're putting amazing amounts of time into commit. How do we get credit for that as a PMM team? I'm not, I don't know yet. Well, yeah, and how do we know, like, part of it's getting credit and part of it is just knowing where to spend our time. If we can double the value of something that's worth a third of it's getting credit and part of it is just knowing where to spend our time if we can if we can double if we can double the value of something that's worth a third as much versus increasing at five percent you know somewhere else yeah so i have two i have two bits of guidance on that right so um well let's think through that for the moment. So I would say one, if, if there is some project, something that you believe, if I invest my time in thing X, it will meaningfully move this needle. Like to your point, it's like, this could, this could like increase this by 50%, not just 5%. Like that should be easy to justify. Even if it's not like a, this could like increase this by 50%, not just 5%. Like that should be easy to justify, even if it's not like a specific KPI. And maybe let's like have a conversation about it, right? Like let's bring that, maybe the whole team should be doing that thing, whatever that is, right? So like, if you see that thing and you're like, I can have big impact here, that should be like the overarching decision matrix, right? Like as you're looking at like all the stuff you spend your time on, like what's driving meaningful goals. The other one is like we got to keep the lights on, right? Or what we call like business as usual. So like this doesn't track like sales enablement. This doesn't track messaging and positioning really. Like it's OKR for us, but we're not like, you know, we don't have like a KPI that's like how many people used our messaging? Like there's things that we need to do as a team that's like, how many people used our messaging? There's things that we need to do as a team that we're probably not ever going to be able to track, but they're important things to do. I'm just curious. I know you're in some product marketing association or something do they have um like a library of things that they share where you could see examples of what other people do they do so uh the the challenge is is how so I've looked I looked into all of that as well. And they do actually, there's a PDF they put out. If I can, if I can track down the PDF, I'll share that with a group. The nutshell of it is that PMM works really differently in different places, right? So in other orgs, product marketing owns campaigns. They don't have, like there is no Jackie's team. Like this team is Jackie's team. And like this team has an MQL number that they need to hit. But like, that doesn't make sense for us because like we're not the campaign's team. In other orgs, product marketing might even own like a revenue number, right? Like when I was at Twilio, like every product team function pretty much autonomously, like the PM was a little CEO and the PM was a little CMO and we were responsible for our business.",
+        "refined_transcript": "[Mark]: That is my opinion.\n\n[Dara]: So, we need to track if the content is valuable, for example, from an SEO perspective.\n\n[Mark]: If people are searching and landing on that page, and if a page is valuable in a customer journey, we need to be incentivized as a team to collaborate with the rest of marketing to get it into that flow.\n\n[Dara]: Yes. So, what metric would you propose to incentivize those things? If it is about collaboration and working on the journey, then page views is a good metric, right? Because then we need to think about it from a customer's point of view. A customer lands on the front page and then wants to know more about CI/CD or GitOps, for example. How do they land on that page? Today, for example, with GitOps, they cannot land directly unless they land directly on that page through an SEO search, because it is not part of the top header or solution header that we have on our homepage. We do not expose the solution tab anymore on our homepage other than at the footer of the page. There are many such pages like that. We do not have one specifically for continuous delivery, as an example. So, if we have to work with the extended team to get that in place, then we need an overall information architecture, as we discussed. What is the journey that the customer needs to take, and what use cases do we want to showcase to the customer? Only those are the things that we, as a team, should pick up and work on, rather than putting together ten different pages. Like we spoke about the theme pages for pricing themes. There is no way that a customer can land on those pages except through SEO. We would not link to that from the pricing page or the main page. So, that is mostly going to be just an SEO effort.\n\n[Mark]: Right. So, essentially, we want to have a decision matrix. If I have page A or page B, which one should I invest time in? Should I generate a new page, or should I refresh an existing page? Overall views, like page views on PMM page content, is something that we want to track. The other aspect of this, and Craig was very open to this, is that ideally, these are long-term, and we are tracking trends over time. But given that our KPIs have been inconsistent for over a year, we just need to try something. We need to measure and get some baselines, and maybe there is a better metric, or we iterate next quarter. But this is a quantity and a quality metric. We want to look at both. The idea here is that if we generate more top-of-funnel volume, in this case, we are measuring that by page views. The assumption is that it is a leading metric to feed things like inquiries and self-service. So, we want to track that. This is a page, and this page individually performs well. When people land on it, they do not bounce. But we also need some type of measure that we are contributing to the downstream thing, which is the inquiries and the self-service signups, which page views would also contribute to. Similarly, for demand generation content, I do not know how we are going to instrument for this. I will tell you what it will not be. It will not be us architecting our own separate machine. Whatever we measure needs to come through Google Analytics, through the normal web measurement system. Our measurement for our KPI cannot be that we need some other tool to do that. We have to work within the confines of what we are measuring. It is the same thing for demand generation. They already track things like inquiries, SAOs, and MQLs, and they track linear attribution. That is already a metric that is being tracked. We just need to segment out the PMM content. In theory, everything that drives the pipeline, if it is in PathFactory and it is PMM contributed, we should be able to pull a number out of that. I do not know how we are going to instrument for that. I am open to ideas. This one should be a lot easier. A while back, we had this thing with five levels of content contribution. Did you write the content? Did you review the content? It was very complicated, and then we had this extra job of coding all of that. We really need to avoid that. When we measure stuff, it should be a normal part of the process. We did this work, and there is not some significant extra task to go and measure it. For field events, they already track the linear attribution. It is already part of the Salesforce object. This should be as simple as listing the events for the quarter and saying that these are the PMM-contributed events. That is the thought there. Are there any other thoughts on KPIs or measurement?\n\n[John]: Yes, this might be a little detailed, but eventually, how we attach ourselves to that is going to be interesting to figure out. Are we 10% of that? Are we 20% of that? Are we competing with other groups for that? Because we could contribute to something that is hugely valuable for the company, but how much time is it still worth putting into that if we are going to budge the needle 5% versus 60% in something that is ultimately less value for the company, but we might actually be generating more value. Is there a part of that smaller hole? For instance, that kind of comes to mind.\n\n[Mark]: Yes, so field,\n\n[John]: like a re-Invent. Maybe we put in 50 hours for re-Invent, and re-Invent is hugely successful, but there are a lot of other people working on that as well. How do we determine how much impact our participation had in that versus the other folks and then judge?\n\n[Mark]: Yes, so that is not a KPI that is on here now. Corporate events are not on there. That is a great point. This is not comprehensive. This is an attempt at incentivizing meaningful things that will move the needle. We know that this team is a team of subject matter experts. This team knows the customer, knows the product, and knows the market. No one else can generate the quality and type of content that we can for the web, for demand generation, or for field. We know that when we put stuff up on the web, it drives outcomes for the business. We know that when we do field events, it drives outcomes for the business. That is why those are on the OKRs as well. This is picking the low-hanging fruit of things that we know drive business outcomes. For something like Commit, we are putting amazing amounts of time into it. How do we get credit for that as a PMM team? I do not know yet.\n\n[John]: Well, yes, and part of it is getting credit, and part of it is just knowing where to spend our time. If we can double the value of something that is worth a third as much versus increasing something by 5% somewhere else.\n\n[Mark]: I have two bits of guidance on that. If there is some project that you believe will meaningfully move the needle, to your point, it could increase this by 50%, not just 5%. That should be easy to justify, even if it is not a specific KPI. Maybe we should have a conversation about it. Maybe the whole team should be doing that thing. If you see that thing and you feel you can have a big impact, that should be the overarching decision matrix. As you are looking at all the stuff you spend your time on, what is driving meaningful goals? The other thing is that we have to keep the lights on, what we call business as usual. This does not track sales enablement or messaging and positioning. It is an OKR for us, but we do not have a KPI that tracks how many people used our messaging. There are things that we need to do as a team that we are probably never going to be able to track, but they are important things to do.\n\n[Annie]: I am curious. I know you are in some product marketing association. Do they have a library of things that they share where you could see examples of what other people do?\n\n[Mark]: The challenge is how. I have looked into all of that as well. They do have a PDF that they put out. If I can track down the PDF, I will share it with the group. The gist of it is that PMM works very differently in different places. In other organizations, product marketing owns campaigns. They do not have a team like Jackie's team. This team has an MQL number that they need to hit. That does not make sense for us because we are not the campaign's team. In other organizations, product marketing might even own a revenue number. When I was at Twilio, every product team functioned pretty much autonomously. The PM was a little CEO, and the PM was a little CMO, and we were responsible for our business.",
+        "subtitle_content": "1\n00:00:00,000 --> 00:00:02,000\nThat's in my opinion.\n\n2\n00:00:02,000 --> 00:00:16,000\nSo we need to track if the content is valuable, for example, from an SAO perspective.\n\n3\n00:00:16,000 --> 00:00:20,000\nIf people are searching and landing on that page.\n\n4\n00:00:20,000 --> 00:00:28,110\nAnd if a page is valuable in a customer journey, we need to be incentivized as a team\n\n5\n00:00:28,110 --> 00:00:32,470\nto collaborate with the rest of marketing to get it into that flow.\n\n6\n00:00:34,470 --> 00:00:38,950\nYeah. So what metric would you propose to incentivize those things?\n\n7\n00:00:40,709 --> 00:00:45,630\nSo if it's about collaboration and working on the journey,\n\n8\n00:00:45,830 --> 00:00:48,529\nthen page views is a good metric, right?\n\n9\n00:00:48,569 --> 00:00:50,450\nBecause then we need to think about it\n\n10\n00:00:50,450 --> 00:00:51,909\nfrom a customer's point of view.\n\n11\n00:00:52,389 --> 00:00:54,009\nCustomer lands on the front page,\n\n12\n00:00:54,490 --> 00:00:56,310\nthen wants to say, let's say,\n\n13\n00:00:56,349 --> 00:01:00,169\nwants to know more about CICD or GitOps, right?\n\n14\n00:01:00,349 --> 00:01:02,340\nHow do they land on that page?\n\n15\n00:01:02,340 --> 00:01:05,959\nToday, for example, GitOps, they cannot land on directly\n\n16\n00:01:05,959 --> 00:01:08,639\nunless they land directly on that page\n\n17\n00:01:08,639 --> 00:01:10,620\nthrough an SEO search, right?\n\n18\n00:01:10,620 --> 00:01:12,900\nBecause it's not part of the top header,\n\n19\n00:01:14,199 --> 00:01:17,080\nsolution header that we have on our homepage.\n\n20\n00:01:17,080 --> 00:01:21,529\nAnd we don't expose the solution tab anymore on our homepage\n\n21\n00:01:21,529 --> 00:01:24,089\nother than at the footer of the page.\n\n22\n00:01:24,089 --> 00:01:26,809\nAnd there are many, many such pages like that.\n\n23\n00:01:26,809 --> 00:01:30,269\nWe don't have one specifically for continuous delivery\n\n24\n00:01:30,269 --> 00:01:32,169\nas an example.\n\n25\n00:01:32,169 --> 00:01:37,169\nSo if we have to work with the extended team\n\n26\n00:01:37,169 --> 00:01:40,290\nto get that in place, then we need an overall\n\n27\n00:01:41,730 --> 00:01:46,930\ninformation architecture like we spoke about, right? Like, how do we, how, what's the journey\n\n28\n00:01:46,930 --> 00:01:53,089\nthat the customer needs to take and what use cases that we want to showcase to the customer? And only\n\n29\n00:01:53,089 --> 00:02:00,519\nthose are things that we should as a team pick up and work on rather than putting together 10 different pages.\n\n30\n00:02:00,519 --> 00:02:05,160\nLike we spoke about this theme pages for, for pricing themes.\n\n31\n00:02:05,580 --> 00:02:09,880\nThere's no way that a customer can land on those pages except through SEO,\n\n32\n00:02:10,279 --> 00:02:13,259\nright? We wouldn't link to that from the pricing page.\n\n33\n00:02:13,339 --> 00:02:16,669\nWe wouldn't link to it from the main page either We wouldn't link to it from the main page either.\n\n34\n00:02:16,669 --> 00:02:24,669\nSo that's mostly going to be just an SEO effort.\n\n35\n00:02:24,669 --> 00:02:29,669\nRight. So the, the,\n\n36\n00:02:29,669 --> 00:02:32,669\nessentially we want to have a decision matrix.\n\n37\n00:02:32,669 --> 00:02:36,330\nLike I'm going to have page A or page B, which one should I invest time in?\n\n38\n00:02:36,330 --> 00:02:40,330\nShould I generate a new page or should I refresh an existing page?\n\n39\n00:02:40,330 --> 00:02:47,330\nLike overall views is something that like page views on PMM page content\n\n40\n00:02:47,330 --> 00:02:50,330\nis something that we want to track.\n\n41\n00:02:50,330 --> 00:02:53,380\nThe other end of this too, and Craig was like really open to this,\n\n42\n00:02:53,520 --> 00:02:56,399\nwas ideally these are long-term\n\n43\n00:02:56,399 --> 00:02:58,279\nand then we're tracking trends over time.\n\n44\n00:02:58,839 --> 00:03:01,800\nBut given that our KPIs have been so goofy\n\n45\n00:03:01,800 --> 00:03:03,800\nand ridiculous for a year plus,\n\n46\n00:03:04,619 --> 00:03:06,979\nwe just need to try something, right?\n\n47\n00:03:07,059 --> 00:03:10,179\nSo we need to measure and get some baselines\n\n48\n00:03:10,179 --> 00:03:14,669\nand maybe there is a better metric or we iterate next quarter.\n\n49\n00:03:14,669 --> 00:03:19,669\nBut this is kind of like a quantity and a quality metric. So we want to look at both of those.\n\n50\n00:03:19,669 --> 00:03:31,089\nWe both want to get like. And then again, it's like the idea here is like if we generate more top of funnel volume, in this case, we're measuring that by page views.\n\n51\n00:03:31,570 --> 00:03:35,250\nBut that the assumption there is that it's a leading metric\n\n52\n00:03:35,250 --> 00:03:39,250\nto feed things like inquiries and self-service.\n\n53\n00:03:40,690 --> 00:03:43,009\nRight, so that's what we also want to track, not just,\n\n54\n00:03:43,009 --> 00:03:45,169\nso we want to track that like this is a page\n\n55\n00:03:45,169 --> 00:03:46,770\nand this page individually performs well,\n\n56\n00:03:46,770 --> 00:03:48,369\nlike when people land on it, they don't bounce.\n\n57\n00:03:49,339 --> 00:03:51,419\nBut we also need some type of measure\n\n58\n00:03:51,419 --> 00:03:55,240\nthat we are contributing to the downstream thing,\n\n59\n00:03:55,240 --> 00:03:58,600\nwhich is the inquiries and the self-service signups,\n\n60\n00:03:58,600 --> 00:04:00,940\nwhich page views would also get to that.\n\n61\n00:04:00,940 --> 00:04:01,779\nSo,\n\n62\n00:04:05,199 --> 00:04:11,630\nso similarly here for demand gen content, I don't know. Again, I don't know how we're\n\n63\n00:04:11,630 --> 00:04:16,350\ngoing to instrument for this. It is, I'll tell you what it will not be. Is it, this will not be us\n\n64\n00:04:17,149 --> 00:04:24,829\narchitecting our own separate machine. Like for all of these, like whatever we measure, like this\n\n65\n00:04:24,829 --> 00:04:27,089\nmeasure, like these measures need to\n\n66\n00:04:27,089 --> 00:04:32,769\ncome through google analytics like through the whatever the web normal measurement thing is\n\n67\n00:04:33,329 --> 00:04:37,970\nlike our measurement for our kpi can't be like well we need some other tool to do that\n\n68\n00:04:38,529 --> 00:04:42,369\nwe have to like work within the the confines of what we're measuring\n\n69\n00:04:42,929 --> 00:04:46,480\nso it's the same thing for demand gen, right? Like demand gen has\n\n70\n00:04:47,359 --> 00:04:54,239\nthis dashboard, which I wonder if I can like pull it quickly. Actually, I probably can't show in a\n\n71\n00:04:54,239 --> 00:05:00,480\npublic video, but you know, they're already tracking things. They're tracking things like inquiries and\n\n72\n00:05:00,480 --> 00:05:05,350\nSAOs and MQLs and they track linear attribution.\n\n73\n00:05:05,350 --> 00:05:07,929\nSo that's already a metric that's being tracked.\n\n74\n00:05:07,929 --> 00:05:10,489\nWe just need to segment out the PMM content.\n\n75\n00:05:11,609 --> 00:05:12,670\nSo in theory here,\n\n76\n00:05:12,670 --> 00:05:15,390\nand this should be like everything that drives the pipeline.\n\n77\n00:05:15,390 --> 00:05:20,390\nLike if it's in a path factory and it's PMM contributed,\n\n78\n00:05:21,609 --> 00:05:23,809\nlike we should be able to pull a number out of that i\n\n79\n00:05:23,809 --> 00:05:31,170\ndon't know how we're gonna instrument for that i'm open to ideas think about that one uh this\n\n80\n00:05:31,170 --> 00:05:37,730\none should be a lot easier um essentially like a while back do you all remember we had this thing\n\n81\n00:05:37,730 --> 00:05:44,000\nand there was like five levels of like you know did you write the content did you review the content did you all like we had this thing and there was like five levels of like, you know, did you write the content? Did you review the content? Did you all like,\n\n82\n00:05:44,000 --> 00:05:50,000\nit was really, really goofy. And then we like had this extra job of going and like coding all of that.\n\n83\n00:05:50,000 --> 00:05:54,000\nWe really need to avoid that. Like as much as possible when we measure stuff,\n\n84\n00:05:54,000 --> 00:05:58,000\nit should be like a normal part of the process. Like we went and did this work.\n\n85\n00:05:58,000 --> 00:06:00,570\nAnd then like, there's not some meaningful,\n\n86\n00:06:00,570 --> 00:06:02,890\nsignificant extra task to go and measure it.\n\n87\n00:06:02,890 --> 00:06:07,890\nSo for field events,\n\n88\n00:06:07,890 --> 00:06:10,809\nthey already track the linear attribution.\n\n89\n00:06:10,809 --> 00:06:13,549\nIt's already part of the Salesforce object.\n\n90\n00:06:13,549 --> 00:06:23,329\nSo this should be as simple as like at this list of events and saying,\n\n91\n00:06:23,329 --> 00:06:26,329\nlike, these are the events for the quarter.\n\n92\n00:06:26,329 --> 00:06:28,329\nWe know what the list is.\n\n93\n00:06:28,329 --> 00:06:30,329\nLet's go pull the linear attribution.\n\n94\n00:06:30,329 --> 00:06:34,329\nThese ones are like PMM contributed events.\n\n95\n00:06:34,329 --> 00:06:37,480\nSo that's kind of the thought there.\n\n96\n00:06:37,619 --> 00:06:40,359\nAny kind of other thoughts on KPIs?\n\n97\n00:06:42,619 --> 00:06:43,140\nMeasurement?\n\n98\n00:06:44,260 --> 00:06:48,880\nYeah, this might be a little down in the weeds, but eventually are we going to get\n\n99\n00:06:48,880 --> 00:06:56,670\nto the point where we are, like how we attach ourselves to that is going to be interesting to figure out.\n\n100\n00:06:56,670 --> 00:07:02,670\nAre we 10% of that? Are we 20% of that? Are we competing with other groups for that?\n\n101\n00:07:02,670 --> 00:07:08,670\nBecause we could contribute to something that's hugely valuable for the company,\n\n102\n00:07:08,670 --> 00:07:13,670\nbut how much time is it still worth putting into that if we're going to budge the needle,\n\n103\n00:07:13,670 --> 00:07:16,170\n5% versus 60%\n\n104\n00:07:16,170 --> 00:07:18,369\nin something that's ultimately less value for the company,\n\n105\n00:07:18,369 --> 00:07:21,250\nbut we might actually be generating more value.\n\n106\n00:07:23,089 --> 00:07:24,929\nIs there a part of that smaller hole?\n\n107\n00:07:24,929 --> 00:07:27,410\nIs there, for instance, that kind of comes to mind?\n\n108\n00:07:27,410 --> 00:07:29,250\nYeah, so field,\n\n109\n00:07:31,089 --> 00:07:33,000\na re-Invent.\n\n110\n00:07:35,000 --> 00:07:39,000\nMaybe we put in 50 hours for reInvent\n\n111\n00:07:39,000 --> 00:07:41,239\nand reInvent's hugely successful,\n\n112\n00:07:41,239 --> 00:07:44,320\nbut there are a zillion other people working on that as well.\n\n113\n00:07:44,320 --> 00:07:47,040\nAnd like, how do we determine how much impact\n\n114\n00:07:47,040 --> 00:07:49,519\nour participation had in that versus the other folks\n\n115\n00:07:49,519 --> 00:07:50,519\nand then judge?\n\n116\n00:07:52,670 --> 00:07:57,670\nYeah, so that is not a KPI that's on here now.\n\n117\n00:07:57,670 --> 00:08:02,670\nCorporate events is not on there.\n\n118\n00:08:02,670 --> 00:08:03,670\nThat's a great call.\n\n119\n00:08:03,670 --> 00:08:07,670\nI don't like, this is not comprehensive, right?\n\n120\n00:08:07,670 --> 00:08:10,209\nThis is like a stab at\n\n121\n00:08:13,410 --> 00:08:21,809\nincentivizing meaningful things that will move the needle, right? So we know that this team\n\n122\n00:08:21,809 --> 00:08:26,529\nis team of subject matter experts. This team knows the customer, knows the product, knows the market.\n\n123\n00:08:27,410 --> 00:08:33,820\nLike no one else can generate the quality and type of content that we can for the web,\n\n124\n00:08:34,359 --> 00:08:37,340\nfor demand generation, or for field.\n\n125\n00:08:38,059 --> 00:08:43,200\nAnd so, and we know that when we do that, we know when we put stuff up on the web, like\n\n126\n00:08:43,200 --> 00:08:44,520\nit drives outcomes for the business.\n\n127\n00:08:44,640 --> 00:08:47,849\nWe know that when we do field events, it drives outcomes for the business. We know that when we do field events,\n\n128\n00:08:47,849 --> 00:08:49,830\nit drives outcomes for the business.\n\n129\n00:08:49,830 --> 00:08:51,989\nAnd that's why those are on the OKRs as well.\n\n130\n00:08:52,530 --> 00:08:55,609\nSo this is like kind of picking the low hanging fruit\n\n131\n00:08:55,609 --> 00:08:58,950\nof like, we know this does drive business outcomes.\n\n132\n00:08:59,109 --> 00:09:01,049\nThat's why we want to track it.\n\n133\n00:09:02,869 --> 00:09:03,390\nYeah.\n\n134\n00:09:03,450 --> 00:09:06,330\nFor something like a, you know, commit.\n\n135\n00:09:06,330 --> 00:09:12,330\nLike, you know, we're putting amazing amounts of time into commit.\n\n136\n00:09:12,330 --> 00:09:15,330\nHow do we get credit for that as a PMM team?\n\n137\n00:09:15,330 --> 00:09:17,330\nI'm not, I don't know yet.\n\n138\n00:09:17,330 --> 00:09:21,330\nWell, yeah, and how do we know, like, part of it's getting credit\n\n139\n00:09:21,330 --> 00:09:24,330\nand part of it is just knowing where to spend our time.\n\n140\n00:09:24,330 --> 00:09:25,039\nIf we can double the value of something that's worth a third of it's getting credit and part of it is just knowing where to spend our time\n\n141\n00:09:29,599 --> 00:09:37,119\nif we can if we can double if we can double the value of something that's worth a third as much versus increasing at five percent you know somewhere else yeah so i have two i have two bits of guidance\n\n142\n00:09:37,119 --> 00:09:47,650\non that right so um well let's think through that for the moment. So I would say one, if, if there is some project,\n\n143\n00:09:47,830 --> 00:09:52,710\nsomething that you believe, if I invest my time in thing X,\n\n144\n00:09:53,330 --> 00:09:56,609\nit will meaningfully move this needle. Like to your point, it's like,\n\n145\n00:09:56,609 --> 00:10:00,609\nthis could, this could like increase this by 50%, not just 5%.\n\n146\n00:10:01,109 --> 00:10:02,049\nLike that should be easy to justify. Even if it's not like a, this could like increase this by 50%, not just 5%.\n\n147\n00:10:05,330 --> 00:10:07,890\nLike that should be easy to justify, even if it's not like a specific KPI.\n\n148\n00:10:09,090 --> 00:10:11,409\nAnd maybe let's like have a conversation about it, right?\n\n149\n00:10:11,409 --> 00:10:12,049\nLike let's bring that,\n\n150\n00:10:12,049 --> 00:10:13,570\nmaybe the whole team should be doing that thing,\n\n151\n00:10:13,570 --> 00:10:15,090\nwhatever that is, right?\n\n152\n00:10:15,090 --> 00:10:16,770\nSo like, if you see that thing and you're like,\n\n153\n00:10:17,489 --> 00:10:19,250\nI can have big impact here,\n\n154\n00:10:20,289 --> 00:10:22,640\nthat should be like the overarching\n\n155\n00:10:23,840 --> 00:10:28,640\ndecision matrix, right? Like as you're looking at like all the stuff you spend your time on,\n\n156\n00:10:28,640 --> 00:10:37,760\nlike what's driving meaningful goals. The other one is like we got to keep the lights on,\n\n157\n00:10:37,760 --> 00:10:40,289\nright? Or what we call like business as usual.\n\n158\n00:10:40,929 --> 00:10:44,669\nSo like this doesn't track like sales enablement.\n\n159\n00:10:44,750 --> 00:10:48,469\nThis doesn't track messaging and positioning really.\n\n160\n00:10:48,669 --> 00:10:57,190\nLike it's OKR for us, but we're not like, you know, we don't have like a KPI that's like how many people used our messaging?\n\n161\n00:10:57,190 --> 00:10:59,250\nLike there's things that we need to do as a team that's like, how many people used our messaging? There's things that we need to do as\n\n162\n00:10:59,250 --> 00:11:06,929\na team that we're probably not ever going to be able to track, but they're important things to do.\n\n163\n00:11:10,210 --> 00:11:21,679\nI'm just curious. I know you're in some product marketing association or something do they have um like a library of\n\n164\n00:11:21,679 --> 00:11:28,640\nthings that they share where you could see examples of what other people do they do so uh\n\n165\n00:11:28,640 --> 00:11:37,630\nthe the challenge is is how so I've looked I looked into all of that as well. And they do actually, there's a PDF they put out.\n\n166\n00:11:37,630 --> 00:11:39,809\nIf I can, if I can track down the PDF,\n\n167\n00:11:39,809 --> 00:11:41,330\nI'll share that with a group.\n\n168\n00:11:44,010 --> 00:11:47,429\nThe nutshell of it is that PMM works really differently\n\n169\n00:11:47,429 --> 00:11:49,409\nin different places, right?\n\n170\n00:11:49,409 --> 00:11:54,330\nSo in other orgs, product marketing owns campaigns.\n\n171\n00:11:55,289 --> 00:11:58,010\nThey don't have, like there is no Jackie's team.\n\n172\n00:11:58,010 --> 00:12:00,250\nLike this team is Jackie's team.\n\n173\n00:12:00,250 --> 00:12:04,010\nAnd like this team has an MQL number that they need to hit.\n\n174\n00:12:04,010 --> 00:12:05,729\nBut like, that doesn't make sense for us\n\n175\n00:12:05,729 --> 00:12:07,950\nbecause like we're not the campaign's team.\n\n176\n00:12:10,369 --> 00:12:31,000\nIn other orgs, product marketing might even own like a revenue number, right? Like when I was at Twilio, like every product team function pretty much autonomously, like the PM was a little CEO and the PM was a little CMO and we were responsible for our business.\n",
+        "summary": "This discussion centers on establishing key performance indicators (KPIs) for the Product Marketing Management (PMM) team, focusing on measuring the impact of their content and activities. The team aims to move beyond inconsistent KPIs and establish baseline metrics to track progress.\n\n**Key Decisions and Conclusions:**\n\n*   **Content Value:** The team agreed that content value should be measured by page views, SEO performance, and its contribution to the customer journey.\n*   **Incentivization:** The team needs to be incentivized to collaborate with the broader marketing team to ensure valuable content is integrated into the customer journey.\n*   **Metric Focus:** Page views on PMM content will be a primary metric, serving as a leading indicator for inquiries and self-service sign-ups. The team will also track downstream metrics like inquiries and self-service sign-ups, segmenting PMM content contributions.\n*   **Measurement Approach:** Metrics will be derived from existing systems like Google Analytics and Salesforce, avoiding the creation of separate measurement tools.\n*   **Attribution:** The team will track PMM contributions to demand generation content through existing linear attribution models. For field events, PMM contributions will be tracked by listing PMM-contributed events for the quarter.\n*   **Prioritization:** A decision matrix is needed to determine which content to invest in, prioritizing high-impact projects that significantly move the needle. The team will also need to maintain business-as-usual activities, even if they are not directly tracked by KPIs.\n*   **External Benchmarking:** While Mark will try to locate a relevant PDF from the Product Marketing Association, it was noted that PMM roles and responsibilities vary greatly across organizations, making direct comparisons challenging.\n\n**Action Items:**\n\n*   **Implement Page View Tracking:** Begin tracking page views on PMM content as a primary metric.\n*   **Segment PMM Contributions:** Segment PMM content contributions within existing demand generation and field event tracking systems.\n*   **Develop Decision Matrix:** Create a decision matrix to prioritize content investments based on potential impact.\n*   **Explore External Resources:** Mark will share the PMM PDF if located.\n*   **Further Discussion:** The team will need to discuss how to measure the impact of PMM contributions to larger corporate events.\n",
+        "diarization_enabled": true,
+        "diarization_status": "completed",
+        "speaker_profiles": {
+            "Dara": {
+                "segments_count": 24,
+                "total_duration": 90.66937499999999
+            },
+            "John": {
+                "segments_count": 14,
+                "total_duration": 70.72312499999987
+            },
+            "Mark": {
+                "segments_count": 196,
+                "total_duration": 421.655625000001
+            },
+            "Annie": {
+                "segments_count": 7,
+                "total_duration": 14.647499999999727
+            }
+        },
+        "audio_hash": null,
+        "created_at": "2025-02-03T16:43:40.615101+00:00",
+        "updated_at": "2025-02-03T16:43:40.615101+00:00",
+        "diarization_progress": 100,
+        "transcription_progress": 0,
+        "speaker_segments": [
+            {
+                "end": 1.41471875,
+                "start": 0.03096875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 2.29221875,
+                "start": 1.41471875,
+                "speaker": "Dara"
+            },
+            {
+                "end": 5.16096875,
+                "start": 3.76034375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 6.84846875,
+                "start": 6.40971875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 8.654093750000001,
+                "start": 7.337843750000001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 10.476593750000003,
+                "start": 9.19409375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 15.52221875,
+                "start": 12.113468750000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 19.28534375,
+                "start": 16.26471875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 20.68596875,
+                "start": 20.12909375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 21.41159375,
+                "start": 20.922218750000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 25.090343750000002,
+                "start": 22.39034375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 28.16159375,
+                "start": 25.731593750000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 26.00159375,
+                "start": 25.95096875,
+                "speaker": "Annie"
+            },
+            {
+                "end": 30.473468750000002,
+                "start": 28.262843750000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 32.51534375,
+                "start": 30.96284375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 35.23221875,
+                "start": 34.962218750000005,
+                "speaker": "Dara"
+            },
+            {
+                "end": 39.079718750000005,
+                "start": 35.77221875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 41.56034375,
+                "start": 41.12159375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 52.00596875,
+                "start": 42.31971875,
+                "speaker": "Dara"
+            },
+            {
+                "end": 54.149093750000006,
+                "start": 52.22534375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 62.04659375000001,
+                "start": 54.486593750000004,
+                "speaker": "Dara"
+            },
+            {
+                "end": 66.61971875,
+                "start": 62.299718750000004,
+                "speaker": "Dara"
+            },
+            {
+                "end": 69.67409375,
+                "start": 66.90659375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 72.62721875,
+                "start": 69.84284375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 73.87596875,
+                "start": 73.20096875,
+                "speaker": "Dara"
+            },
+            {
+                "end": 76.74471875,
+                "start": 74.11221875000001,
+                "speaker": "Dara"
+            },
+            {
+                "end": 91.78034375,
+                "start": 76.99784375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 84.99659375,
+                "start": 84.15284375,
+                "speaker": "Annie"
+            },
+            {
+                "end": 92.65784375000001,
+                "start": 92.18534375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 95.08784375,
+                "start": 94.19346875000001,
+                "speaker": "Dara"
+            },
+            {
+                "end": 100.57221875,
+                "start": 95.35784375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 104.87534375000001,
+                "start": 101.31471875000001,
+                "speaker": "Dara"
+            },
+            {
+                "end": 110.35971875000001,
+                "start": 105.12846875000001,
+                "speaker": "Dara"
+            },
+            {
+                "end": 114.71346875,
+                "start": 110.78159375000001,
+                "speaker": "Dara"
+            },
+            {
+                "end": 119.08409375000001,
+                "start": 115.35471875,
+                "speaker": "Dara"
+            },
+            {
+                "end": 121.00784375,
+                "start": 119.47221875000001,
+                "speaker": "Dara"
+            },
+            {
+                "end": 125.26034375,
+                "start": 121.21034375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 135.62159375000002,
+                "start": 125.81721875000001,
+                "speaker": "Dara"
+            },
+            {
+                "end": 136.60034375,
+                "start": 136.16159375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 141.30846875,
+                "start": 138.22034375,
+                "speaker": "Dara"
+            },
+            {
+                "end": 145.66221875000002,
+                "start": 145.10534375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 146.55659375000002,
+                "start": 145.72971875000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 148.61534375000002,
+                "start": 147.99096875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 159.88784375,
+                "start": 149.83034375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 160.91721875000002,
+                "start": 160.44471875000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 165.22034375,
+                "start": 161.60909375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 166.99221875,
+                "start": 165.69284375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 168.94971875000002,
+                "start": 167.49846875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 170.33346875,
+                "start": 169.75971875000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 174.34971875000002,
+                "start": 170.82284375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 178.31534375,
+                "start": 175.09221875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 179.51346875000002,
+                "start": 178.90596875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 184.01909375000002,
+                "start": 179.59784375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 186.34784375,
+                "start": 184.52534375000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 187.52909375000002,
+                "start": 186.70221875000001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 190.53284375,
+                "start": 187.93409375000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 193.87409375000001,
+                "start": 190.80284375000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 197.95784375000002,
+                "start": 194.48159375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 200.97846875000002,
+                "start": 198.41346875000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 205.51784375000003,
+                "start": 201.95721875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 207.64409375000002,
+                "start": 206.09159375000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 208.84221875,
+                "start": 208.04909375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 211.28909375,
+                "start": 209.43284375000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 212.21721875,
+                "start": 211.71096875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 214.93409375000002,
+                "start": 212.55471875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 216.60471875000002,
+                "start": 215.33909375000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 219.49034375000002,
+                "start": 216.82409375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 225.04221875000002,
+                "start": 220.80659375000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 228.60284375,
+                "start": 225.32909375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 234.64409375000002,
+                "start": 229.31159375000001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 238.35659375,
+                "start": 235.21784375000001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 240.58409375000002,
+                "start": 238.55909375000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 241.30971875,
+                "start": 240.92159375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 243.46971875000003,
+                "start": 242.82846875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 248.07659375000003,
+                "start": 245.19096875000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 249.24096875,
+                "start": 248.59971875000002,
+                "speaker": "Mark"
+            },
+            {
+                "end": 252.81846875000002,
+                "start": 250.60784375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 256.69971875,
+                "start": 253.13909375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 259.01159375000003,
+                "start": 257.25659375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 260.81721875,
+                "start": 260.12534375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 265.62659375000004,
+                "start": 261.44159375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 273.16971875,
+                "start": 265.79534375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 278.09721875,
+                "start": 273.43971875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 280.02096875,
+                "start": 278.63721875000005,
+                "speaker": "Mark"
+            },
+            {
+                "end": 282.46784375000004,
+                "start": 280.99971875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 286.75409375000004,
+                "start": 283.10909375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 288.79596875000004,
+                "start": 287.39534375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 290.44971875000005,
+                "start": 289.63971875000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 292.93034375,
+                "start": 290.61846875000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 295.17471875,
+                "start": 292.94721875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 296.03534375000004,
+                "start": 295.51221875000005,
+                "speaker": "Mark"
+            },
+            {
+                "end": 301.62096875000003,
+                "start": 296.76096875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 304.64159375,
+                "start": 301.94159375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 310.26096875,
+                "start": 305.31659375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 313.51784375,
+                "start": 311.59409375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 316.38659375000003,
+                "start": 314.09159375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 317.44971875000005,
+                "start": 316.84221875000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 319.03596875,
+                "start": 318.17534375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 321.16221875,
+                "start": 319.64346875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 321.90471875000003,
+                "start": 321.55034375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 326.20784375,
+                "start": 322.07346875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 329.19471875000005,
+                "start": 328.48596875000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 330.54471875,
+                "start": 330.08909375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 332.83971875000003,
+                "start": 331.00034375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 333.95346875,
+                "start": 333.46409375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 340.11284375,
+                "start": 334.81409375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 345.42846875000004,
+                "start": 340.61909375000005,
+                "speaker": "Mark"
+            },
+            {
+                "end": 349.47846875000005,
+                "start": 345.74909375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 353.51159375000003,
+                "start": 350.17034375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 357.66284375000004,
+                "start": 354.25409375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 362.23596875000004,
+                "start": 358.32096875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 363.40034375000005,
+                "start": 362.91096875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 365.57721875000004,
+                "start": 363.77159375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 367.61909375000005,
+                "start": 366.48846875000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 373.01909375,
+                "start": 367.83846875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 375.14534375000005,
+                "start": 373.55909375000005,
+                "speaker": "Mark"
+            },
+            {
+                "end": 377.99721875,
+                "start": 375.51659375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 379.27971875000003,
+                "start": 378.82409375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 380.29221875,
+                "start": 379.76909375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 382.30034375,
+                "start": 380.74784375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 383.78534375000004,
+                "start": 382.87409375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 385.84409375,
+                "start": 384.37596875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 388.03784375000004,
+                "start": 386.60346875000005,
+                "speaker": "Mark"
+            },
+            {
+                "end": 390.51846875,
+                "start": 388.51034375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 393.10034375000004,
+                "start": 390.67034375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 394.82159375000003,
+                "start": 394.19721875000005,
+                "speaker": "Mark"
+            },
+            {
+                "end": 400.54221875,
+                "start": 395.59784375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 403.17471875,
+                "start": 402.49971875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 410.22846875000005,
+                "start": 404.13659375000003,
+                "speaker": "John"
+            },
+            {
+                "end": 423.49221875,
+                "start": 412.28721875,
+                "speaker": "John"
+            },
+            {
+                "end": 429.28034375000004,
+                "start": 424.45409375,
+                "speaker": "John"
+            },
+            {
+                "end": 430.00596875,
+                "start": 429.36471875,
+                "speaker": "John"
+            },
+            {
+                "end": 439.74284375,
+                "start": 430.69784375,
+                "speaker": "John"
+            },
+            {
+                "end": 441.36284375,
+                "start": 439.86096875000004,
+                "speaker": "John"
+            },
+            {
+                "end": 445.15971875,
+                "start": 443.28659375,
+                "speaker": "John"
+            },
+            {
+                "end": 444.01221875000005,
+                "start": 443.30346875000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 445.73346875000004,
+                "start": 445.51409375000003,
+                "speaker": "John"
+            },
+            {
+                "end": 447.60659375,
+                "start": 445.73346875000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 450.81284375,
+                "start": 448.02846875,
+                "speaker": "John"
+            },
+            {
+                "end": 452.16284375000004,
+                "start": 451.09971875,
+                "speaker": "John"
+            },
+            {
+                "end": 453.68159375000005,
+                "start": 452.93909375000004,
+                "speaker": "John"
+            },
+            {
+                "end": 470.40471875000003,
+                "start": 454.44096875,
+                "speaker": "John"
+            },
+            {
+                "end": 473.94846875,
+                "start": 472.96971875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 476.37846875,
+                "start": 474.85971875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 478.18409375000005,
+                "start": 477.03659375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 480.68159375000005,
+                "start": 478.25159375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 482.67284375,
+                "start": 481.69409375000004,
+                "speaker": "Mark"
+            },
+            {
+                "end": 484.66409375,
+                "start": 483.26346875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 485.42346875000004,
+                "start": 485.05221875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 487.65096875,
+                "start": 486.16596875000005,
+                "speaker": "Mark"
+            },
+            {
+                "end": 490.43534375,
+                "start": 488.14034375000006,
+                "speaker": "Mark"
+            },
+            {
+                "end": 491.71784375000004,
+                "start": 491.16096875000005,
+                "speaker": "Mark"
+            },
+            {
+                "end": 497.05034375,
+                "start": 493.42221875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 497.94471875000005,
+                "start": 497.55659375000005,
+                "speaker": "Mark"
+            },
+            {
+                "end": 499.42971875,
+                "start": 498.23159375000006,
+                "speaker": "Mark"
+            },
+            {
+                "end": 500.29034375000003,
+                "start": 499.81784375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 506.78721875,
+                "start": 500.79659375000006,
+                "speaker": "Mark"
+            },
+            {
+                "end": 507.83346875,
+                "start": 507.49596875000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 510.06096875000003,
+                "start": 507.98534375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 512.84534375,
+                "start": 510.48284375000003,
+                "speaker": "Mark"
+            },
+            {
+                "end": 513.9084687500001,
+                "start": 513.1828437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 516.0178437500001,
+                "start": 514.39784375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 517.4015937500001,
+                "start": 516.4228437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 519.07221875,
+                "start": 518.31284375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 525.1472187500001,
+                "start": 519.62909375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 526.51409375,
+                "start": 525.4340937500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 527.9990937499999,
+                "start": 526.95284375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 532.0322187500001,
+                "start": 528.45471875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 533.1797187500001,
+                "start": 532.5047187499999,
+                "speaker": "Mark"
+            },
+            {
+                "end": 536.1497187500001,
+                "start": 533.9897187500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 537.73596875,
+                "start": 536.21721875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 540.9422187499999,
+                "start": 538.2084687500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 542.1909687500001,
+                "start": 541.68471875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 544.67159375,
+                "start": 543.11909375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 545.4140937500001,
+                "start": 544.92471875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 546.05534375,
+                "start": 545.5659687500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 547.00034375,
+                "start": 546.7978437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 550.0547187500001,
+                "start": 549.0422187500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 557.14221875,
+                "start": 550.54409375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 564.44909375,
+                "start": 558.13784375,
+                "speaker": "John"
+            },
+            {
+                "end": 573.5615937499999,
+                "start": 565.1072187500001,
+                "speaker": "John"
+            },
+            {
+                "end": 578.1684687500001,
+                "start": 574.9622187500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 579.77159375,
+                "start": 578.55659375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 583.0959687500001,
+                "start": 580.88534375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 583.8215937500001,
+                "start": 583.6359687500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 585.7453437500001,
+                "start": 584.27721875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 589.5928437499999,
+                "start": 586.4709687500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 592.8159687500001,
+                "start": 589.94721875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 601.0847187500001,
+                "start": 593.3728437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 602.5359687499999,
+                "start": 602.13096875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 608.1384687500001,
+                "start": 603.24471875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 614.6184687500001,
+                "start": 608.72909375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 616.93034375,
+                "start": 614.95596875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 619.44471875,
+                "start": 617.6728437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 622.98846875,
+                "start": 620.3390937500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 625.08096875,
+                "start": 623.8828437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 628.33784375,
+                "start": 625.4522187499999,
+                "speaker": "Mark"
+            },
+            {
+                "end": 629.82284375,
+                "start": 628.74284375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 631.9153437500001,
+                "start": 630.4809687500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 633.3159687500001,
+                "start": 632.65784375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 637.46721875,
+                "start": 635.22284375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 640.4540937500001,
+                "start": 637.9397187500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 641.36534375,
+                "start": 640.80846875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 643.0022187500001,
+                "start": 641.92221875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 645.76971875,
+                "start": 643.5422187500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 647.84534375,
+                "start": 646.47846875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 650.3090937500001,
+                "start": 648.0984687499999,
+                "speaker": "Mark"
+            },
+            {
+                "end": 651.54096875,
+                "start": 650.78159375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 652.35096875,
+                "start": 651.79409375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 654.76409375,
+                "start": 652.80659375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 659.79284375,
+                "start": 655.59096875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 661.4465937500001,
+                "start": 660.26534375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 667.11659375,
+                "start": 662.61096875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 668.53409375,
+                "start": 668.1797187500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 669.52971875,
+                "start": 669.0403437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 669.95159375,
+                "start": 669.52971875,
+                "speaker": "Annie"
+            },
+            {
+                "end": 670.3059687500001,
+                "start": 670.2890937500001,
+                "speaker": "Annie"
+            },
+            {
+                "end": 670.81221875,
+                "start": 670.3059687500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 674.82846875,
+                "start": 670.81221875,
+                "speaker": "Annie"
+            },
+            {
+                "end": 677.07284375,
+                "start": 675.3684687500001,
+                "speaker": "Annie"
+            },
+            {
+                "end": 685.29096875,
+                "start": 677.69721875,
+                "speaker": "Annie"
+            },
+            {
+                "end": 686.52284375,
+                "start": 685.8984687500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 687.78846875,
+                "start": 687.11346875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 688.78409375,
+                "start": 687.8390937500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 698.0990937500001,
+                "start": 689.18909375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 701.00159375,
+                "start": 698.33534375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 702.87471875,
+                "start": 702.26721875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 709.15221875,
+                "start": 703.97159375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 709.84409375,
+                "start": 709.2703437499999,
+                "speaker": "Mark"
+            },
+            {
+                "end": 712.0547187500001,
+                "start": 710.26596875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 714.8897187500002,
+                "start": 712.42596875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 717.45471875,
+                "start": 715.2778437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 719.6653437500001,
+                "start": 718.02846875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 723.1415937500001,
+                "start": 720.27284375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 727.7822187500001,
+                "start": 724.0359687499999,
+                "speaker": "Mark"
+            },
+            {
+                "end": 729.13221875,
+                "start": 728.59221875,
+                "speaker": "Mark"
+            },
+            {
+                "end": 732.37221875,
+                "start": 730.3640937499999,
+                "speaker": "Mark"
+            },
+            {
+                "end": 735.9497187500001,
+                "start": 732.62534375,
+                "speaker": "Mark"
+            },
+            {
+                "end": 739.0715937500001,
+                "start": 736.5403437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 748.23471875,
+                "start": 739.3078437500001,
+                "speaker": "Mark"
+            },
+            {
+                "end": 750.90096875,
+                "start": 748.7747187500001,
+                "speaker": "Mark"
+            }
+        ],
+        "refinement_triggered": false,
+        "refinement_pending": false,
+        "credits_required": null,
+        "credits_charged": true,
+        "language": "en",
+        "job_shares": []
+    },
+    {
+        "id": "2139bcb4-e8b4-4e44-b8d1-fdd3f1c83ad2",
+        "user_id": "6a06b447-ef52-451d-9098-b0293cf85657",
+        "file_name": "Lecture 1 Introduction to 14_02 Principles of Macroeconomics",
+        "file_url": "samples/sample-lecture.mp3",
+        "status": "transcribed",
+        "transcript": "OK, let's start. Hello everyone. Welcome to 1402, Introduction to Macroeconomics. I won't teach today, so that's good news. I will start on Wednesday. So what I want to do today is essentially tell you what macro is about, macroeconomics is about, and also the rules of the game. So what a difference a single letter makes. Many of you must have taken 1401. In fact, some of you may be taking it concurrently. It's a lecture right before mine. And, you know, that's microeconomics, 1401. This is macroeconomics. And it doesn't take a lot of imagination to realize that this course is about big things. We don't look at small things. That's what micro is about. Micro looks at a household, at a firm, at an industry. In macro, we don't do that. We look at the whole economy. We think about the US. We think about China. We don't think about an individual price. We think about inflation, so the rate of change of all prices. We don't think about whether a particular worker is employed or unemployed. We think of whether the rate of unemployment is very high or low, things of that kind. When we look at two countries, we look at the exchange rate, which is the price of two currencies, not two individual goods in two different countries, but the whole currency and so on. So that's what macro is about. Now, you could think that macro is nothing else than the sum of lots of micros. After all, that's what an economy is made of. A population, a whole population, is made of lots of individuals that can be analyzed with the tools of 1401 and the sequence that follows 1401. But that doesn't work. And there are parallels in physics about this and so on. The way you want to study sort of big bodies is different from the way you want to understand the movements of small elements. And that's the case in macro. There's a big line of research that has to do with the micro foundations of macroeconomics, but even in that case, which is very close to micro, most of the action ends up happening in the non-micro part, in the interactions, in the equilibrium aspects of the system. So it's a much more complicated object, and if you were to build it from the micro, it would be an incredibly complicated object. So one of the things we need to do in macroeconomics is take some shortcuts, and that's what makes macro a lot of an art. It's not a science, per se. It's some sort of a science. It has the tools of a science. But it's a lot about shortcuts and tricks and so on to capture the essence of a problem that is very complex, if you were to model it in all the gory details. OK? And in this course, we're going to exaggerate on that sense. We're not going to do in all the gory details. And in this course, we're going to exaggerate on that sense. We're not going to do anything complicated. I promise you that. Some conceptually things will be complicated. But the math will not be complicated. So we want to keep things very, very simple. I want to communicate the essence of the big macroeconomic relationships this is not a PhD course if you were to take a PhD course in macro it would be a very math type course in fact most of the people that do apply in micro in our PhD program complain against macro because they find it too mathy and so on but that's not going to be the case here that's not what this course is about. My goal, so if this is a successful course, is not that you come out being a researcher in macro out of this. Hopefully, you'll have a career eventually and do all the next steps that you need to do that. But I want you to be able to do is to read something like this. This is a World Economic Outlook. It's a publication that the IMF puts out every six months in which it tells you how this is the world and where we're heading and so on. No equations there. Lots of tables and stuff like that. I'd like you to be able to read that kind of document very clearly. I would like you to be able to read something, say, the Wall Street Journal, and read even critically, sometimes disagreeing with what is in there. Financial Times, The Economist, that's the goal of this course. It's not a lot more than that. It's just that. If you do a summer internship in Wall Street and you work in a macro hedge fund or whatever, this is going to be a good course for that. I mean, this is what traders really know. They don't know a lot more than that. Many traders should know that. They don't. But that's a level of knowledge. If it gets to be very complicated, I'm failing. That's not what I want to do here. The typical lecture, again, this is not a lecture. The first lecture will be on Wednesday. The typical lecture, again this is not a lecture, the first lecture will be on Wednesday. The typical lecture, and not in the first part of the course because you're not going to have the tools, the definitions and so on to do it. What I want to do is spend five to ten minutes early on. Again, the first part of the course we can do that because you don't have the knowledge to do that. But as we start building tools, I want to be able to sort of figure out Again, the first part of the course, we can't do that because you don't have a sealed knowledge to do that. But as you start building tools, I want to be able to talk about current events, something that is happening out there that I find interesting, or something I received that morning, may even the morning of the lecture, in which I find interesting. And if I think you already have the tools to begin to understand it, I'm going to be repetitive. I'm going to sort of come back to three, four times to the same topic. Hopefully, you'll be more advanced in your knowledge in the later stages, and you'll be able to understand it more and more. So the typical lecture we'll have, five to 10 minutes, in which we'll talk about some facts, something that is going on. For example, a picture like this. This is, I received this morning. I think this came from Goldman, I think, Goldman Sachs, yes. And what you have in that picture, again, don't worry about details today, is you have two lines. One of them is a measure of wages, wage growth, compensation to workers. And another one is a measure of wages, wage growth, compensation to workers. And another one is a measure of inflation. Again, all those definitions will come in the next lecture. Inflation. So it's a rate at which you must have heard about inflation. It's something prices are rising. And what that picture shows you is that these two series are very highly correlated. So when wage growth is high, inflation tends to be high. And that's a big issue on these days. There's a lot of concern about this stuff. So let me try to explain a little bit what is the concern on these days. Again, if you don't understand anything, it doesn't matter. If you don't understand anything I'm saying right now in the last lecture, then it matters. But now it doesn't matter. I'm just trying to give you a flavor of the kind of things we'll be talking about. That picture there, again a variable that we'll define in the next lecture, not now, shows you the unemployment rate. You don't need any specific definition to know that, to feel at least get a sense that well if unemployment is high workers aren't very happy. It's not a good thing to have lots of unemployment. And what that series shows you, the shaded areas are recessions in the US. What that series shows you is that typically in recessions unemployment goes up. So that series shows you is that typically in recessions, unemployment goes up. So that's one of the features. One of the main features of a recession is that unemployment is high. This episode here is called the Great Recession. As a parallel for the Great Depression, the US had the Great Depression in the 30s. This is the Great Recession, the biggest sort of recession outside of the Great Depression in the US. And it's also known as the global financial crisis because this was a recession all around the world. And what you can see is that employment went very high. That's a very feature, a total sign of a big recession. And then it took a long time. This was in sort of recovering. COVID was a massive shock to the labor market. So not surprisingly, the unemployment rate has spiked there. But then it also recovered a lot faster than it recovered from that. And today, we have unemployment rates that are at historically low levels. And that's a big issue. The rate of unemployment in the U.S. is at historically low levels, okay? Way below what is normal. Forget recessions. Obviously, way below what happens in recession. But even way below what is normal, what happens during normal times, okay? Closely related to that is wage growth. I have just one measure of wages there. It's a series of wages that is particularly, what I'm about to say is particularly sharp, which is the wages in the accommodation and food service sectors. So wages have been rising very steadily and very fast recently everywhere, particularly in sectors like this, where we have some problems, what we call labor supply. But I'll get back to that. OK, so those are two facts. We have unemployment at extremely low levels, and we have wage growth at a very fast pace. Now, that sounds wonderful, no? I mean, what else do you want? An economy in which there's few people unemployed, and the wages are growing a lot. I mean, if this was micro, this would be fantastic. Say, OK, look, the guy is employed, and he's getting a high wage. This is great. Well, not so fast for macro. Not so fast, because I already showed you in the first picture that I showed you to motivate. There's a connection between wage growth and inflation. And that's what we're experiencing. The normal level of inflation for an economy like the US is around 2%. That's normal. That's what central of inflation for an economy like the US is around 2%. That's normal. That's what central banks target in an economy like the US, in the euro area. Japan has been dreaming with 2%, but it hasn't been able for decades to get it. Although now they are, but they weren't for a couple of decades to get to 2%. But that's about, and we will discuss later in the course, why 2% is about right for economies of the size of the US and so on. Obviously, in recessions, these things can go low. And that's why in the COVID recession, inflation went to zero, essentially. But then it began to pick up. And it's now at levels which are unheard of in the US since the 80s. So depending on the particular measure you use of inflation, it's around 6.5% to 8%. That's the level of inflation we have. Which is way, way above what is considered a reasonable target for the central banks for inflation. So that's a problem. We have had some good news recently in that inflation clearly peaked already. Again, definition of inflation, formal definition of inflation happens in the next lecture, but it already peaked and is declining, but it's still at very, very high levels. And that's a problem. That's a big macroeconomic problem. And one of the things we want to understand in this course is, well, what to do about it? but it's still at very, very high levels. And that's a problem. That's a big macroeconomic problem. And one of the things we want to understand in this course is, well, what to do about it? How do you deal with that? What do central banks need to do in order to deal with that? Now, I've been talking about the US, but this is not specific to the US. This episode, this recovery from COVID, is incredibly common across the US. This episode, this recovery from COVID, is incredibly common across different regions of the world. I mean, you see it everywhere, with a few exceptions. And I'm going to talk about one major exception in a minute. But it's widespread. It's a widespread phenomenon that we had high unemployment, then we had sort of very high, well, I haven't told you that part yet, but then we had sort of low inflation, then inflation picked up enormously, and now we're all worried about these very high levels of inflation. In fact, if you look at sort of what happened between the Great Recession and the COVID recession, it was pretty normal to have 70% to 80% of the economies in the world having inflation levels at or below 2%. So that's the norm. If they throw you into a country, they drop you into a country, the normal thing would be, well, it's about 2%. That's the level of inflation. Obviously, if I drop you in Argentina, you're going to find a much bigger number, 10,000%. But the bulk of the countries were around 2% or so. Today, you don't find any country with inflation below 2%. Not even Japan, that for years were in deflation and trying to get sort of above zero. That's all they wanted. Not even in Japan you have inflation below 2% today. So this thing I show you, and for more or less the same reasons, is happening everywhere. Not exactly the same factors. It's the same episode, for example, and then with differences depending on the structure of the economy or in additional shocks. In Europe, for example, they have very high inflation. But the problem is not, the origin of the problem, the bulk of the problem is the same as in the US. But at the margin, they are different. In Europe, the big driver of inflation, the big recent driver of inflation, is unlike the US, which is aggregate demand, I can't understand later, is essentially the war in Ukraine. That has increased the price of energy, and the price of energy has led to lots of inflation. So there are different reasons, but all of them are sort of different reasons that you add on top of what is a common story, which is that we overheated coming out of the COVID episode and now we're struggling with that. Now the main tool, and we're going to talk a lot about this in this course, the main tool that central banks have to deal with inflation is the interest rate. So for reasons you'll understand later, although you may have intuition about some of those now, obviously, when the central bank lowers the interest rates, then that helps the economy to expand. And when it increases interest rate, then it does the opposite. Rising interest rate makes mortgages more expensive, make everything more expensive. So people tend to consume less, firms tend to invest less, and so on, because it's more expensive to invest, to borrow, to do something. And there you see it. I mean, this was the level of the interest rate in the US before COVID. When COVID came, boom, they brought it all the way down. It happens that you cannot bring interest rate a lot lower than zero. That's the reason it stayed close to zero there. We're going to talk about that later on. But then eventually, they realized that we're behind the curve. Inflation had picked up a lot.",
+        "refined_transcript": "Okay, let's begin. Hello everyone, and welcome to 1402, Introduction to Macroeconomics. I will not be teaching today, which is good news for you. My lectures will start on Wednesday. Today, I want to explain what macroeconomics is about and discuss the rules of the course.\n\nThe difference a single letter makes is significant. Many of you have likely taken 1401, and some may even be taking it concurrently, as it's the lecture right before mine. That course, 1401, is microeconomics. This course is macroeconomics. It doesn't take much to realize that this course deals with big-picture issues, not small ones. Microeconomics focuses on a household, a firm, or an industry. In macroeconomics, we examine the entire economy. We consider the US, China, and other large economies. We don't look at individual prices but rather at inflation, the rate of change of all prices. We don't focus on whether a specific worker is employed or unemployed but instead on the overall unemployment rate. When comparing countries, we look at exchange rates, the price of currencies, not individual goods.\n\nOne might think macroeconomics is simply the sum of many microeconomic elements, as an economy is composed of individuals who can be analyzed using the tools of 1401. However, this approach doesn't work. There are parallels in physics where the study of large bodies differs from the study of small elements. Similarly, in macroeconomics, while there's research on the micro foundations of macroeconomics, most of the action occurs in the non-micro aspects, particularly in the interactions and equilibrium of the system. Macroeconomics is a more complex object, and building it from the micro level would be incredibly complicated. Therefore, macroeconomics requires shortcuts, making it more of an art than a pure science. It uses scientific tools but relies on shortcuts and tricks to capture the essence of complex problems.\n\nIn this course, we will emphasize this approach by keeping things simple. The math will not be complicated, though some concepts may be. I want to convey the essence of major macroeconomic relationships. This is not a PhD course. A PhD course in macroeconomics would be very math-intensive, which is why some PhD students in microeconomics often complain about macro. My goal is not to turn you into macro researchers. Instead, I want you to be able to read documents like the World Economic Outlook from the IMF, which provides insights into the global economy. I also want you to be able to read publications like the Wall Street Journal, the Financial Times, and The Economist critically. If you do a summer internship in a macro hedge fund, this course will be beneficial. This is the level of knowledge many traders possess, or should possess. If the material becomes overly complicated, then I will have failed.\n\nThe typical lecture, and this is not a lecture, will begin on Wednesday. In the first part of the course, we will not be able to do this, as you will not have the necessary definitions and tools. But as we progress, I want to spend five to ten minutes discussing current events, something interesting that has happened recently, perhaps even that morning. If I believe you have the tools to understand it, I will revisit the topic multiple times. Hopefully, with your increased knowledge, you will understand it better each time. So, the typical lecture will include five to ten minutes of discussing current events. For example, I received a picture this morning from Goldman Sachs. It shows two lines: one measuring wage growth and the other measuring inflation. These definitions will be covered in the next lecture. The picture illustrates that these two series are highly correlated, meaning that when wage growth is high, inflation tends to be high, which is a major concern today.\n\nLet me briefly explain the current concern. If you don't understand everything now, it's okay. I'm just giving you a preview of what we will discuss. Another picture, which we will define in the next lecture, shows the unemployment rate. High unemployment is generally not a good thing. The shaded areas in the picture represent recessions in the US. Typically, during recessions, unemployment increases. The Great Recession, also known as the global financial crisis, saw a significant rise in unemployment. COVID-19 also caused a massive shock to the labor market, leading to a spike in unemployment. However, the recovery was faster than after the Great Recession. Today, unemployment rates are at historically low levels, even below normal levels.\n\nClosely related to this is wage growth. Wages, particularly in sectors like accommodation and food service, have been rising steadily and rapidly. This is due to labor supply issues. So, we have extremely low unemployment and rapid wage growth. While this may sound good, it is not so fast for macroeconomics. As I showed you in the first picture, there is a connection between wage growth and inflation. The normal level of inflation for an economy like the US is around 2%, which is what central banks target. However, inflation is now at levels not seen since the 1980s, around 6.5% to 8%, depending on the measure. This is way above the reasonable target for central banks. While inflation has peaked and is declining, it remains very high. This is a significant macroeconomic problem that we will explore in this course, including what central banks should do about it.\n\nThis situation is not unique to the US; it is common across many regions of the world, with a few exceptions. We have seen high unemployment, low inflation, then a significant increase in inflation, and now we are worried about these high levels. Before the COVID recession, 70% to 80% of economies had inflation at or below 2%. Today, no country has inflation below 2%, not even Japan, which has been trying to get above zero for years. This phenomenon is happening globally, although the specific factors may vary. For example, in Europe, the war in Ukraine is a major driver of inflation due to increased energy prices. However, the common story is that we overheated coming out of the COVID episode and are now struggling with it.\n\nThe main tool central banks use to deal with inflation is the interest rate. When central banks lower interest rates, it helps the economy expand. When they increase interest rates, it has the opposite effect, making mortgages and investments more expensive, which leads to less consumption and investment. Before COVID, interest rates were at a certain level, but when COVID hit, they were brought down significantly.\nThat is the reason it stayed close to zero. We will discuss that later.\n\nEventually, they realized that they were behind the curve. Inflation had increased significantly.",
+        "subtitle_content": "1\n00:00:00,000 --> 00:00:21,000\nOK, let's start.\n\n3\n00:00:21,000 --> 00:00:22,000\nHello everyone.\n\n4\n00:00:22,000 --> 00:00:24,670\nWelcome to 1402,\n\n5\n00:00:24,670 --> 00:00:28,670\nIntroduction to Macroeconomics.\n\n6\n00:00:28,670 --> 00:00:30,670\nI won't teach today,\n\n7\n00:00:30,670 --> 00:00:32,669\nso that's good news.\n\n8\n00:00:32,669 --> 00:00:34,669\nI will start on Wednesday.\n\n9\n00:00:34,669 --> 00:00:36,669\nSo what I want to do today is essentially\n\n10\n00:00:36,669 --> 00:00:38,669\ntell you what macro is about,\n\n11\n00:00:38,669 --> 00:00:40,669\nmacroeconomics is about,\n\n12\n00:00:40,669 --> 00:00:44,330\nand also the rules of the game.\n\n13\n00:00:44,330 --> 00:00:50,330\nSo what a difference a single letter makes. Many of you must have taken 1401.\n\n14\n00:00:50,330 --> 00:00:55,330\nIn fact, some of you may be taking it concurrently. It's a lecture right before mine.\n\n15\n00:00:55,330 --> 00:01:01,680\nAnd, you know, that's microeconomics, 1401. This is macroeconomics.\n\n16\n00:01:01,680 --> 00:01:03,560\nAnd it doesn't take a lot of imagination\n\n17\n00:01:03,560 --> 00:01:07,300\nto realize that this course is about big things.\n\n18\n00:01:07,300 --> 00:01:09,080\nWe don't look at small things.\n\n19\n00:01:09,080 --> 00:01:10,319\nThat's what micro is about.\n\n20\n00:01:10,319 --> 00:01:15,599\nMicro looks at a household, at a firm, at an industry.\n\n21\n00:01:15,599 --> 00:01:17,099\nIn macro, we don't do that.\n\n22\n00:01:17,099 --> 00:01:19,199\nWe look at the whole economy.\n\n23\n00:01:19,199 --> 00:01:21,669\nWe think about the US. We think about China.\n\n24\n00:01:21,669 --> 00:01:25,669\nWe don't think about an individual price. We think about inflation,\n\n25\n00:01:25,669 --> 00:01:27,669\nso the rate of change of all prices.\n\n26\n00:01:27,669 --> 00:01:31,669\nWe don't think about whether a particular worker is employed or unemployed.\n\n27\n00:01:31,669 --> 00:01:34,669\nWe think of whether the rate of unemployment is very high or low,\n\n28\n00:01:34,669 --> 00:01:35,669\nthings of that kind.\n\n29\n00:01:35,669 --> 00:01:39,510\nWhen we look at two countries, we look at the exchange rate,\n\n30\n00:01:39,510 --> 00:01:41,569\nwhich is the price of two currencies,\n\n31\n00:01:41,569 --> 00:01:44,290\nnot two individual goods in two different countries,\n\n32\n00:01:44,290 --> 00:01:46,029\nbut the whole currency and so on.\n\n33\n00:01:46,029 --> 00:01:48,790\nSo that's what macro is about.\n\n34\n00:01:48,790 --> 00:01:51,110\nNow, you could think that macro is nothing else\n\n35\n00:01:51,110 --> 00:01:53,330\nthan the sum of lots of micros.\n\n36\n00:01:53,330 --> 00:01:55,430\nAfter all, that's what an economy is made of.\n\n37\n00:01:55,430 --> 00:01:57,000\nA population, a whole population,\n\n38\n00:01:57,000 --> 00:01:59,120\nis made of lots of individuals that\n\n39\n00:01:59,120 --> 00:02:01,800\ncan be analyzed with the tools of 1401\n\n40\n00:02:01,800 --> 00:02:05,639\nand the sequence that follows 1401.\n\n41\n00:02:05,639 --> 00:02:06,980\nBut that doesn't work.\n\n42\n00:02:06,980 --> 00:02:09,660\nAnd there are parallels in physics about this and so on.\n\n43\n00:02:09,660 --> 00:02:11,740\nThe way you want to study sort of big bodies\n\n44\n00:02:11,740 --> 00:02:13,059\nis different from the way you want\n\n45\n00:02:13,059 --> 00:02:15,669\nto understand the movements of small\n\n46\n00:02:15,669 --> 00:02:23,669\nelements. And that's the case in macro. There's a big line of research that has to do with\n\n47\n00:02:23,669 --> 00:02:30,669\nthe micro foundations of macroeconomics, but even in that case, which is very close to micro,\n\n48\n00:02:30,669 --> 00:02:36,330\nmost of the action ends up happening in the non-micro part, in the interactions,\n\n49\n00:02:36,330 --> 00:02:41,330\nin the equilibrium aspects of the system. So it's a much more complicated object, and\n\n50\n00:02:41,330 --> 00:02:46,330\nif you were to build it from the micro, it would be an incredibly complicated object.\n\n51\n00:02:46,330 --> 00:02:52,330\nSo one of the things we need to do in macroeconomics is take some shortcuts, and that's what makes\n\n52\n00:02:52,330 --> 00:02:54,520\nmacro a lot of an art.\n\n53\n00:02:54,520 --> 00:02:56,279\nIt's not a science, per se.\n\n54\n00:02:56,279 --> 00:02:58,020\nIt's some sort of a science.\n\n55\n00:02:58,020 --> 00:02:59,820\nIt has the tools of a science.\n\n56\n00:02:59,820 --> 00:03:02,559\nBut it's a lot about shortcuts and tricks and so on\n\n57\n00:03:02,559 --> 00:03:05,580\nto capture the essence of a problem that is very complex,\n\n58\n00:03:05,580 --> 00:03:09,059\nif you were to model it in all the gory details.\n\n59\n00:03:09,059 --> 00:03:09,800\nOK?\n\n60\n00:03:09,800 --> 00:03:11,669\nAnd in this course, we're going to exaggerate on that sense. We're not going to do in all the gory details.\n\n61\n00:03:11,669 --> 00:03:15,350\nAnd in this course, we're going to exaggerate on that sense.\n\n62\n00:03:15,350 --> 00:03:17,169\nWe're not going to do anything complicated.\n\n63\n00:03:17,169 --> 00:03:18,229\nI promise you that.\n\n64\n00:03:18,229 --> 00:03:20,610\nSome conceptually things will be complicated.\n\n65\n00:03:20,610 --> 00:03:24,410\nBut the math will not be complicated.\n\n66\n00:03:24,410 --> 00:03:26,550\nSo we want to keep things very, very simple.\n\n67\n00:03:26,550 --> 00:03:28,550\nI want to communicate the essence\n\n68\n00:03:28,550 --> 00:03:30,309\nof the big macroeconomic\n\n69\n00:03:30,309 --> 00:03:35,649\nrelationships this is not a PhD course if you were to take a PhD course in\n\n70\n00:03:35,649 --> 00:03:39,789\nmacro it would be a very math type course in fact most of the people that do\n\n71\n00:03:39,789 --> 00:03:44,529\napply in micro in our PhD program complain against macro because they find\n\n72\n00:03:44,529 --> 00:03:47,589\nit too mathy and so on but that's not going to be the case here\n\n73\n00:03:47,589 --> 00:03:51,000\nthat's not what this course is about.\n\n74\n00:03:51,000 --> 00:03:55,000\nMy goal, so if this is a successful course,\n\n75\n00:03:55,000 --> 00:03:58,000\nis not that you come out being a researcher in macro out of this.\n\n76\n00:03:58,000 --> 00:04:00,000\nHopefully, you'll have a career eventually\n\n77\n00:04:00,000 --> 00:04:03,000\nand do all the next steps that you need to do that.\n\n78\n00:04:03,000 --> 00:04:07,000\nBut I want you to be able to do is to read something like this.\n\n79\n00:04:07,000 --> 00:04:07,669\nThis is a World Economic Outlook.\n\n80\n00:04:07,669 --> 00:04:16,670\nIt's a publication that the IMF puts out every six months in which it tells you how this is the world and where we're heading and so on.\n\n81\n00:04:16,670 --> 00:04:17,670\nNo equations there.\n\n82\n00:04:17,670 --> 00:04:19,670\nLots of tables and stuff like that.\n\n83\n00:04:19,670 --> 00:04:23,670\nI'd like you to be able to read that kind of document very clearly.\n\n84\n00:04:23,670 --> 00:04:26,570\nI would like you to be able to read something, say,\n\n85\n00:04:26,570 --> 00:04:29,609\nthe Wall Street Journal, and read even critically,\n\n86\n00:04:29,609 --> 00:04:31,950\nsometimes disagreeing with what is in there.\n\n87\n00:04:31,950 --> 00:04:34,029\nFinancial Times, The Economist, that's\n\n88\n00:04:34,029 --> 00:04:34,989\nthe goal of this course.\n\n89\n00:04:34,989 --> 00:04:36,670\nIt's not a lot more than that.\n\n90\n00:04:36,670 --> 00:04:37,769\nIt's just that.\n\n91\n00:04:37,769 --> 00:04:39,809\nIf you do a summer internship in Wall Street\n\n92\n00:04:39,809 --> 00:04:42,750\nand you work in a macro hedge fund or whatever,\n\n93\n00:04:42,750 --> 00:04:46,420\nthis is going to be a good course for that. I mean, this is what traders really know.\n\n94\n00:04:46,420 --> 00:04:47,619\nThey don't know a lot more than that.\n\n95\n00:04:47,619 --> 00:04:48,799\nMany traders should know that.\n\n96\n00:04:48,799 --> 00:04:49,700\nThey don't.\n\n97\n00:04:49,700 --> 00:04:53,140\nBut that's a level of knowledge.\n\n98\n00:04:53,140 --> 00:04:55,940\nIf it gets to be very complicated, I'm failing.\n\n99\n00:04:55,940 --> 00:04:59,179\nThat's not what I want to do here.\n\n100\n00:04:59,179 --> 00:05:02,320\nThe typical lecture, again, this is not a lecture.\n\n101\n00:05:02,320 --> 00:05:03,670\nThe first lecture will be on Wednesday. The typical lecture, again this is not a lecture, the first lecture will be on Wednesday.\n\n102\n00:05:03,670 --> 00:05:08,670\nThe typical lecture, and not in the first part of the course because you're not going to have the tools,\n\n103\n00:05:08,670 --> 00:05:16,670\nthe definitions and so on to do it. What I want to do is spend five to ten minutes early on.\n\n104\n00:05:16,670 --> 00:05:21,670\nAgain, the first part of the course we can do that because you don't have the knowledge to do that.\n\n105\n00:05:21,670 --> 00:05:22,429\nBut as we start building tools, I want to be able to sort of figure out Again, the first part of the course, we can't do that because you don't have a sealed knowledge to do that.\n\n106\n00:05:22,429 --> 00:05:25,190\nBut as you start building tools,\n\n107\n00:05:25,190 --> 00:05:28,790\nI want to be able to talk about current events,\n\n108\n00:05:28,790 --> 00:05:32,149\nsomething that is happening out there that I find interesting,\n\n109\n00:05:32,149 --> 00:05:34,369\nor something I received that morning,\n\n110\n00:05:34,369 --> 00:05:37,089\nmay even the morning of the lecture,\n\n111\n00:05:37,089 --> 00:05:38,869\nin which I find interesting.\n\n112\n00:05:38,869 --> 00:05:40,410\nAnd if I think you already have the tools\n\n113\n00:05:40,410 --> 00:05:42,980\nto begin to understand it, I'm going to be repetitive.\n\n114\n00:05:42,980 --> 00:05:45,359\nI'm going to sort of come back to three, four times\n\n115\n00:05:45,359 --> 00:05:46,480\nto the same topic.\n\n116\n00:05:46,480 --> 00:05:49,799\nHopefully, you'll be more advanced in your knowledge\n\n117\n00:05:49,799 --> 00:05:51,720\nin the later stages, and you'll be able to understand it\n\n118\n00:05:51,720 --> 00:05:53,279\nmore and more.\n\n119\n00:05:53,279 --> 00:05:55,700\nSo the typical lecture we'll have, five to 10 minutes,\n\n120\n00:05:55,700 --> 00:05:58,100\nin which we'll talk about some facts,\n\n121\n00:05:58,100 --> 00:05:59,630\nsomething that is going on.\n\n122\n00:06:04,049 --> 00:06:09,809\nFor example, a picture like this. This is, I received this morning. I think this came from Goldman, I think, Goldman Sachs, yes. And what you have in that picture, again, don't worry about\n\n123\n00:06:09,809 --> 00:06:20,529\ndetails today, is you have two lines. One of them is a measure of wages, wage growth, compensation to workers. And another one is a measure of wages, wage growth, compensation\n\n124\n00:06:20,529 --> 00:06:21,730\nto workers.\n\n125\n00:06:21,730 --> 00:06:23,929\nAnd another one is a measure of inflation.\n\n126\n00:06:23,929 --> 00:06:27,890\nAgain, all those definitions will come in the next lecture.\n\n127\n00:06:27,890 --> 00:06:28,510\nInflation.\n\n128\n00:06:28,510 --> 00:06:31,450\nSo it's a rate at which you must have heard about inflation.\n\n129\n00:06:31,450 --> 00:06:34,029\nIt's something prices are rising.\n\n130\n00:06:34,029 --> 00:06:36,489\nAnd what that picture shows you is that these two series\n\n131\n00:06:36,489 --> 00:06:39,320\nare very highly correlated.\n\n132\n00:06:39,320 --> 00:06:44,160\nSo when wage growth is high, inflation tends to be high.\n\n133\n00:06:44,160 --> 00:06:45,820\nAnd that's a big issue on these days.\n\n134\n00:06:45,820 --> 00:06:47,700\nThere's a lot of concern about this stuff.\n\n135\n00:06:50,260 --> 00:06:52,600\nSo let me try to explain a little bit\n\n136\n00:06:52,600 --> 00:06:54,480\nwhat is the concern on these days.\n\n137\n00:06:54,480 --> 00:06:58,670\nAgain, if you don't understand anything, it doesn't matter.\n\n138\n00:06:58,670 --> 00:07:02,670\nIf you don't understand anything I'm saying right now in the last lecture, then it matters.\n\n139\n00:07:02,670 --> 00:07:06,670\nBut now it doesn't matter. I'm just trying to give you a flavor of the kind of\n\n140\n00:07:06,670 --> 00:07:10,670\nthings we'll be talking about. That picture there,\n\n141\n00:07:10,670 --> 00:07:19,109\nagain a variable that we'll define in the next lecture, not now, shows you the unemployment rate. You don't need any specific definition to know that, to feel\n\n142\n00:07:19,109 --> 00:07:23,070\nat least get a sense that well if unemployment is high workers aren't very\n\n143\n00:07:23,070 --> 00:07:27,029\nhappy. It's not a good thing to have lots of unemployment. And what that series\n\n144\n00:07:27,029 --> 00:07:32,570\nshows you, the shaded areas are recessions in the US. What that series shows you is\n\n145\n00:07:32,570 --> 00:07:34,000\nthat typically in recessions unemployment goes up. So that series shows you is that typically in recessions,\n\n146\n00:07:34,000 --> 00:07:35,000\nunemployment goes up.\n\n147\n00:07:35,000 --> 00:07:36,000\nSo that's one of the features.\n\n148\n00:07:36,000 --> 00:07:40,000\nOne of the main features of a recession is that unemployment is high.\n\n149\n00:07:40,000 --> 00:07:45,000\nThis episode here is called the Great Recession.\n\n150\n00:07:45,000 --> 00:07:49,000\nAs a parallel for the Great Depression, the US had the Great Depression in the 30s.\n\n151\n00:07:49,000 --> 00:07:54,649\nThis is the Great Recession, the biggest sort of recession outside of the Great Depression in the\n\n152\n00:07:54,649 --> 00:07:59,670\nUS. And it's also known as the global financial crisis because this was a\n\n153\n00:07:59,670 --> 00:08:03,670\nrecession all around the world. And what you can see is that employment went very\n\n154\n00:08:03,670 --> 00:08:09,890\nhigh. That's a very feature, a total sign of a big recession. And then it took a\n\n155\n00:08:09,890 --> 00:08:10,570\nlong time.\n\n156\n00:08:10,570 --> 00:08:13,209\nThis was in sort of recovering.\n\n157\n00:08:13,209 --> 00:08:16,089\nCOVID was a massive shock to the labor market.\n\n158\n00:08:16,089 --> 00:08:18,290\nSo not surprisingly, the unemployment rate\n\n159\n00:08:18,290 --> 00:08:19,970\nhas spiked there.\n\n160\n00:08:19,970 --> 00:08:22,049\nBut then it also recovered a lot faster\n\n161\n00:08:22,049 --> 00:08:23,809\nthan it recovered from that.\n\n162\n00:08:23,809 --> 00:08:26,209\nAnd today, we have unemployment rates that\n\n163\n00:08:26,209 --> 00:08:28,290\nare at historically low levels.\n\n164\n00:08:28,290 --> 00:08:29,019\nAnd that's a big issue.\n\n165\n00:08:30,200 --> 00:08:35,200\nThe rate of unemployment in the U.S. is at historically low levels, okay?\n\n166\n00:08:35,659 --> 00:08:37,280\nWay below what is normal.\n\n167\n00:08:38,400 --> 00:08:39,440\nForget recessions.\n\n168\n00:08:39,719 --> 00:08:42,260\nObviously, way below what happens in recession.\n\n169\n00:08:42,739 --> 00:08:47,099\nBut even way below what is normal, what happens during normal times, okay?\n\n170\n00:08:49,390 --> 00:08:53,489\nClosely related to that is wage growth.\n\n171\n00:08:53,489 --> 00:08:55,950\nI have just one measure of wages there.\n\n172\n00:08:55,950 --> 00:09:01,109\nIt's a series of wages that is particularly,\n\n173\n00:09:01,109 --> 00:09:03,969\nwhat I'm about to say is particularly sharp,\n\n174\n00:09:03,969 --> 00:09:06,969\nwhich is the wages in the accommodation and food\n\n175\n00:09:06,969 --> 00:09:08,090\nservice sectors.\n\n176\n00:09:08,090 --> 00:09:11,369\nSo wages have been rising very steadily and very fast\n\n177\n00:09:11,369 --> 00:09:13,750\nrecently everywhere, particularly\n\n178\n00:09:13,750 --> 00:09:16,469\nin sectors like this, where we have some problems,\n\n179\n00:09:16,469 --> 00:09:18,030\nwhat we call labor supply.\n\n180\n00:09:18,030 --> 00:09:19,929\nBut I'll get back to that.\n\n181\n00:09:19,929 --> 00:09:20,989\nOK, so those are two facts.\n\n182\n00:09:20,989 --> 00:09:23,770\nWe have unemployment at extremely low levels,\n\n183\n00:09:23,770 --> 00:09:28,020\nand we have wage growth at a very fast pace.\n\n184\n00:09:28,020 --> 00:09:29,380\nNow, that sounds wonderful, no?\n\n185\n00:09:29,380 --> 00:09:30,479\nI mean, what else do you want?\n\n186\n00:09:30,479 --> 00:09:33,419\nAn economy in which there's few people unemployed,\n\n187\n00:09:33,419 --> 00:09:37,320\nand the wages are growing a lot.\n\n188\n00:09:37,320 --> 00:09:39,880\nI mean, if this was micro, this would be fantastic.\n\n189\n00:09:39,880 --> 00:09:42,059\nSay, OK, look, the guy is employed,\n\n190\n00:09:42,059 --> 00:09:43,429\nand he's getting a high wage.\n\n191\n00:09:43,429 --> 00:09:45,390\nThis is great.\n\n192\n00:09:45,390 --> 00:09:48,729\nWell, not so fast for macro.\n\n193\n00:09:48,729 --> 00:09:51,750\nNot so fast, because I already showed you\n\n194\n00:09:51,750 --> 00:09:53,429\nin the first picture that I showed you to motivate.\n\n195\n00:09:53,429 --> 00:09:56,789\nThere's a connection between wage growth and inflation.\n\n196\n00:09:56,789 --> 00:09:58,309\nAnd that's what we're experiencing.\n\n197\n00:09:58,309 --> 00:10:01,150\nThe normal level of inflation for an economy like the US\n\n198\n00:10:01,150 --> 00:10:02,489\nis around 2%. That's normal. That's what central of inflation for an economy like the US is around 2%.\n\n199\n00:10:02,489 --> 00:10:03,169\nThat's normal.\n\n200\n00:10:03,169 --> 00:10:06,549\nThat's what central banks target in an economy like the US,\n\n201\n00:10:06,549 --> 00:10:08,390\nin the euro area.\n\n202\n00:10:08,390 --> 00:10:10,210\nJapan has been dreaming with 2%,\n\n203\n00:10:10,210 --> 00:10:12,989\nbut it hasn't been able for decades to get it.\n\n204\n00:10:12,989 --> 00:10:15,890\nAlthough now they are, but they weren't\n\n205\n00:10:15,890 --> 00:10:18,109\nfor a couple of decades to get to 2%.\n\n206\n00:10:18,109 --> 00:10:20,799\nBut that's about, and we will discuss later in the course,\n\n207\n00:10:20,799 --> 00:10:24,440\nwhy 2% is about right for economies of the size of the US\n\n208\n00:10:24,440 --> 00:10:26,479\nand so on.\n\n209\n00:10:26,479 --> 00:10:29,320\nObviously, in recessions, these things can go low.\n\n210\n00:10:29,320 --> 00:10:32,599\nAnd that's why in the COVID recession,\n\n211\n00:10:32,599 --> 00:10:35,239\ninflation went to zero, essentially.\n\n212\n00:10:35,239 --> 00:10:37,000\nBut then it began to pick up.\n\n213\n00:10:37,000 --> 00:10:42,669\nAnd it's now at levels which are unheard of in the US since the 80s.\n\n214\n00:10:42,669 --> 00:10:46,669\nSo depending on the particular measure you use of inflation,\n\n215\n00:10:46,669 --> 00:10:50,669\nit's around 6.5% to 8%. That's the level of inflation we have.\n\n216\n00:10:50,669 --> 00:10:54,669\nWhich is way, way above what is considered a reasonable\n\n217\n00:10:54,669 --> 00:10:58,330\ntarget for the central banks for inflation.\n\n218\n00:10:58,330 --> 00:10:59,330\nSo that's a problem.\n\n219\n00:10:59,330 --> 00:11:01,330\nWe have had some good news recently\n\n220\n00:11:01,330 --> 00:11:04,330\nin that inflation clearly peaked already.\n\n221\n00:11:04,330 --> 00:11:06,330\nAgain, definition of inflation,\n\n222\n00:11:06,330 --> 00:11:08,330\nformal definition of inflation happens in the next lecture,\n\n223\n00:11:08,330 --> 00:11:11,330\nbut it already peaked and is declining,\n\n224\n00:11:11,330 --> 00:11:14,330\nbut it's still at very, very high levels.\n\n225\n00:11:14,330 --> 00:11:15,330\nAnd that's a problem.\n\n226\n00:11:15,330 --> 00:11:16,330\nThat's a big macroeconomic problem.\n\n227\n00:11:16,330 --> 00:11:17,080\nAnd one of the things we want to understand in this course is, well, what to do about it? but it's still at very, very high levels. And that's a problem. That's a big macroeconomic problem.\n\n228\n00:11:17,080 --> 00:11:19,380\nAnd one of the things we want to understand in this course\n\n229\n00:11:19,380 --> 00:11:20,979\nis, well, what to do about it?\n\n230\n00:11:20,979 --> 00:11:22,979\nHow do you deal with that?\n\n231\n00:11:22,979 --> 00:11:26,679\nWhat do central banks need to do in order to deal with that?\n\n232\n00:11:26,679 --> 00:11:29,320\nNow, I've been talking about the US,\n\n233\n00:11:29,320 --> 00:11:33,320\nbut this is not specific to the US.\n\n234\n00:11:33,320 --> 00:11:36,909\nThis episode, this recovery from COVID, is incredibly common across the US. This episode, this recovery from COVID,\n\n235\n00:11:36,909 --> 00:11:41,150\nis incredibly common across different regions of the world.\n\n236\n00:11:41,150 --> 00:11:43,289\nI mean, you see it everywhere, with a few exceptions.\n\n237\n00:11:43,289 --> 00:11:46,549\nAnd I'm going to talk about one major exception in a minute.\n\n238\n00:11:46,549 --> 00:11:49,530\nBut it's widespread.\n\n239\n00:11:49,530 --> 00:11:52,690\nIt's a widespread phenomenon that we had high unemployment,\n\n240\n00:11:52,690 --> 00:11:58,330\nthen we had sort of very high, well, I haven't told you that part yet,\n\n241\n00:11:58,330 --> 00:12:02,330\nbut then we had sort of low inflation, then inflation picked up enormously,\n\n242\n00:12:02,330 --> 00:12:05,330\nand now we're all worried about these very high levels of inflation.\n\n243\n00:12:05,330 --> 00:12:10,330\nIn fact, if you look at sort of what happened between the Great Recession\n\n244\n00:12:10,330 --> 00:12:13,659\nand the COVID recession, it was pretty normal\n\n245\n00:12:13,659 --> 00:12:17,179\nto have 70% to 80% of the economies in the world\n\n246\n00:12:17,179 --> 00:12:20,320\nhaving inflation levels at or below 2%.\n\n247\n00:12:20,320 --> 00:12:21,919\nSo that's the norm.\n\n248\n00:12:21,919 --> 00:12:23,140\nIf they throw you into a country,\n\n249\n00:12:23,140 --> 00:12:25,979\nthey drop you into a country, the normal thing would be,\n\n250\n00:12:25,979 --> 00:12:27,059\nwell, it's about 2%.\n\n251\n00:12:27,059 --> 00:12:28,320\nThat's the level of inflation.\n\n252\n00:12:28,320 --> 00:12:29,859\nObviously, if I drop you in Argentina,\n\n253\n00:12:29,859 --> 00:12:33,469\nyou're going to find a much bigger number, 10,000%.\n\n254\n00:12:33,469 --> 00:12:39,530\nBut the bulk of the countries were around 2% or so.\n\n255\n00:12:39,530 --> 00:12:44,849\nToday, you don't find any country with inflation below 2%.\n\n256\n00:12:44,849 --> 00:12:47,710\nNot even Japan, that for years were in deflation\n\n257\n00:12:47,710 --> 00:12:50,330\nand trying to get sort of above zero.\n\n258\n00:12:50,330 --> 00:12:52,330\nThat's all they wanted.\n\n259\n00:12:52,330 --> 00:12:55,330\nNot even in Japan you have inflation below 2% today.\n\n260\n00:12:55,330 --> 00:12:59,330\nSo this thing I show you, and for more or less the same reasons,\n\n261\n00:12:59,330 --> 00:13:02,330\nis happening everywhere.\n\n262\n00:13:02,330 --> 00:13:04,330\nNot exactly the same factors.\n\n263\n00:13:04,330 --> 00:13:12,000\nIt's the same episode, for example, and then with differences depending on the structure of the economy\n\n264\n00:13:12,000 --> 00:13:16,000\nor in additional shocks. In Europe, for example, they have very high inflation.\n\n265\n00:13:16,000 --> 00:13:20,000\nBut the problem is not, the origin of the problem,\n\n266\n00:13:20,000 --> 00:13:24,000\nthe bulk of the problem is the same as in the US.\n\n267\n00:13:24,000 --> 00:13:27,659\nBut at the margin, they are different.\n\n268\n00:13:27,659 --> 00:13:29,659\nIn Europe, the big driver of inflation,\n\n269\n00:13:29,659 --> 00:13:32,659\nthe big recent driver of inflation,\n\n270\n00:13:32,659 --> 00:13:35,659\nis unlike the US, which is aggregate demand,\n\n271\n00:13:35,659 --> 00:13:38,659\nI can't understand later, is essentially the war in Ukraine.\n\n272\n00:13:38,659 --> 00:13:40,659\nThat has increased the price of energy,\n\n273\n00:13:40,659 --> 00:13:42,659\nand the price of energy has led to lots of inflation.\n\n274\n00:13:42,659 --> 00:13:44,659\nSo there are different reasons,\n\n275\n00:13:44,659 --> 00:13:50,150\nbut all of them are sort of different reasons that you add on top of what is a common story, which is\n\n276\n00:13:50,150 --> 00:13:58,070\nthat we overheated coming out of the COVID episode and now we're\n\n277\n00:13:58,070 --> 00:14:02,150\nstruggling with that. Now the main tool, and we're going to talk a lot about\n\n278\n00:14:02,150 --> 00:14:05,640\nthis in this course, the main tool that central banks have\n\n279\n00:14:05,640 --> 00:14:08,640\nto deal with inflation is the interest rate.\n\n280\n00:14:08,640 --> 00:14:11,820\nSo for reasons you'll understand later,\n\n281\n00:14:11,820 --> 00:14:15,119\nalthough you may have intuition about some of those now,\n\n282\n00:14:15,119 --> 00:14:18,419\nobviously, when the central bank lowers the interest rates,\n\n283\n00:14:18,419 --> 00:14:21,859\nthen that helps the economy to expand.\n\n284\n00:14:21,859 --> 00:14:23,900\nAnd when it increases interest rate,\n\n285\n00:14:23,900 --> 00:14:25,080\nthen it does the opposite.\n\n286\n00:14:25,080 --> 00:14:27,559\nRising interest rate makes mortgages more expensive,\n\n287\n00:14:27,559 --> 00:14:28,619\nmake everything more expensive.\n\n288\n00:14:28,619 --> 00:14:30,820\nSo people tend to consume less, firms\n\n289\n00:14:30,820 --> 00:14:32,979\ntend to invest less, and so on, because it's\n\n290\n00:14:32,979 --> 00:14:37,200\nmore expensive to invest, to borrow, to do something.\n\n291\n00:14:37,200 --> 00:14:40,760\nAnd there you see it.\n\n292\n00:14:40,760 --> 00:14:44,090\nI mean, this was the level of the interest rate in the US\n\n293\n00:14:44,090 --> 00:14:45,010\nbefore COVID.\n\n294\n00:14:45,010 --> 00:14:48,090\nWhen COVID came, boom, they brought it all the way down.\n\n295\n00:14:48,090 --> 00:14:50,530\nIt happens that you cannot bring interest rate a lot lower\n\n296\n00:14:50,530 --> 00:14:51,609\nthan zero.\n\n297\n00:14:51,609 --> 00:14:53,570\nThat's the reason it stayed close to zero there.\n\n298\n00:14:53,570 --> 00:14:55,849\nWe're going to talk about that later on.\n\n299\n00:14:55,849 --> 00:14:57,309\nBut then eventually, they realized\n\n300\n00:14:57,309 --> 00:14:58,369\nthat we're behind the curve.\n\n301\n00:14:58,369 --> 00:14:59,989\nInflation had picked up a lot.\n",
+        "summary": "This session serves as an introduction to Macroeconomics (1402), contrasting it with Microeconomics (1401). The speaker, who will begin lecturing on Wednesday, clarifies that macroeconomics focuses on the \"big picture,\" examining entire economies, inflation rates, and overall unemployment, rather than individual households or firms. While acknowledging the micro foundations of macroeconomics, the speaker emphasizes that it is a more complex field that often requires shortcuts and is more of an art than a pure science.\n\nThe course aims to provide students with a practical understanding of macroeconomic principles, enabling them to critically analyze publications like the World Economic Outlook, the Wall Street Journal, and the Financial Times. The goal is not to train macro researchers but to equip students with the knowledge possessed by many traders. The course will maintain a simplified approach, avoiding overly complex math.\n\nA key element of the lectures, starting after the initial introductory period, will be a 5-10 minute discussion of current events, linking real-world scenarios to the course material. The speaker previewed a current macroeconomic concern: the correlation between wage growth and inflation, highlighting that high wage growth often leads to high inflation. The speaker also discussed the current low unemployment rates and rapid wage growth, which, while seemingly positive, contribute to the current high inflation levels, far exceeding the 2% target for central banks. This situation is not unique to the US, with many countries experiencing similar issues. The speaker also mentioned that central banks use interest rates as a tool to manage inflation, and that they were lowered during the COVID crisis and are now being raised to combat inflation.\n\nThe speaker concluded by emphasizing that the current high inflation is a significant macroeconomic problem that will be explored throughout the course.\n",
+        "diarization_enabled": false,
+        "diarization_status": null,
+        "speaker_profiles": null,
+        "audio_hash": null,
+        "created_at": "2025-02-03T16:48:46.684151+00:00",
+        "updated_at": "2025-02-03T16:48:46.684151+00:00",
+        "diarization_progress": 0,
+        "transcription_progress": 0,
+        "speaker_segments": null,
+        "refinement_triggered": false,
+        "refinement_pending": false,
+        "credits_required": null,
+        "credits_charged": true,
+        "language": "",
+        "job_shares": []
+    }
+]

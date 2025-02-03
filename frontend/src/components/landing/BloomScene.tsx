@@ -8,7 +8,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 
 extend({ EffectComposer, RenderPass, UnrealBloomPass, OutputPass });
 
-function BloomScene({ frequency }: { frequency: number }) {
+function BloomScene({ frequencyRef }: { frequencyRef: React.RefObject<number> }) {
     const { gl, scene, camera, size } = useThree();
 
     const renderPass = useRef<RenderPass | null>(null);
@@ -56,9 +56,9 @@ function BloomScene({ frequency }: { frequency: number }) {
 
     useEffect(() => {
         if (bloomPass.current) {
-            bloomPass.current.strength = 0.1 + frequency / 1500;
+            bloomPass.current.strength = 0.1 + frequencyRef.current! / 1500;
         }
-    }, [frequency]);
+    }, [frequencyRef]);
 
     useFrame(() => {
         if (composer.current) {
