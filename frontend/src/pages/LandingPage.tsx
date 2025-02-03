@@ -29,14 +29,14 @@ const fadeIn = {
   }
 };
 
-const slideIn = {
-  hidden: { opacity: 0, x: -20 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
-  }
-};
+// const slideIn = {
+//   hidden: { opacity: 0, x: -20 },
+//   visible: {
+//     opacity: 1,
+//     x: 0,
+//     transition: { duration: 0.6, ease: "easeOut" }
+//   }
+// };
 const scenarios = [
   {
     value: "meetings",
@@ -106,7 +106,7 @@ const LandingPage = () => {
   const heroRef = useRef(null);
   const videoRef = useRef<HTMLElement>(null);
   const isHeroInView = useInView(heroRef);
-  const videoInView = useInView(videoRef);
+  // const videoInView = useInView(videoRef);
   const frequency = useAudioAnalyzer();
 
   const scrollToVideo = () => {
