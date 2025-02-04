@@ -3,8 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { router } from './routes';
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpecs from './swaggerConfig';
+// import swaggerUi from 'swagger-ui-express';
+// import swaggerSpecs from './swaggerConfig';
 import path from 'path';
 import session from 'express-session';
 
@@ -31,10 +31,10 @@ app.use(session({
 }));
 
 app.use('/api', router);
-app.use('/api/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+// app.use('/api/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-if (swaggerSpecs && Object.keys(swaggerSpecs).length > 0)
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+// if (swaggerSpecs && Object.keys(swaggerSpecs).length > 0)
+//     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

@@ -27,7 +27,7 @@ interface EnhancementJob {
     error?: string;
 }
 
-async function pollDiarizationStatus(jobId: string, maxAttempts = 360): Promise<any> {
+async function pollDiarizationStatus(jobId: string, maxAttempts = 1200): Promise<any> {
     let attempts = 0;
 
     while (attempts < maxAttempts) {
