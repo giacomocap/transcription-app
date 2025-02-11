@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Job } from "../types";
 import { DownloadOptions } from "./DownloadOptions";
 import { useEffect, useState } from "react";
+import ReactMarkdown from 'react-markdown';
 
 interface SummaryViewProps {
     job: Job;
@@ -41,12 +42,8 @@ export const SummaryView = ({ job }: SummaryViewProps) => {
                             <p>Please review and confirm speaker names to begin AI processing.</p>
                         </div>
                     ) : job.summary ? (
-                        <div className="text-gray-800 text-base leading-relaxed">
-                            {job.summary.split('\n\n').map((paragraph, index) => (
-                                <div key={index} className="mb-4">
-                                    {paragraph}
-                                </div>
-                            ))}
+                        <div className="prose prose-sm max-w-none">
+                            <ReactMarkdown>{job.summary}</ReactMarkdown>
                         </div>
                     ) : (
                         <p className="text-gray-500 italic">

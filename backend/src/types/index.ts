@@ -32,3 +32,15 @@ export interface Job {
 export type Status = 'pending' | 'running' | 'completed' | 'failed';
 
 export type TranscriptionStatus = Status | 'transcribed';
+
+export interface PyannoteWebhookPayload {
+    jobId: string;
+    status: 'succeeded' | 'failed';
+    output?: {
+        diarization: Array<{
+            start: number;
+            end: number;
+            speaker: string;
+        }>;
+    };
+}

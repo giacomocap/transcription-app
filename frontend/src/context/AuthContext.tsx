@@ -33,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [token, setToken] = useState<string | null>(null);
     const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
     const [needsOnboarding, setNeedsOnboarding] = useState(false);
+    const [hasShownSignInToast, setHasShownSignInToast] = useState(false);
     const { toast } = useToast();
 
     const fetchUserSettings = async () => {
@@ -78,22 +79,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user ?? null);
             setToken(session?.access_token ?? null);
-            
-            if (event === 'SIGNED_IN') {
+
+            if (event === 'SIGNED_IN' && !hasShownSignInToast) {
                 toast({
                     title: "Welcome!",
                     description: "You have successfully signed in.",
                 });
+                setHasShownSignInToast(true);
             } else if (event === 'SIGNED_OUT') {
                 toast({
                     title: "Goodbye!",
                     description: "You have been signed out successfully.",
                 });
+                setHasShownSignInToast(false);
             }
         });
 
         return () => authListener?.subscription.unsubscribe();
-    }, [toast]);
+    }, [toast, hasShownSignInToast]);
 
     const updateUserSettings = async (settings: Partial<UserSettings>) => {
         if (!user || !token) return;

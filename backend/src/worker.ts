@@ -7,8 +7,9 @@ import { createReadStream } from 'fs';
 import { RefinementConfig } from './types';
 import { TranscriptionSegment, TranscriptionVerbose } from 'openai/resources/audio/transcriptions';
 import crypto from 'crypto';
-import { unlink } from 'fs/promises';
+import { readFile, unlink } from 'fs/promises';
 import { creditTransactionService } from './services/credit-transaction-service';
+import path from 'path';
 
 dotenv.config();
 
@@ -27,42 +28,6 @@ interface EnhancementJob {
     error?: string;
 }
 
-async function pollDiarizationStatus(jobId: string, maxAttempts = 1200): Promise<any> {
-    let attempts = 0;
-
-    while (attempts < maxAttempts) {
-        const response = await fetch(`${DIARIZATION_URL}/status/${jobId}`);
-
-        if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error('Diarization job not found');
-            }
-            throw new Error(`Failed to get diarization status: ${response.statusText}`);
-        }
-
-        const status = await response.json();
-
-        if (status.status === 'completed') {
-            console.log('Diarization completed for job:', jobId);
-            return status.result;
-        }
-
-        if (status.status === 'failed') {
-            throw new Error(`Diarization failed: ${status.error}`);
-        }
-
-        await supabaseAdmin
-            .from('jobs')
-            .update({ diarization_progress: +status.progress })
-            .eq('id', jobId);
-
-        // Wait for 10 seconds before next attempt
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        attempts++;
-    }
-
-    throw new Error('Diarization timed out');
-}
 
 async function processAudioEnhancement(audioPath: string): Promise<string> {
     try {
@@ -169,6 +134,7 @@ const transcriptionWorker = new Worker(
 
             language = transcription.language;
 
+            console.log('Diarization enabled:', diarizationEnabled);
             // Start refinement immediately if diarization is disabled
             if (!diarizationEnabled) {
                 await refinementQueue.add('refine', {
@@ -189,21 +155,79 @@ const transcriptionWorker = new Worker(
                     .update({ refinement_pending: true })
                     .eq('id', jobId);
 
-                try {
-                    const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            job_id: jobId,
-                            file_path: audioFilePath,
-                        }),
-                    });
 
-                    if (!diarizeResponse.ok) {
-                        throw new Error(`Failed to start diarization: ${diarizeResponse.statusText}`);
+
+                try {
+                    if (process.env.USE_API_DIARIZATION !== 'true') {
+                        const diarizeResponse = await fetch(`${DIARIZATION_URL}/diarize`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                job_id: jobId,
+                                file_path: audioFilePath,
+                            }),
+                        });
+
+                        if (!diarizeResponse.ok) {
+                            throw new Error(`Failed to start diarization: ${diarizeResponse.statusText}`);
+                        }
                     }
+
+                    else {
+                        // 1. Create media location
+                        const mediaUrl = `media://${userId}/${jobId}/audio${path.extname(audioFilePath)}`;
+                        const mediaResponse = await fetch('https://api.pyannote.ai/v1/media/input', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${process.env.PYANNOTEAI_API_TOKEN}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ url: mediaUrl })
+                        });
+
+                        if (!mediaResponse.ok) throw new Error(`Media creation failed: ${mediaResponse.statusText}`);
+                        const { url: presignedUrl } = await mediaResponse.json();
+
+                        // 2. Upload audio file
+                        const fileBuffer = await readFile(audioFilePath);
+                        const uploadResponse = await fetch(presignedUrl, {
+                            method: 'PUT',
+                            body: new Blob([fileBuffer]),
+                            headers: { 'Content-Type': 'audio/mpeg' }
+                        });
+                        if (!uploadResponse.ok) throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+
+                        // 3. Create diarization job
+                        // const webhookUrl = `${process.env.BACKEND_URL}/api/diarization/webhook?jobId=${jobId}`;
+                        const jobResponse = await fetch('https://api.pyannote.ai/v1/diarize', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${process.env.PYANNOTEAI_API_TOKEN}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                url: mediaUrl
+                            })
+                        });
+
+                        if (!jobResponse.ok) throw new Error(`Job creation failed: ${await jobResponse.text()}`);
+
+                        const responseJson = await jobResponse.json();
+                        const diarizationJobId = responseJson.jobId;
+                        await supabaseAdmin
+                            .from('jobs')
+                            .update({ diarization_status: 'pending', diarization_job_id: diarizationJobId })
+                            .eq('id', jobId);
+
+                        try {
+                            await unlink(audioFilePath);
+                        } catch (err) {
+                            console.error('Error deleting file:', err);
+                        }
+                    }
+                    console.log('Diarization job created');
 
                     await diarizationQueue.add('pollDiarization', {
                         jobId,
@@ -217,6 +241,67 @@ const transcriptionWorker = new Worker(
                         .update({ diarization_status: 'failed' })
                         .eq('id', jobId);
                 }
+
+                // try {
+                //     // 1. Create media location
+                //     const mediaUrl = `media://${userId}/${jobId}/audio${path.extname(audioFilePath)}`;
+                //     const mediaResponse = await fetch('https://api.pyannote.ai/v1/media/input', {
+                //         method: 'POST',
+                //         headers: {
+                //             'Authorization': `Bearer ${process.env.PYANNOTEAI_API_TOKEN}`,
+                //             'Content-Type': 'application/json'
+                //         },
+                //         body: JSON.stringify({ url: mediaUrl })
+                //     });
+
+                //     if (!mediaResponse.ok) throw new Error(`Media creation failed: ${mediaResponse.statusText}`);
+                //     const { url: presignedUrl } = await mediaResponse.json();
+
+                //     // 2. Upload audio file
+                //     const fileBuffer = await readFile(audioFilePath);
+                //     const uploadResponse = await fetch(presignedUrl, {
+                //         method: 'PUT',
+                //         body: new Blob([fileBuffer]),
+                //         headers: { 'Content-Type': 'audio/mpeg' }
+                //     });
+                //     if (!uploadResponse.ok) throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+
+                //     // 3. Create diarization job
+                //     const webhookUrl = `${process.env.BACKEND_URL}/api/diarization/webhook?jobId=${jobId}`;
+                //     const jobResponse = await fetch('https://api.pyannote.ai/v1/diarize', {
+                //         method: 'POST',
+                //         headers: {
+                //             'Authorization': `Bearer ${process.env.PYANNOTEAI_API_TOKEN}`,
+                //             'Content-Type': 'application/json'
+                //         },
+                //         body: JSON.stringify({
+                //             url: mediaUrl,
+                //             webhook: webhookUrl
+                //         })
+                //     });
+
+                //     if (!jobResponse.ok) throw new Error(`Job creation failed: ${await jobResponse.text()}`);
+
+                //     const responseJson = await jobResponse.json();
+                //     const diarizationJobId = responseJson.jobId;
+                //     await supabaseAdmin
+                //         .from('jobs')
+                //         .update({ diarization_status: 'pending', diarization_job_id: diarizationJobId })
+                //         .eq('id', jobId);
+
+                //     try {
+                //         await unlink(audioFilePath);
+                //     } catch (err) {
+                //         console.error('Error deleting file:', err);
+                //     }
+
+                // } catch (error) {
+                //     console.error('Pyannote diarization error:', error);
+                //     await supabaseAdmin
+                //         .from('jobs')
+                //         .update({ diarization_status: 'failed' })
+                //         .eq('id', jobId);
+                // }
             }
 
             await creditTransactionService.completeTransaction(jobId);
@@ -245,6 +330,93 @@ const transcriptionWorker = new Worker(
     },
     { connection: redisOptions }
 );
+
+async function pollDiarizationStatus(jobId: string, maxAttempts = 1200): Promise<any> {
+    if (process.env.USE_API_DIARIZATION === 'true') {
+        const { data: existingJob } = await supabaseAdmin
+            .from('jobs')
+            .select('diarization_job_id, id')
+            .eq('id', jobId)
+            .single();
+        const diarization_job_id = existingJob?.diarization_job_id;
+        let job_status = "";
+        let output;
+        while (true) {
+            const response = await fetch(`https://api.pyannote.ai/v1/jobs/${diarization_job_id}`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${process.env.PYANNOTEAI_API_TOKEN}`,
+                    "Content-Type": "application/json"
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                job_status = data.status;
+                if (job_status === "succeeded") {
+                    output = data.output;
+                    break;
+                } else if (["failed", "canceled"].includes(job_status)) {
+                    throw new Error(`Diarization failed: ${job_status}`);
+                }
+            } else {
+                throw new Error(`Failed to get job status: ${response.status} - ${await response.text()}`);
+            }
+            await new Promise(resolve => setTimeout(resolve, 10000));
+        }
+
+        // Calculate speaker profiles from diarization segments
+        const speaker_profiles: { [key: string]: { segments_count: number; total_duration: number } } = {};
+        
+        output.diarization.forEach((segment: { start: number; end: number; speaker: string }) => {
+            if (!speaker_profiles[segment.speaker]) {
+                speaker_profiles[segment.speaker] = {
+                    segments_count: 0,
+                    total_duration: 0
+                };
+            }
+            
+            speaker_profiles[segment.speaker].segments_count++;
+            speaker_profiles[segment.speaker].total_duration += segment.end - segment.start;
+        });
+
+        return { speaker_profiles, segments: output.diarization };
+    } else {
+        let attempts = 0;
+
+        while (attempts < maxAttempts) {
+            const response = await fetch(`${DIARIZATION_URL}/status/${jobId}`);
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('Diarization job not found');
+                }
+                throw new Error(`Failed to get diarization status: ${response.statusText}`);
+            }
+
+            const status = await response.json();
+
+            if (status.status === 'completed') {
+                console.log('Diarization completed for job:', jobId);
+                return status.result;
+            }
+
+            if (status.status === 'failed') {
+                throw new Error(`Diarization failed: ${status.error}`);
+            }
+
+            await supabaseAdmin
+                .from('jobs')
+                .update({ diarization_progress: +status.progress })
+                .eq('id', jobId);
+
+            // Wait for 10 seconds before next attempt
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            attempts++;
+        }
+
+        throw new Error('Diarization timed out');
+    }
+}
 
 const diarizationQueue = new Queue('diarizationQueue', { connection: redisOptions });
 

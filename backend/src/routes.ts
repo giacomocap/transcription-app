@@ -1,7 +1,8 @@
-import { Router, Response } from 'express';
+import { Router, Response, Request } from 'express';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 import { refineTranscription } from './refinement';
 import { isAuthenticated, isResourceOwner, isAdmin, hasJobAccess } from './auth';
 import { AuthenticatedRequest } from './types/auth';
@@ -14,6 +15,7 @@ import { supabaseAdmin } from './utils/supabase';
 import { createWriteStream, existsSync } from 'fs';
 import { pipeline } from 'stream/promises';
 import { creditTransactionService } from './services/credit-transaction-service';
+import { PyannoteWebhookPayload } from './types';
 
 dotenv.config();
 
@@ -517,6 +519,93 @@ router.patch('/jobs/:id/update', isAuthenticated, isResourceOwner, async (req: A
     } catch (error) {
         console.error('Error updating job:', error);
         res.status(500).json({ error: 'Failed to update job' });
+    }
+});
+
+router.post('/diarization/webhook', async (req: Request, res: Response) => {
+    const signature = req.headers['x-signature'] as string;
+    const timestamp = req.headers['x-request-timestamp'] as string;
+    const diarization_job_id = req.body.jobId as string;
+
+    if (!signature || !timestamp || !diarization_job_id) {
+        res.status(400).json({ error: 'Missing required headers or parameters' });
+        return;
+    }
+
+    const { data: existingJob } = await supabaseAdmin
+        .from('jobs')
+        .select('diarization_status, id')
+        .eq('diarization_job_id', diarization_job_id)
+        .single();
+
+    if (!existingJob) {
+        res.status(404).json({ error: 'Job not found' });
+        return;
+    }
+
+    const jobId = existingJob.id;
+    // Verify signature
+    const secret = process.env.PYANNOTEAI_WEBHOOK_SECRET;
+    if (!secret) {
+        res.status(500).json({ error: 'Server error' });
+        return
+    }
+    const rawBody = req.body.toString('utf8');
+    const body = JSON.parse(rawBody) as PyannoteWebhookPayload;
+
+    // Use raw body for signature verification
+    const signedContent = `v0:${timestamp}:${rawBody.toString('utf8')}`;
+    const computedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(signedContent)
+        .digest('hex');
+
+    if (computedSignature !== signature) {
+        res.status(403).json({ error: 'Invalid signature' });
+        return;
+    }
+
+    // Process diarization result
+    if (req.body.status !== 'succeeded') {
+        await supabaseAdmin
+            .from('jobs')
+            .update({ diarization_status: 'failed' })
+            .eq('id', jobId);
+        res.json({ status: 'failed' });
+        return;
+    }
+
+    try {
+        const diarizationResult = req.body?.output.diarization;
+        const { data: job } = await supabaseAdmin
+            .from('jobs')
+            .select('subtitle_content, transcript, language')
+            .eq('id', jobId)
+            .single();
+
+        if (!job) {
+            res.status(404).json({ error: 'Job not found' });
+            return
+        }
+        await supabaseAdmin
+            .from('jobs')
+            .update({
+                diarization_status: 'completed',
+                speaker_profiles: diarizationResult.speaker_profiles,
+                speaker_segments: diarizationResult.segments,
+                diarization_progress: 100,
+                refinement_pending: true
+            })
+            .eq('id', jobId);
+
+        res.json({ status: 'success' });
+    } catch (error) {
+        console.error('Webhook processing error:', error);
+        await supabaseAdmin
+            .from('jobs')
+            .update({ diarization_status: 'failed' })
+            .eq('id', jobId);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -1100,5 +1189,6 @@ router.get('/admin/users/credits', isAuthenticated, isAdmin, async (req: Authent
         res.status(500).json({ error: 'Failed to fetch user credits' });
     }
 });
+
 
 export { router };
