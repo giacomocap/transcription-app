@@ -52,7 +52,7 @@ services:
       context: ./diarization-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    runtime: nvidia
+    gpus: "${USE_GPU:-}"
     ports:
       - '8001:8000'
     environment:
