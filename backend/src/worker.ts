@@ -155,7 +155,7 @@ const transcriptionWorker = new Worker(
                     .update({ refinement_pending: true })
                     .eq('id', jobId);
 
-
+                console.log('Use API diarization:', process.env.USE_API_DIARIZATION)
 
                 try {
                     if (process.env.USE_API_DIARIZATION !== 'true') {
@@ -366,7 +366,7 @@ async function pollDiarizationStatus(jobId: string, maxAttempts = 1200): Promise
 
         // Calculate speaker profiles from diarization segments
         const speaker_profiles: { [key: string]: { segments_count: number; total_duration: number } } = {};
-        
+
         output.diarization.forEach((segment: { start: number; end: number; speaker: string }) => {
             if (!speaker_profiles[segment.speaker]) {
                 speaker_profiles[segment.speaker] = {
@@ -374,7 +374,7 @@ async function pollDiarizationStatus(jobId: string, maxAttempts = 1200): Promise
                     total_duration: 0
                 };
             }
-            
+
             speaker_profiles[segment.speaker].segments_count++;
             speaker_profiles[segment.speaker].total_duration += segment.end - segment.start;
         });
