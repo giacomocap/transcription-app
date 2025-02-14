@@ -19,7 +19,7 @@ import {
 } from './ui/dropdown-menu';
 
 export const Navigation = () => {
-    const { user, isAuthenticated, logout } = useAuth();
+    const { user, isAuthenticated, logout, accounts, currentAccount, switchAccount } = useAuth();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     const UserAvatar = ({ size = 'h-8 w-8' }) => (
@@ -49,6 +49,26 @@ export const Navigation = () => {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+                {/* If the user belongs to more than one account, show an account switcher */}
+                {accounts.length > 1 && (
+                    <>
+                        <DropdownMenuItem disabled>
+                            <strong>Switch Team</strong>
+                        </DropdownMenuItem>
+                        {accounts.map((acc) => (
+                            <DropdownMenuItem
+                                key={acc.id}
+                                onClick={() => {
+                                    switchAccount(acc);
+                                    onClick();
+                                }}
+                            >
+                                {acc.name} {currentAccount?.id === acc.id && '✓'}
+                            </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                    </>
+                )}
                 <DropdownMenuItem asChild>
                     <Link to="/settings" onClick={onClick}>Settings and Credits</Link>
                 </DropdownMenuItem>

@@ -19,7 +19,6 @@ import { OnboardingModal } from './components/OnboardingModal'; // Add this impo
 import { Toaster } from './components/ui/toaster';
 import { SettingsPage } from './pages/SettingsPage';
 
-// Create a new component to handle the conditional rendering of the Navigation
 const AppContent = () => {
   const location = useLocation();
   const { isPublicAccess } = usePublicAccess();

@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import { router } from './routes';
 // import swaggerUi from 'swagger-ui-express';
 // import swaggerSpecs from './swaggerConfig';
-import path from 'path';
+import accountRouter from './routes/account';
 import session from 'express-session';
 
 dotenv.config();
@@ -31,6 +31,7 @@ app.use(session({
 }));
 
 app.use('/api', router);
+app.use('/api/accounts', accountRouter)
 // app.use('/api/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // if (swaggerSpecs && Object.keys(swaggerSpecs).length > 0)

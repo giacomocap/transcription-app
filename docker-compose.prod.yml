@@ -52,6 +52,7 @@ services:
       context: ./diarization-service
       dockerfile: Dockerfile
     restart: unless-stopped
+    runtime: nvidia
     ports:
       - '8001:8000'
     environment:

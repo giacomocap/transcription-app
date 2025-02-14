@@ -11,6 +11,16 @@ export const supabase = createClient(
     import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
+export interface Account {
+    id: string;
+    name: string;
+    slug: string;
+    personal_account: boolean;
+    billing_status: string;
+    plan: string;
+    // ...other account fields
+}
+
 interface AuthContextType {
     user: User | null;
     token: string | null;
@@ -23,6 +33,10 @@ interface AuthContextType {
     updateUserSettings: (settings: Partial<UserSettings>) => Promise<void>;
     completeOnboarding: () => void;
     deleteAccount: () => Promise<void>;
+    accounts: Account[];
+    currentAccount: Account | null;
+    switchAccount: (account: Account) => void;
+    updateAccountSettings: (settings: Partial<Account>) => Promise<Account>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
     const [needsOnboarding, setNeedsOnboarding] = useState(false);
     const [hasShownSignInToast, setHasShownSignInToast] = useState(false);
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
     const { toast } = useToast();
 
     const fetchUserSettings = async () => {
@@ -53,6 +69,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const fetchAccounts = async () => {
+        if (!user) return;
+        try {
+            const response = await authFetch('/api/accounts', { method: 'GET' });
+            if (response.ok) {
+                const data = await response.json();
+                setAccounts(data.accounts);
+                // Set a default account – choose the personal account if available, otherwise first account
+                if (data.accounts.length > 0) {
+                    const defaultAccount =
+                        data.accounts.find((acc: Account) => acc.personal_account) || data.accounts[0];
+                    setCurrentAccount(defaultAccount);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching accounts:', error);
+        }
+    };
+
     useEffect(() => {
         // Check initial session
         const initializeAuth = async () => {
@@ -63,6 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 if (session?.user && session?.access_token) {
                     await fetchUserSettings();
+                    await fetchAccounts(); // fetch accounts on login
                 } else {
                     setUserSettings(null);
                     setNeedsOnboarding(false);
@@ -114,6 +150,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setNeedsOnboarding(false);
     };
 
+    const switchAccount = (account: Account) => {
+        setCurrentAccount(account);
+    };
+
+    const updateAccountSettings = async (settings: Partial<Account>): Promise<Account> => {
+        if (!currentAccount) throw new Error('No account selected');
+        try {
+            const response = await authFetch(`/api/accounts/${currentAccount.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings),
+            });
+            if (!response.ok) {
+                throw new Error('Failed to update account settings');
+            }
+            const { account: updatedAccount } = await response.json();
+            // Update both currentAccount and the accounts array
+            setCurrentAccount(updatedAccount);
+            setAccounts((prev) =>
+                prev.map((acc) => (acc.id === updatedAccount.id ? updatedAccount : acc))
+            );
+            return updatedAccount;
+        } catch (error) {
+            console.error('Error updating account settings:', error);
+            throw error;
+        }
+    };
+
+    const deleteAccount = async () => {
+        if (!user || !token) return;
+        try {
+            const response = await authFetch('/api/user/delete', {
+                method: 'DELETE',
+            });
+            if (!response.ok) {
+                throw new Error('Failed to delete account');
+            }
+            await logout();
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            throw error;
+        }
+    };
+
     const login = async (provider: Provider = 'google') => {
         await supabase.auth.signInWithOAuth({
             provider
@@ -131,25 +211,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const deleteAccount = async () => {
-        if (!user || !token) return;
-
-        try {
-            const response = await authFetch('/api/user/delete', {
-                method: 'DELETE'
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to delete account');
-            }
-
-            await logout();
-        } catch (error) {
-            console.error('Error deleting account:', error);
-            throw error;
-        }
-    };
-
     return (
         <AuthContext.Provider value={{
             user,
@@ -162,7 +223,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             needsOnboarding,
             updateUserSettings,
             completeOnboarding,
-            deleteAccount
+            deleteAccount,
+            accounts,
+            currentAccount,
+            switchAccount,
+            updateAccountSettings,
         }}>
             {children}
         </AuthContext.Provider>
