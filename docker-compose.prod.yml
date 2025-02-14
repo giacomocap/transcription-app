@@ -52,13 +52,7 @@ services:
       context: ./diarization-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+    runtime: ${DOCKER_RUNTIME:-}
     ports:
       - '8001:8000'
     environment:
