@@ -1,6 +1,6 @@
 services:
   backend:
-    dns: 
+    dns:
       - 8.8.8.8
       - 1.1.1.1
     env_file:
@@ -32,7 +32,7 @@ services:
       - ./backend/uploads:/app/uploads
 
   frontend:
-    dns: 
+    dns:
       - 8.8.8.8
       - 1.1.1.1
     build:
@@ -45,14 +45,20 @@ services:
       - backend
 
   diarization:
-    dns: 
+    dns:
       - 8.8.8.8
       - 1.1.1.1
     build:
       context: ./diarization-service
       dockerfile: Dockerfile
     restart: unless-stopped
-    gpus: "${USE_GPU:-}"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
     ports:
       - '8001:8000'
     environment:
@@ -64,7 +70,7 @@ services:
       - redis
 
   worker:
-    dns: 
+    dns:
       - 8.8.8.8
       - 1.1.1.1
     env_file:
@@ -94,7 +100,7 @@ services:
       - ./backend/uploads:/app/uploads
 
   cloudflared:
-    dns: 
+    dns:
       - 8.8.8.8
       - 1.1.1.1
     image: cloudflare/cloudflared
